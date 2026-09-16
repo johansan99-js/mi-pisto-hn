@@ -1,0 +1,37 @@
+name: Actualizar tasas de cambio
+
+on:
+  schedule:
+    # 12:00 UTC = 6:00 AM Honduras (UTC-6), todos los días
+    - cron: '0 12 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-rates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Ejecutar updater de tasas
+        run: node .github/workflows/update-rates.js
+
+      - name: Commit tasas.json si cambió
+        run: |
+          if git diff --quiet -- tasas.json; then
+            echo "Sin cambios en tasas.json"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tasas.json
+          git commit -m "chore: actualizar tasas de cambio [automated]"
+          git push

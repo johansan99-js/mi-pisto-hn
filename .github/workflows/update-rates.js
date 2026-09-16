@@ -175,7 +175,8 @@ async function getRatesFromApi() {
     _legacy_rates_for_compat: legacyRates
   };
 
-  const outPath = path.join(__dirname, 'tasas.json');
+  // __dirname es .github/workflows/ — el archivo lo consume la app desde la raíz del repo
+  const outPath = path.join(__dirname, '..', '..', 'tasas.json');
   fs.writeFileSync(outPath, JSON.stringify(output, null, 2) + '\n');
 
   console.log('\n📝 Escrito: ' + outPath);
