@@ -1499,6 +1499,13 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
       <span style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;background:var(--red);border-radius:2px"></div> Gastos</span>
     </div>
   </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h4>📊 Gastos por Categoría</h4>
+      <select id="catstats-mes" class="input-field" style="margin:0;width:auto;padding:8px 10px;font-size:12px" onchange="renderCategoryStats()"></select>
+    </div>
+    <div id="catstats-list"></div>
+  </div>
   <button class="btn btn-primary" onclick="exportToExcelPro()" style="background: #1D6F42; color: white; margin-top: 15px;">
     📊 Exportar Reporte Profesional (Excel)
   </button>
@@ -1800,7 +1807,15 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <div id="gasto-conversion-info" class="conversion-info" style="display:none"></div>
     <input type="text" id="gasto-cat" class="input-field" placeholder="Categoría">
     <input type="text" id="gasto-subcat" class="input-field" placeholder="Comercio / Subcategoría">
-    
+
+    <button type="button" class="btn btn-secondary" id="btn-toggle-split" onclick="toggleGastoSplit()" style="margin-bottom:10px">➗ Este pago incluye varias categorías</button>
+    <div id="gasto-split-wrap" style="display:none;margin-bottom:10px">
+      <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Divide el monto total en las categorías que correspondan. La suma debe cuadrar con el monto de arriba.</p>
+      <div id="gasto-split-list"></div>
+      <button type="button" class="btn btn-secondary" onclick="addGastoSplitRow()" style="margin:6px 0">+ Agregar categoría</button>
+      <div id="gasto-split-total" style="font-size:12px;font-weight:700;padding:8px 10px;background:var(--bg3);border-radius:8px"></div>
+    </div>
+
     <select id="gasto-tipo" class="input-field">
         <option value="fijo">Gasto Fijo (Necesario para vivir)</option>
         <option value="extra" selected>Gasto Extra (Ocio/Deseo)</option>
@@ -3119,6 +3134,7 @@ function actualizarConversionGasto() {
   const moneda = document.getElementById('gasto-moneda')?.value || 'HNL';
   const info = document.getElementById('gasto-conversion-info');
   _renderConversion(info, monto, moneda, 'expense');
+  if (typeof updateGastoSplitTotal === 'function') updateGastoSplitTotal();
 }
 
 function actualizarConversionIngreso() {
@@ -3153,15 +3169,42 @@ function renderMontoTx(t, signo, color) {
 function saveGasto(){
     const montoInput = parseMonto(document.getElementById('gasto-monto').value),
           moneda = document.getElementById('gasto-moneda')?.value || 'HNL',
-          cat = document.getElementById('gasto-cat').value || 'General',
           subcat = document.getElementById('gasto-subcat').value || '',
           pago = (document.getElementById('gasto-cuenta')?.value||document.getElementById('gasto-pago').value),
           tipo = document.getElementById('gasto-tipo').value || 'extra',
           banco = document.getElementById('gasto-banco').value || '',
           etiqueta = (document.getElementById('etiqueta-input')?.value || '').trim();
-          
+    let cat = document.getElementById('gasto-cat').value || 'General';
+
     if(montoInput===null || montoInput<=0) return alert('Monto inválido (no se permite notación científica ni valores >1.000.000.000)');
-    
+
+    // ── DIVISIÓN EN VARIAS CATEGORÍAS (splits) ──
+    // Si el usuario activó "Este pago incluye varias categorías", validamos
+    // que la suma de las partes cuadre exactamente con el monto total.
+    const splitActivo = document.getElementById('gasto-split-wrap').style.display !== 'none';
+    let splitsInput = null;
+    if (splitActivo) {
+        const filas = document.querySelectorAll('#gasto-split-list .split-row-wrap');
+        const partes = [];
+        let suma = 0;
+        for (const fila of filas) {
+            const catFila = fila.querySelector('.split-cat').value.trim();
+            const montoFila = parseMonto(fila.querySelector('.split-monto').value);
+            if (!catFila && (montoFila === null || montoFila <= 0)) continue; // fila vacía, se ignora
+            if (!catFila) return alert('Falta el nombre de la categoría en una de las divisiones.');
+            if (montoFila === null || montoFila <= 0) return alert(`Falta el monto para "${catFila}".`);
+            partes.push({ cat: catFila, monto: montoFila });
+            suma += montoFila;
+        }
+        if (partes.length < 2) return alert('Agrega al menos 2 categorías para dividir el gasto (o desactiva la división).');
+        if (Math.abs(suma - montoInput) > 0.01) {
+            return alert(`La suma de las categorías (L.${suma.toFixed(2)}) no cuadra con el monto total (L.${montoInput.toFixed(2)}). Ajusta los montos para que cuadren exactamente.`);
+        }
+        splitsInput = partes;
+        const nombres = partes.map(p => p.cat);
+        cat = nombres.length > 2 ? `Varios (${nombres.slice(0,2).join(', ')} +${nombres.length-2})` : `Varios (${nombres.join(', ')})`;
+    }
+
     // ─────────────────────────────────────────────────────────────
     // MULTIMONEDA: convertir a HNL si es necesario
     // Gasto → tasa ASK (banco te VENDE la moneda extranjera)
@@ -3171,8 +3214,9 @@ function saveGasto(){
     let originalCurrency = null;
     let conversionRate = null;
     let conversionSide = null;
+    let rate = null;
     if (moneda && moneda !== 'HNL' && window.currencyManager) {
-      const rate = window.currencyManager.getRate(moneda);
+      rate = window.currencyManager.getRate(moneda);
       if (!rate) return alert('⚠️ No hay tasa configurada para ' + moneda + '. Configúrala en Configuración → Tasas.');
       monto = Math.round(montoInput * rate.ask * 100) / 100;
       originalAmount = montoInput;
@@ -3180,7 +3224,13 @@ function saveGasto(){
       conversionRate = rate.ask;
       conversionSide = 'ask';
     }
-    
+
+    // Convertir cada parte del split a HNL con la misma tasa que el total
+    const splits = splitsInput ? splitsInput.map(p => ({
+        cat: p.cat,
+        monto: rate ? Math.round(p.monto * rate.ask * 100) / 100 : p.monto
+    })) : null;
+
     // Recuperar ID de imagen desde IDB (no base64 de localStorage)
     const facturaImagenId = _tempFacturaId || null;
 
@@ -3216,7 +3266,14 @@ function saveGasto(){
         transaction.conversionRate = conversionRate;
         transaction.conversionSide = conversionSide;
     }
-    
+    // Gasto dividido en varias categorías (ej. una factura de supermercado con
+    // comida + limpieza + higiene en un solo pago): el monto total sigue
+    // impactando la cuenta una sola vez, pero cada parte cuenta para su
+    // propia categoría en las estadísticas.
+    if (splits) {
+        transaction.splits = splits;
+    }
+
     if(pago === 'credito'){
         const tarjetaId = document.getElementById('gasto-tarjeta').value; // P1-4: no parseInt
         if(tarjetaId){
@@ -3250,8 +3307,78 @@ function saveGasto(){
     const prevEl = document.getElementById('ocr-preview');
     if (prevEl) prevEl.style.display = 'none';
     clearEtiqueta();
-    
+    resetGastoSplit();
+
     alert('✅ Gasto guardado. Factura adjuntada si fue escaneada.');
+}
+
+// ── UI: dividir un gasto en varias categorías ──
+function resetGastoSplit() {
+    const wrap = document.getElementById('gasto-split-wrap');
+    const catInput = document.getElementById('gasto-cat');
+    const btn = document.getElementById('btn-toggle-split');
+    if (!wrap) return;
+    wrap.style.display = 'none';
+    document.getElementById('gasto-split-list').innerHTML = '';
+    catInput.style.display = '';
+    catInput.disabled = false;
+    btn.textContent = '➗ Este pago incluye varias categorías';
+}
+
+function toggleGastoSplit() {
+    const wrap = document.getElementById('gasto-split-wrap');
+    const activo = wrap.style.display !== 'none';
+    if (activo) {
+        resetGastoSplit();
+    } else {
+        wrap.style.display = 'block';
+        const catInput = document.getElementById('gasto-cat');
+        catInput.style.display = 'none';
+        catInput.disabled = true;
+        document.getElementById('btn-toggle-split').textContent = '✖️ Cancelar división';
+        if (!document.getElementById('gasto-split-list').children.length) {
+            addGastoSplitRow();
+            addGastoSplitRow();
+        }
+    }
+}
+
+function addGastoSplitRow(cat, monto) {
+    const list = document.getElementById('gasto-split-list');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'split-row-wrap';
+    wrapper.style.cssText = 'margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)';
+    wrapper.innerHTML = `
+      <div class="input-row" style="margin-bottom:6px">
+        <input type="text" class="input-field split-cat" placeholder="Categoría" value="${cat ? esc(cat) : ''}">
+        <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="input-field split-monto" placeholder="Monto" value="${monto || ''}">
+      </div>
+      <button type="button" class="btn-tx-delete" style="width:100%">🗑️ Quitar esta categoría</button>
+    `;
+    wrapper.querySelector('.split-monto').addEventListener('input', updateGastoSplitTotal);
+    wrapper.querySelector('button').addEventListener('click', () => { wrapper.remove(); updateGastoSplitTotal(); });
+    list.appendChild(wrapper);
+    updateGastoSplitTotal();
+}
+
+function updateGastoSplitTotal() {
+    const montos = document.querySelectorAll('#gasto-split-list .split-monto');
+    let suma = 0;
+    montos.forEach(inp => { const v = parseMonto(inp.value); if (v) suma += v; });
+    const totalEl = document.getElementById('gasto-split-total');
+    if (!totalEl) return;
+    const montoTotal = parseMonto(document.getElementById('gasto-monto').value) || 0;
+    const restante = montoTotal - suma;
+    if (Math.abs(restante) < 0.01 && montoTotal > 0) {
+        totalEl.style.color = 'var(--green)';
+        totalEl.textContent = `✅ Asignado: L.${suma.toFixed(2)} de L.${montoTotal.toFixed(2)}`;
+    } else if (restante > 0) {
+        totalEl.style.color = 'var(--amber)';
+        totalEl.textContent = `Asignado: L.${suma.toFixed(2)} · Falta: L.${restante.toFixed(2)}`;
+    } else {
+        totalEl.style.color = 'var(--red)';
+        totalEl.textContent = `⚠️ Asignado: L.${suma.toFixed(2)} · Sobran: L.${Math.abs(restante).toFixed(2)}`;
+    }
 }
 
 function saveIngreso(){
@@ -3987,6 +4114,11 @@ function renderGastos(){
         const tieneFactura = t.facturaImagenId || t.facturaImagen; // P0-2: IDB o legacy
         const etiqPill = t.etiqueta ? `<span class="etiqueta-pill">#${esc(t.etiqueta)}</span>` : '';
         const concBadge = t.esConciliacion ? `<span class="badge-conciliacion">⚖️</span> ` : '';
+        const splitsHtml = (Array.isArray(t.splits) && t.splits.length)
+            ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px">
+                 ${t.splits.map(s => `<div style="display:flex;justify-content:space-between"><span>${esc(s.cat)}</span><span>${fL(s.monto)}</span></div>`).join('')}
+               </div>`
+            : '';
         return `<div class="card" style="padding:14px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div style="flex:1;min-width:0">
@@ -3994,6 +4126,7 @@ function renderGastos(){
                     <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(t.subcat||'')} ${t.banco?'· '+t.banco:''}</div>
                     <div style="font-size:11px;color:var(--text2)">${new Date(t.date).toLocaleDateString('es-HN')}</div>
                     ${etiqPill}
+                    ${splitsHtml}
                 </div>
                 ${renderMontoTx(t, '-', 'var(--red)')}
             </div>
@@ -4098,6 +4231,11 @@ function renderDashboard(){
         recentEl.innerHTML = recent.map(t => {
         const tieneFactura = t.facturaImagenId || t.facturaImagen; // P0-2: IDB o legacy
         const etiqPill = t.etiqueta ? `<span class="etiqueta-pill">#${esc(t.etiqueta)}</span>` : '';
+        const splitsHtml = (Array.isArray(t.splits) && t.splits.length)
+            ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px">
+                 ${t.splits.map(s => `<div style="display:flex;justify-content:space-between"><span>${esc(s.cat)}</span><span>${fL(s.monto)}</span></div>`).join('')}
+               </div>`
+            : '';
         return `
         <div style="padding:12px 0;border-bottom:1px solid var(--border)">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
@@ -4105,6 +4243,7 @@ function renderDashboard(){
                     <div style="font-weight:600">${esc(t.cat)} ${tieneFactura?'🧾':''} ${t.esConciliacion?'<span class="badge-conciliacion">⚖️</span>':''}</div>
                     <div style="font-size:11px;color:var(--text2)">${esc(t.subcat||'')} ${t.banco?'('+t.banco+')':''}</div>
                     ${etiqPill}
+                    ${splitsHtml}
                 </div>
                 ${renderMontoTx(t, t.type==='income'?'+':'-', t.esConciliacion?(t.type==='income'?'var(--blue)':'var(--purple)'):(t.type==='income'?'var(--green)':'var(--red)'))}
             </div>
@@ -4167,6 +4306,98 @@ function renderHistorico() {
         html += '</div>';
     });
     chartContainer.innerHTML = html;
+    renderCategoryStats();
+}
+
+// ── ESTADÍSTICAS POR CATEGORÍA (con tendencia vs. mes anterior) ──
+// Distribuye el monto de cada gasto en su(s) categoría(s): si la transacción
+// está dividida (splits), cada parte cuenta para su propia categoría en vez
+// de imputar todo el monto a una sola.
+function getCategoryTotalsForMonth(year, month) {
+    const totales = {};
+    state.transactions.forEach(t => {
+        if (t.deletedAt || t.type !== 'expense' || t.esTransferencia || t.esConciliacion) return;
+        const fecha = new Date(t.date);
+        if (fecha.getFullYear() !== year || fecha.getMonth() !== month) return;
+        if (Array.isArray(t.splits) && t.splits.length) {
+            t.splits.forEach(s => {
+                const cat = s.cat || 'Sin categoría';
+                totales[cat] = (totales[cat] || 0) + s.monto;
+            });
+        } else {
+            const cat = t.cat || 'Sin categoría';
+            totales[cat] = (totales[cat] || 0) + t.amount;
+        }
+    });
+    return totales;
+}
+
+function poblarSelectorMesCategoria() {
+    const sel = document.getElementById('catstats-mes');
+    if (!sel) return;
+    // Solo repoblar si está vacío (para no perder la selección del usuario en cada render)
+    if (sel.options.length) return;
+    const ahora = new Date();
+    for (let i = 0; i < 12; i++) {
+        const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+        const value = fecha.getFullYear() + '-' + fecha.getMonth();
+        const label = fecha.toLocaleDateString('es-HN', { month: 'long', year: 'numeric' });
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        sel.appendChild(opt);
+    }
+}
+
+function renderCategoryStats() {
+    const container = document.getElementById('catstats-list');
+    if (!container) return;
+    poblarSelectorMesCategoria();
+    const sel = document.getElementById('catstats-mes');
+    const [selYear, selMonth] = (sel.value || '').split('-').map(Number);
+    const ahora = new Date();
+    const year = Number.isFinite(selYear) ? selYear : ahora.getFullYear();
+    const month = Number.isFinite(selMonth) ? selMonth : ahora.getMonth();
+
+    const actual = getCategoryTotalsForMonth(year, month);
+    const prevFecha = new Date(year, month - 1, 1);
+    const anterior = getCategoryTotalsForMonth(prevFecha.getFullYear(), prevFecha.getMonth());
+
+    const categorias = Object.keys(actual).sort((a, b) => actual[b] - actual[a]);
+    const totalMes = categorias.reduce((a, c) => a + actual[c], 0);
+
+    if (categorias.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text2);padding:20px">Sin gastos registrados este mes</p>';
+        return;
+    }
+
+    const maxValor = Math.max(...categorias.map(c => actual[c]));
+    container.innerHTML = categorias.map(cat => {
+        const monto = actual[cat];
+        const pct = totalMes ? (monto / totalMes * 100) : 0;
+        const barPct = maxValor ? (monto / maxValor * 100) : 0;
+        const montoAnterior = anterior[cat] || 0;
+        let tendenciaHtml = '<span style="font-size:10px;color:var(--text2)">— sin datos del mes anterior</span>';
+        if (montoAnterior > 0) {
+            const variacion = ((monto - montoAnterior) / montoAnterior) * 100;
+            const subio = variacion > 0.5;
+            const bajo = variacion < -0.5;
+            const color = subio ? 'var(--red)' : (bajo ? 'var(--green)' : 'var(--text2)');
+            const flecha = subio ? '▲' : (bajo ? '▼' : '▬');
+            tendenciaHtml = `<span style="font-size:10px;color:${color};font-weight:700">${flecha} ${Math.abs(variacion).toFixed(0)}% vs. mes anterior</span>`;
+        }
+        return `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+            <span style="font-weight:700;font-size:13px">${esc(cat)}</span>
+            <span style="font-weight:700;font-size:13px;color:var(--amber)">${fL(monto)} <span style="font-weight:400;color:var(--text2);font-size:11px">(${pct.toFixed(0)}%)</span></span>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden">
+            <div style="width:${barPct}%;height:100%;background:linear-gradient(90deg,var(--amber),#FF7043);border-radius:6px"></div>
+          </div>
+          <div style="margin-top:3px">${tendenciaHtml}</div>
+        </div>`;
+    }).join('');
 }
 function exportFullReport() {
     try {
