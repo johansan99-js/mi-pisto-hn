@@ -4760,6 +4760,11 @@ document.addEventListener('click',e=>{
 
 function renderAll(){
     renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderHistorico();renderBudgetRules();
+    // FIX: el saludo/topbar (nombre, fecha, avatar) tiene su propio ciclo de
+    // render independiente de renderAll(). Sin esto, cualquier flujo que solo
+    // llame renderAll() tras cargar el state (ej. desbloqueo con PIN o con
+    // biometría) deja el saludo mostrando "Cargando..." indefinidamente.
+    if (typeof renderWelcome === 'function') renderWelcome();
     setTimeout(function(){ renderLiquidez7Dias(); renderChipsRapidas(); }, 50);
 }
 // ========== INICIALIZACIÓN ==========
