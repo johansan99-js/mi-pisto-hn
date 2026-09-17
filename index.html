@@ -1470,17 +1470,24 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
   <div id="pagos-alertas" style="margin-bottom:20px"></div>
   <div id="pagos-list"></div>
   <button class="btn btn-secondary" onclick="openModal('modal-pago-recurrente')">+ Nuevo Pago Recurrente</button>
+
+  <h2 style="margin:26px 0 6px">🔁 Transferencias Programadas</h2>
+  <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Automatiza transferencias entre tus cuentas (ej. ahorro mensual, cuota de préstamo) — se ejecutan solas el día que elijas.</p>
+  <div id="transferencias-prog-list"></div>
+  <button class="btn btn-secondary" onclick="openModal('modal-transferencia-prog')">+ Nueva Transferencia Programada</button>
 </div>
 
 <div id="view-gastos" class="view">
   <h2 style="margin-bottom:15px">📊 Gastos</h2>
   <div class="card"><div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Este mes</span><strong id="gastos-mes">L. 0.00</strong></div></div>
+  <input type="text" id="buscar-gastos" class="input-field" placeholder="🔍 Buscar por categoría, comercio, etiqueta o monto…" oninput="renderGastos()" style="margin-bottom:12px">
   <div id="gastos-list"></div>
 </div>
 
 <div id="view-ingresos" class="view">
   <h2 style="margin-bottom:15px">💵 Ingresos</h2>
   <div class="card"><div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Salario</span><strong id="ingreso-salario">L. 0.00</strong></div></div>
+  <input type="text" id="buscar-ingresos" class="input-field" placeholder="🔍 Buscar por categoría o monto…" oninput="renderIngresos()" style="margin-bottom:12px">
   <div id="ingresos-list"></div>
 </div>
 
@@ -1793,7 +1800,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 
     <!-- MULTIMONEDA: monto + moneda con conversión en vivo -->
     <div class="monto-moneda-group">
-      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="gasto-monto" class="input-field monto-input" placeholder="Monto" oninput="actualizarConversionGasto()">
+      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="gasto-monto" class="input-field monto-input" placeholder="Monto (o 150+200)" oninput="actualizarConversionGasto()">
       <select id="gasto-moneda" class="input-field moneda-select" onchange="actualizarConversionGasto()">
         <option value="HNL" selected>L (HNL)</option>
         <option value="USD">$ (USD)</option>
@@ -1862,7 +1869,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <h3 style="margin-bottom:16px">💰 Nuevo Ingreso</h3>
     <!-- MULTIMONEDA: monto + moneda con conversión en vivo -->
     <div class="monto-moneda-group">
-      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="ingreso-monto" class="input-field monto-input" placeholder="Monto" oninput="actualizarConversionIngreso()">
+      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="ingreso-monto" class="input-field monto-input" placeholder="Monto (o 150+200)" oninput="actualizarConversionIngreso()">
       <select id="ingreso-moneda" class="input-field moneda-select" onchange="actualizarConversionIngreso()">
         <option value="HNL" selected>L (HNL)</option>
         <option value="USD">$ (USD)</option>
@@ -1922,6 +1929,28 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     </div>
 
     <button class="btn btn-primary" onclick="saveTarjeta()">Guardar Tarjeta</button>
+  </div>
+</div>
+<div id="modal-transferencia-prog" class="modal" onclick="closeModalIfBg(event,'modal-transferencia-prog')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:16px">🔁 Nueva Transferencia Programada</h3>
+    <input type="text" id="tprog-nombre" class="input-field" placeholder="Nombre (Ej. Ahorro mensual, Cuota préstamo)">
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="tprog-monto" class="input-field" placeholder="Monto (L) — puedes usar +, -, *, /">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:10px">
+      <select id="tprog-desde" class="input-field" style="margin:0">
+        <option value="efectivo">💵 Desde Efectivo</option>
+        <option value="ahorro">🏦 Desde Ahorro</option>
+      </select>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <select id="tprog-hasta" class="input-field" style="margin:0">
+        <option value="ahorro">🏦 Hacia Ahorro</option>
+        <option value="efectivo">💵 Hacia Efectivo</option>
+      </select>
+    </div>
+    <input type="number" id="tprog-dia" class="input-field" placeholder="Día del mes en que se ejecuta (1-31)" min="1" max="31">
+    <p style="font-size:11px;color:var(--text2);margin:-4px 0 12px">Se ejecutará sola cada mes cuando abras la app en o después de ese día (una sola vez por mes).</p>
+    <button class="btn btn-secondary" onclick="closeModal('modal-transferencia-prog')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveTransferenciaProgramada()">Guardar</button>
   </div>
 </div>
 <div id="modal-pago-recurrente" class="modal" onclick="closeModalIfBg(event,'modal-pago-recurrente')"><div class="modal-content"><h3>🔔 Nuevo Pago Recurrente</h3><input type="text" id="pago-servicio" class="input-field" placeholder="Servicio (Ej. Agua, Luz, Teléfono)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="pago-monto" class="input-field" placeholder="Monto estimado (L)"><input type="number" id="pago-dia" class="input-field" placeholder="Día de pago (1-31)" min="1" max="31"><select id="pago-alerta" class="input-field"><option value="5">Alertarme 5 días antes</option><option value="3" selected>Alertarme 3 días antes</option><option value="1">Alertarme 1 día antes</option></select><label style="display:flex;align-items:center;gap:10px;margin:10px 0;cursor:pointer"><input type="checkbox" id="pago-notificacion" checked><span style="font-size:12px">Activar notificaciones push</span></label><button class="btn btn-secondary" onclick="closeModal('modal-pago-recurrente')">Cancelar</button><button class="btn btn-primary" onclick="savePagoRecurrente()">Guardar Pago</button></div></div>
@@ -2002,7 +2031,7 @@ const USD_HNL_VALID_RANGE = { min: 20, max: 35 };
 
 // ========== VARIABLES GLOBALES Y ESTADO ==========
 const LS_KEY='mifinanzashn_pro_v20_full';
-let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
+let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
 
 // ────────────────────────────────────────────────────────────────────
 // CARGA INICIAL — detecta si el state está cifrado o en plano
@@ -2156,9 +2185,77 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // P1-8: parseo estricto de montos. Rechaza notación científica ('e'/'E'),
 // caracteres no numéricos y valores absurdos. Acepta coma o punto como decimal.
+// Calculadora rápida: evalúa expresiones aritméticas simples ("150+200",
+// "45.50*2") escritas directamente en un campo de monto. Parser manual
+// (sin eval/Function) — solo entiende dígitos, + - * / ( ) y espacios.
+function evaluarExpresionSegura(expr) {
+  if (!/^[\d+\-*/().\s]+$/.test(expr)) return null;
+  let i = 0;
+  function skipSpaces() { while (expr[i] === ' ') i++; }
+  function parseNumber() {
+    skipSpaces();
+    const start = i;
+    if (expr[i] === '-') i++;
+    const digitsStart = i;
+    while (i < expr.length && /[\d.]/.test(expr[i])) i++;
+    if (i === digitsStart) return null; // no había dígitos tras el posible signo
+    const num = parseFloat(expr.slice(start, i));
+    return Number.isFinite(num) ? num : null;
+  }
+  function parseFactor() {
+    skipSpaces();
+    if (expr[i] === '(') {
+      i++;
+      const val = parseExpr();
+      skipSpaces();
+      if (val === null || expr[i] !== ')') return null;
+      i++;
+      return val;
+    }
+    return parseNumber();
+  }
+  function parseTerm() {
+    let val = parseFactor();
+    if (val === null) return null;
+    skipSpaces();
+    while (expr[i] === '*' || expr[i] === '/') {
+      const op = expr[i]; i++;
+      const rhs = parseFactor();
+      if (rhs === null) return null;
+      val = op === '*' ? val * rhs : val / rhs;
+      skipSpaces();
+    }
+    return val;
+  }
+  function parseExpr() {
+    let val = parseTerm();
+    if (val === null) return null;
+    skipSpaces();
+    while (expr[i] === '+' || expr[i] === '-') {
+      const op = expr[i]; i++;
+      const rhs = parseTerm();
+      if (rhs === null) return null;
+      val = op === '+' ? val + rhs : val - rhs;
+      skipSpaces();
+    }
+    return val;
+  }
+  const result = parseExpr();
+  skipSpaces();
+  if (i !== expr.length) return null; // sobraron caracteres sin consumir
+  return result;
+}
+
 function parseMonto(str) {
   if (str === null || str === undefined) return null;
-  const s = String(str).trim().replace(',', '.');
+  let s = String(str).trim().replace(',', '.');
+  // Si no es un número simple pero parece una operación (+ - * /), intentar
+  // evaluarla como calculadora rápida antes de rechazarla.
+  if (!/^-?\d+(\.\d+)?$/.test(s) && /[+\-*/()]/.test(s)) {
+    const resultado = evaluarExpresionSegura(s);
+    if (resultado === null) return null;
+    s = String(resultado);
+  }
   // Rechazar notación científica y cualquier letra
   if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
   const n = parseFloat(s);
@@ -3064,9 +3161,10 @@ async function finishOnboarding(){
     prestamos:[],
     tarjetas:[],
     pagosRecurrentes:[],
+    transferenciasProgramadas:[],
     budgetRules:{gastos:65,ahorro:20,extra:15}
   };
-  
+
   // save() ahora cifra automáticamente (porque _sessionDEK está cargado)
   save();
   
@@ -4096,6 +4194,17 @@ function reconcileBalance(){
   alert(`✅ Conciliación completada.\n${cuentaNombre}: ${fL(saldoReal)}`);
 }
 
+// Búsqueda simple sobre categoría, comercio/subcategoría, etiqueta, banco,
+// categorías de un gasto dividido y el monto (como texto).
+function _coincideBusquedaTx(t, query){
+    if (!query) return true;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const campos = [t.cat, t.subcat, t.etiqueta, t.banco, String(t.amount)];
+    if (Array.isArray(t.splits)) t.splits.forEach(s => campos.push(s.cat));
+    return campos.some(c => c && String(c).toLowerCase().includes(q));
+}
+
 function renderGastos(){
     // P0-2: ocultar transferencias internas y conciliaciones del listado y del KPI
     const gastos = state.transactions.filter(t => t.type === 'expense' && !t.deletedAt && !t.esTransferencia && !t.esConciliacion);
@@ -4103,6 +4212,8 @@ function renderGastos(){
     document.getElementById('gastos-mes').textContent = fL(total);
     const container = document.getElementById('gastos-list');
     if (!container) return;
+    const query = document.getElementById('buscar-gastos')?.value || '';
+    const gastosFiltrados = gastos.filter(t => _coincideBusquedaTx(t, query));
     if (gastos.length === 0) {
         container.innerHTML = `<div class="empty-state-simple">
           <div class="es-icon">📭</div>
@@ -4110,7 +4221,13 @@ function renderGastos(){
           <div class="es-sub">Registra tu primer gasto tocando el botón ➕ o escaneando un recibo.</div>
           <button class="btn-empty-secondary" onclick="openModal('modal-gasto')">📝 Registrar gasto</button>
         </div>`; return; }
-    container.innerHTML = gastos.slice().reverse().map(t => {
+    if (gastosFiltrados.length === 0) {
+        container.innerHTML = `<div class="empty-state-simple">
+          <div class="es-icon">🔍</div>
+          <div class="es-title">Sin resultados</div>
+          <div class="es-sub">Ningún gasto coincide con "${esc(query)}".</div>
+        </div>`; return; }
+    container.innerHTML = gastosFiltrados.slice().reverse().map(t => {
         const tieneFactura = t.facturaImagenId || t.facturaImagen; // P0-2: IDB o legacy
         const etiqPill = t.etiqueta ? `<span class="etiqueta-pill">#${esc(t.etiqueta)}</span>` : '';
         const concBadge = t.esConciliacion ? `<span class="badge-conciliacion">⚖️</span> ` : '';
@@ -4145,6 +4262,8 @@ function renderIngresos(){
     document.getElementById('ingreso-salario').textContent = fL(ingresos.reduce((a,b)=>a+b.amount,0));
     const container = document.getElementById('ingresos-list');
     if (!container) return;
+    const query = document.getElementById('buscar-ingresos')?.value || '';
+    const ingresosFiltrados = ingresos.filter(t => _coincideBusquedaTx(t, query));
     if (ingresos.length === 0) {
         container.innerHTML = `<div class="empty-state-simple">
           <div class="es-icon">💵</div>
@@ -4152,7 +4271,13 @@ function renderIngresos(){
           <div class="es-sub">Registra tu salario u otro ingreso tocando el botón ➕.</div>
           <button class="btn-empty-secondary" onclick="openModal('modal-ingreso')">💰 Registrar ingreso</button>
         </div>`; return; }
-    container.innerHTML = ingresos.slice().reverse().map(t => `
+    if (ingresosFiltrados.length === 0) {
+        container.innerHTML = `<div class="empty-state-simple">
+          <div class="es-icon">🔍</div>
+          <div class="es-title">Sin resultados</div>
+          <div class="es-sub">Ningún ingreso coincide con "${esc(query)}".</div>
+        </div>`; return; }
+    container.innerHTML = ingresosFiltrados.slice().reverse().map(t => `
         <div class="card" style="padding:14px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div>
@@ -4633,7 +4758,7 @@ function _validarSchemaBackup(obj) {
   }
   
   // ── Validar arrays esperados ──
-  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes'];
+  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas'];
   for (const k of arrays) {
     if (obj[k] !== undefined && !Array.isArray(obj[k])) return `${k} debe ser array`;
   }
@@ -4990,7 +5115,7 @@ document.addEventListener('click',e=>{
 });
 
 function renderAll(){
-    renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderHistorico();renderBudgetRules();
+    renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderTransferenciasProgramadas();renderHistorico();renderBudgetRules();
     // FIX: el saludo/topbar (nombre, fecha, avatar) tiene su propio ciclo de
     // render independiente de renderAll(). Sin esto, cualquier flujo que solo
     // llame renderAll() tras cargar el state (ej. desbloqueo con PIN o con
@@ -5169,7 +5294,7 @@ function updateTransferPreview(){
   // P0-4: lecturas derivadas
   const from=document.getElementById('transfer-from')?.value||'efectivo';
   const to=document.getElementById('transfer-to')?.value||'ahorro';
-  const monto=parseFloat(document.getElementById('transfer-monto')?.value)||0;
+  const monto=parseMonto(document.getElementById('transfer-monto')?.value)||0;
   const saldoFrom=getCuentaBalance(from);
   const saldoTo=getCuentaBalance(to);
   const fromBal=document.getElementById('transfer-from-bal');
@@ -5185,7 +5310,7 @@ function updateTransferPreview(){
 function ejecutarTransferencia(){
   const from=document.getElementById('transfer-from')?.value||'efectivo';
   const to=document.getElementById('transfer-to')?.value||'ahorro';
-  const monto=parseFloat(document.getElementById('transfer-monto')?.value);
+  const monto=parseMonto(document.getElementById('transfer-monto')?.value);
   if(!monto||monto<=0)return alert('Ingresa un monto válido');
   if(from===to)return alert('Las cuentas deben ser diferentes');
   // P0-4: validación con saldo derivado
@@ -5198,6 +5323,132 @@ function ejecutarTransferencia(){
   state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:new Date().toISOString(),esTransferencia:true});
   save();closeModal('modal-transferir');renderAll();
   alert(`✅ Transferencia completada.\n${fromNom}: ${fL(getCuentaBalance(from))}\n${toNom}: ${fL(getCuentaBalance(to))}`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 🔁 TRANSFERENCIAS PROGRAMADAS (recurrentes entre cuentas)
+// ══════════════════════════════════════════════════════════════
+function saveTransferenciaProgramada(){
+  const nombre = document.getElementById('tprog-nombre').value.trim();
+  const monto = parseMonto(document.getElementById('tprog-monto').value);
+  const desde = document.getElementById('tprog-desde').value;
+  const hasta = document.getElementById('tprog-hasta').value;
+  const dia = parseInt(document.getElementById('tprog-dia').value);
+  if (!nombre) return alert('Ponle un nombre a la transferencia.');
+  if (monto === null || monto <= 0) return alert('Monto inválido.');
+  if (desde === hasta) return alert('Las cuentas deben ser diferentes.');
+  if (!dia || dia < 1 || dia > 31) return alert('El día del mes debe estar entre 1 y 31.');
+  if (!state.transferenciasProgramadas) state.transferenciasProgramadas = [];
+  state.transferenciasProgramadas.push({
+    id: uid(), nombre, monto, desde, hasta, dia, activa: true, ultimaEjecucion: null
+  });
+  save();
+  closeModal('modal-transferencia-prog');
+  ['tprog-nombre','tprog-monto','tprog-dia'].forEach(id => document.getElementById(id).value = '');
+  renderAll();
+  alert(`✅ "${nombre}" programada para el día ${dia} de cada mes.`);
+}
+
+function renderTransferenciasProgramadas(){
+  const c = document.getElementById('transferencias-prog-list');
+  if (!c) return;
+  const lista = state.transferenciasProgramadas || [];
+  if (lista.length === 0) {
+    c.innerHTML = `<div class="empty-state-simple">
+      <div class="es-icon">🔁</div>
+      <div class="es-title">Sin transferencias programadas</div>
+      <div class="es-sub">Automatiza tu ahorro mensual o el pago de una cuota entre tus cuentas.</div>
+      <button class="btn-empty-secondary" onclick="openModal('modal-transferencia-prog')">➕ Programar transferencia</button>
+    </div>`;
+    return;
+  }
+  const nombreCuenta = c => c === 'efectivo' ? '💵 Efectivo' : '🏦 Ahorro';
+  const hoy = new Date();
+  c.innerHTML = lista.map(t => {
+    let prox = new Date(hoy.getFullYear(), hoy.getMonth(), t.dia);
+    if (prox < hoy) prox.setMonth(prox.getMonth()+1);
+    const yaEsteMonth = t.ultimaEjecucion === `${hoy.getFullYear()}-${hoy.getMonth()}`;
+    const estadoTxt = !t.activa
+        ? '<span style="color:var(--text2)">⏸️ Pausada</span>'
+        : (yaEsteMonth
+            ? `<span style="color:var(--green)">✓ Ya se ejecutó este mes</span>`
+            : `<span style="color:var(--amber)">Próxima: día ${t.dia}</span>`);
+    return `<div class="card" style="padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px">${esc(t.nombre)}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${nombreCuenta(t.desde)} → ${nombreCuenta(t.hasta)}</div>
+          <div style="font-size:11px;margin-top:4px">${estadoTxt}</div>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:var(--blue)">${fL(t.monto)}</div>
+      </div>
+      <div class="tx-actions" style="grid-template-columns:1fr 1fr 1fr">
+        <button class="btn-tx-edit" onclick="toggleTransferenciaProgramada('${esc(t.id)}')">${t.activa?'⏸️ Pausar':'▶️ Reactivar'}</button>
+        <button class="btn-tx-edit" onclick="ejecutarTransferenciaProgramadaAhora('${esc(t.id)}')">⚡ Ejecutar ahora</button>
+        <button class="btn-tx-delete" onclick="eliminarTransferenciaProgramada('${esc(t.id)}')">🗑️ Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTransferenciaProgramada(id){
+  const t = (state.transferenciasProgramadas||[]).find(x => x.id === id);
+  if (!t) return;
+  t.activa = !t.activa;
+  save(); renderAll();
+}
+
+function eliminarTransferenciaProgramada(id){
+  const t = (state.transferenciasProgramadas||[]).find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`¿Eliminar la transferencia programada "${t.nombre}"?`)) return;
+  state.transferenciasProgramadas = state.transferenciasProgramadas.filter(x => x.id !== id);
+  save(); renderAll();
+}
+
+/** Ejecuta una transferencia (programada o manual desde el botón "Ejecutar ahora")
+    y registra el par de transacciones, igual que ejecutarTransferencia(). */
+function _ejecutarTransferenciaInterna(desde, hasta, monto, nombre, transferenciaProgramadaId){
+  const fromNom = desde === 'efectivo' ? 'Efectivo' : 'Ahorro';
+  const toNom = hasta === 'efectivo' ? 'Efectivo' : 'Ahorro';
+  const meta = transferenciaProgramadaId ? { transferenciaProgramadaId } : {};
+  state.transactions.push({id:uid(), type:'expense', amount:monto, cat:'Transferencia', subcat:`${nombre} · Salida de ${fromNom}`, cuenta:desde, tipo:'fijo', date:new Date().toISOString(), esTransferencia:true, ...meta});
+  state.transactions.push({id:uid(), type:'income', amount:monto, cat:'Transferencia', subcat:`${nombre} · Entrada a ${toNom}`, cuenta:hasta, date:new Date().toISOString(), esTransferencia:true, ...meta});
+}
+
+function ejecutarTransferenciaProgramadaAhora(id){
+  const t = (state.transferenciasProgramadas||[]).find(x => x.id === id);
+  if (!t) return;
+  const saldoDisponible = getCuentaBalance(t.desde);
+  if (t.monto > saldoDisponible) return alert(`Saldo insuficiente en ${t.desde==='efectivo'?'Efectivo':'Ahorro'} para ejecutar "${t.nombre}".`);
+  const hoy = new Date();
+  _ejecutarTransferenciaInterna(t.desde, t.hasta, t.monto, t.nombre, t.id);
+  t.ultimaEjecucion = `${hoy.getFullYear()}-${hoy.getMonth()}`;
+  save(); renderAll();
+  alert(`✅ "${t.nombre}" ejecutada.`);
+}
+
+/** Revisa todas las transferencias programadas activas y ejecuta las que
+    ya llegaron a su día del mes y no se han ejecutado todavía este mes. */
+function verificarTransferenciasProgramadas(){
+  const hoy = new Date();
+  const mesActual = `${hoy.getFullYear()}-${hoy.getMonth()}`;
+  let ejecutadas = [];
+  (state.transferenciasProgramadas||[]).forEach(t => {
+    if (!t.activa) return;
+    if (t.ultimaEjecucion === mesActual) return;
+    if (hoy.getDate() < t.dia) return;
+    const saldoDisponible = getCuentaBalance(t.desde);
+    if (t.monto > saldoDisponible) return; // se reintenta el próximo día que abra la app
+    _ejecutarTransferenciaInterna(t.desde, t.hasta, t.monto, t.nombre, t.id);
+    t.ultimaEjecucion = mesActual;
+    ejecutadas.push(t.nombre);
+  });
+  if (ejecutadas.length) {
+    save();
+    renderAll();
+    alert(`🔁 Se ejecutaron ${ejecutadas.length} transferencia(s) programada(s): ${ejecutadas.join(', ')}.`);
+  }
 }
 
 // Registro del Service Worker (fuera del window.onload, aquí sí va)
@@ -5579,6 +5830,7 @@ function ejecutarVerificacionesNuevas() {
     detectarDuplicados();
     renderPapelera();
     renderChipsRapidas();
+    verificarTransferenciasProgramadas();
   }, 200);
 }
 
@@ -6877,7 +7129,7 @@ const cloudSync = {
     });
     // Arrays: unión inteligente por ID
     const LABELS = { transactions:'transacciones', goals:'metas de ahorro', receivables:'deudas a cobrar',
-      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes' };
+      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas' };
     for (const field of Object.keys(LABELS)) {
       const localArr  = Array.isArray(localState[field])  ? localState[field]  : [];
       const remoteArr = Array.isArray(remoteState[field]) ? remoteState[field] : [];
@@ -6921,7 +7173,7 @@ const cloudSync = {
   /** Genera HTML del diff para el modal de merge */
   buildDiffHtml(diff, localDeviceName, remoteDeviceName, remoteDate) {
     const LABELS = { transactions:'transacciones', goals:'metas de ahorro', receivables:'deudas a cobrar',
-      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes' };
+      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas' };
     let html = '';
     const renderSection = (title, color, entries) => {
       html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">' + title + '</div>';
@@ -6984,7 +7236,7 @@ const cloudSync = {
             // Aplicar merged sin disparar otro auto-sync
             Object.keys(state).forEach(k => delete state[k]);
             Object.assign(state, merged);
-            ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables'].forEach(f => { if (!state[f]) state[f] = []; });
+            ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
             // Persistir localmente sin trigger
             try {
               const enc = await _encryptState(state, _sessionDEK);
@@ -7365,7 +7617,7 @@ async function confirmarEstrategiaMerge(strategy) {
     const { merged } = _pendingMerge;
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, merged);
-    ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables'].forEach(f => { if (!state[f]) state[f] = []; });
+    ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
     // Persistir localmente
     try {
       if (_sessionDEK) {
