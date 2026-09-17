@@ -109,7 +109,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 .input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:300;justify-content:center;align-items:center;padding:20px}
 .modal-content{background:var(--bg2);border-radius:var(--r);width:100%;max-width:380px;padding:25px;max-height:90vh;overflow-y:auto}
-.view{display:none;padding:20px;padding-top:70px;padding-bottom:100px}
+.view{display:none;padding:20px;padding-top:20px;padding-bottom:100px}
 .view.active{display:block}
 .hidden{display:none!important}
 .balance-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:var(--r);padding:25px 20px;text-align:center;margin-bottom:15px}
@@ -317,7 +317,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 .fab-item-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* === AJUSTE DE PADDING PARA LAS VISTAS === */
-.view{display:none;padding:20px;padding-top:70px;padding-bottom:calc(var(--nav-h) + 24px)}
+.view{display:none;padding:20px;padding-top:20px;padding-bottom:calc(var(--nav-h) + 24px)}
 .view.active{display:block}
 
 /* === TOUCH OPTIMIZATIONS === */
@@ -754,7 +754,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 .topbar-greeting-name { font-size: 24px; font-weight: 900; letter-spacing: -.5px; }
 
 /* Mobile welcome — visible en móvil */
-.mobile-welcome { display: block; padding: 14px 16px 0; }
+.mobile-welcome { display: block; padding: 70px 16px 0; }
 @media (min-width: 768px) {
   .mobile-welcome { display: none !important; }
 }
@@ -915,10 +915,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
       <div id="dt-date" style="font-size:12px;color:var(--text2);text-align:right;line-height:1.5"></div>
     </div>
   </div>
-  <!-- Mobile welcome (solo móvil) -->
-  <div class="mobile-welcome" id="mobile-welcome-wrap"></div>
-
-<div class="hamburger-menu" style="position:relative">
+<div class="hamburger-menu">
   <div class="hamburger-spacer"></div>
   <div class="hamburger-title" style="display:flex;align-items:center;justify-content:center;gap:7px;-webkit-text-fill-color:initial;background:none">
     <svg width="28" height="28" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(160,160,160,.5))">
@@ -956,6 +953,9 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
   <!-- Indicador de sync en la nube - visible solo si el usuario activó sync -->
   <div id="cloud-sync-indicator" title="Estado de sincronización en la nube"></div>
 </div>
+
+<!-- Mobile welcome (solo móvil) -->
+<div class="mobile-welcome" id="mobile-welcome-wrap"></div>
 
 <div class="hamburger-overlay" id="hamburgerOverlay" onclick="toggleHamburger()"></div>
 
@@ -2680,13 +2680,22 @@ function clearOCRCache() {
   
 // ========== FUNCIONES DE SUPERVIVENCIA Y GRÁFICO ==========
 function updateSurvivalIndex(balance) {
-    const fijosMensual = state.transactions.filter(t => t.type === 'expense' && t.tipo === 'fijo' && !t.deletedAt).reduce((a, b) => a + b.amount, 0) || 1;
-    const gastoDiario = fijosMensual / 30;
-    const dias = Math.max(0, Math.floor(balance / (gastoDiario || 1)));
+    const fijosMensual = state.transactions.filter(t => t.type === 'expense' && t.tipo === 'fijo' && !t.deletedAt).reduce((a, b) => a + b.amount, 0);
 
     const el  = document.getElementById('survival-val');
     const box = document.querySelector('.survival-box');
     const statusEl = document.getElementById('survival-status');
+
+    // Sin gastos fijos registrados aún: no hay base para estimar días de supervivencia
+    if (fijosMensual <= 0) {
+        if (el) { el.textContent = '—'; el.style.color = 'var(--text2)'; }
+        if (box) { box.classList.remove('state-danger','state-warning','state-safe'); }
+        if (statusEl) { statusEl.className = 'survival-status'; statusEl.textContent = 'Registra tus gastos fijos para calcular esto'; }
+        return;
+    }
+
+    const gastoDiario = fijosMensual / 30;
+    const dias = Math.max(0, Math.floor(balance / gastoDiario));
 
     // Umbrales: < 30 rojo | 30–90 amarillo | > 90 verde
     let state_class, statusClass, statusText, numColor;
@@ -2704,7 +2713,7 @@ function updateSurvivalIndex(balance) {
         numColor    = 'var(--green)';
     }
 
-    if (el) { el.textContent = dias; el.style.color = numColor; }
+    if (el) { el.textContent = dias.toLocaleString('es-HN'); el.style.color = numColor; }
     if (box) { box.classList.remove('state-danger','state-warning','state-safe'); box.classList.add(state_class); }
     if (statusEl) { statusEl.className = `survival-status ${statusClass}`; statusEl.textContent = statusText; }
 }
@@ -7778,7 +7787,8 @@ console.log('✅ Mi Pisto HN v2.0 listo');
         <div class="rates-grid-pretty">
           ${Object.keys(cm.rates).filter(c => c !== 'HNL').map(code => {
             const info = cm.getCurrencyInfo(code) || {};
-            const rate = cm.rates[code];
+            const rateObj = cm.rates[code];
+            const rate = typeof rateObj === 'number' ? rateObj : (rateObj ? rateObj.mid : 0);
             return `
               <div class="rate-pretty">
                 <span class="rate-pretty-flag">${info.flag || ''}</span>
