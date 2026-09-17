@@ -1,25 +1,53 @@
 {
-  "updated_at": "2026-04-28T17:00:00.000Z",
+  "updated_at": "2026-09-17T00:08:32.219Z",
   "base": "HNL",
   "format_version": 2,
-  "note": "format_version 2: cada moneda tiene { bid, ask, mid }. bid=tasa de compra del banco (cuando TÚ vendes esa moneda), ask=tasa de venta (cuando TÚ compras esa moneda). Ej: USD bid 26.5965 → si tienes USD y los cambias a HNL, recibes L.26.5965 por dólar. USD ask 26.7295 → si quieres comprar USD, pagas L.26.7295 por dólar.",
-  "source": "BCH oficial 28-abr-2026 (USD); resto: derivados con spread típico 0.5%",
+  "note": "format_version 2: cada moneda tiene { bid, ask, mid }. bid=tasa compra del banco (cuando TÚ vendes esa moneda), ask=tasa venta (cuando TÚ compras). USD usa BCH oficial cuando es accesible; resto deriva con spread 0.5%.",
+  "source": "https://open.er-api.com/v6/latest/USD",
   "rates": {
-    "USD": { "bid": 26.5965, "ask": 26.7295, "mid": 26.6630 },
-    "EUR": { "bid": 30.8450, "ask": 31.1550, "mid": 31.0000 },
-    "GTQ": { "bid":  3.4639, "ask":  3.4987, "mid":  3.4813 },
-    "NIO": { "bid":  0.7182, "ask":  0.7254, "mid":  0.7218 },
-    "MXN": { "bid":  1.5100, "ask":  1.5252, "mid":  1.5176 },
-    "CRC": { "bid":  0.0527, "ask":  0.0533, "mid":  0.0530 },
-    "PAB": { "bid": 26.5965, "ask": 26.7295, "mid": 26.6630 }
+    "USD": {
+      "bid": 26.786,
+      "ask": 26.9202,
+      "mid": 26.8531
+    },
+    "EUR": {
+      "bid": 30.9053,
+      "ask": 31.0602,
+      "mid": 30.9828
+    },
+    "GTQ": {
+      "bid": 3.5089,
+      "ask": 3.5264,
+      "mid": 3.5177
+    },
+    "NIO": {
+      "bid": 0.7288,
+      "ask": 0.7325,
+      "mid": 0.7307
+    },
+    "MXN": {
+      "bid": 1.5612,
+      "ask": 1.569,
+      "mid": 1.5651
+    },
+    "CRC": {
+      "bid": 0.0597,
+      "ask": 0.0599,
+      "mid": 0.0598
+    },
+    "PAB": {
+      "bid": 26.786,
+      "ask": 26.9202,
+      "mid": 26.8531
+    }
   },
   "_legacy_rates_for_compat": {
-    "USD": 26.6630,
-    "EUR": 31.0000,
-    "GTQ":  3.4813,
-    "NIO":  0.7218,
-    "MXN":  1.5176,
-    "CRC":  0.0530,
-    "PAB": 26.6630
+    "USD": 26.8531,
+    "EUR": 30.9828,
+    "GTQ": 3.5177,
+    "NIO": 0.7307,
+    "MXN": 1.5651,
+    "CRC": 0.0598,
+    "PAB": 26.8531
   }
 }
