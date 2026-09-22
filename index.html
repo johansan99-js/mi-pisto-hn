@@ -13,9 +13,12 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
 <title>Mi Pisto HN · Tu dinero, tu control</title>
 <link rel="manifest" href="manifest.json">
-<!-- FIX: Removed invalid SRI hashes that blocked Chart.js and SheetJS loading.
-     TODO: Re-add real SRI hashes calculated at deploy time using srihash.org -->
+<!-- DSS05.02: SRI real, calculado con sha384sum sobre el archivo servido por el
+     CDN el 2026-09-21. Si jsDelivr cambia el contenido de esta versión fijada
+     (no debería, es inmutable por versión), el navegador bloqueará la carga
+     en vez de ejecutar código no verificado. -->
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+        integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4"
         crossorigin="anonymous"></script>
 <!-- Tesseract: eliminado del head — se carga bajo demanda en procesarReciboOCR() -->
 <script>
@@ -25,14 +28,15 @@
     corePath: 'https://unpkg.com/tesseract.js-core@4.0.2/tesseract-core.wasm.js'
   };
 </script>
-<!-- SheetJS para Excel -->
-<!-- FIX: SRI removed. Re-add valid hash at deploy time. -->
+<!-- SheetJS para Excel — SRI calculado igual que Chart.js -->
 <script defer src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
+        integrity="sha384-QCIdq2UMVEoSRhR3ZWZwdz2/pivLowr+eokFMdYyukq7qI26VYRxFa4Nl6FKetmL"
         crossorigin="anonymous"></script>
 <!-- ═══ CLOUD SYNC: Supabase JS SDK (cargado bajo demanda, no bloquea offline) ═══ -->
 <!-- Se carga async para no impactar el tiempo de arranque. Si falla (offline), la app
      sigue funcionando 100% local — el módulo cloudSync verifica window.supabase antes de usarlo. -->
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
+        integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"
         crossorigin="anonymous"></script>
 <style>
 :root{--bg:#130507;--bg2:#1C080B;--bg3:#280D10;--bg4:#3A1418;--amber:#F5C800;--text:#FFF0E8;--text2:#C09090;--green:#4CAF50;--red:#FF4444;--blue:#4285F4;--purple:#FF7043;--border:#3A1418;--r:12px}
@@ -1180,7 +1184,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <h3 style="margin-bottom:10px">Acceso Seguro</h3>
     <p style="color:var(--text2);font-size:12px;margin-bottom:20px">Ingresa tu PIN de 4 dígitos</p>
     <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
-    <button class="btn btn-primary" onclick="verificarPIN()">🔓 Entrar con PIN</button>
+    <button class="btn btn-primary" id="btn-entrar-pin" onclick="verificarPIN()">🔓 Entrar con PIN</button>
     <!-- Botón biométrico — se muestra solo si está registrado -->
     <div id="pin-bio-btn-wrap" style="display:none;margin-top:8px">
       <button class="btn-bio-unlock" onclick="intentarBiometriaDesdePin()">
@@ -2025,6 +2029,43 @@ window.addEventListener('pagehide', () => {
   window.clearAllTimeouts();
   window.clearAllIntervals();
 });
+
+// ══════════════════════════════════════════════════════════════
+// 🔒 DSS05.04/05.05 — Auto-bloqueo al pasar a segundo plano
+// ──────────────────────────────────────────────────────────────
+// Antes: una vez desbloqueada con el PIN, la app quedaba abierta
+// indefinidamente aunque cambiaras de app, apagaras la pantalla o
+// soltaras el celular — cualquiera que lo tomara veía todos los datos
+// financieros sin volver a pedir el PIN. Ahora, si la app estuvo oculta
+// más de 60 segundos, se vuelve a bloquear al regresar.
+// ══════════════════════════════════════════════════════════════
+const AUTO_LOCK_GRACIA_MS = 60 * 1000;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    sessionStorage.setItem('_ocultoDesde', String(Date.now()));
+  } else if (document.visibilityState === 'visible') {
+    const ocultoDesdeStr = sessionStorage.getItem('_ocultoDesde');
+    sessionStorage.removeItem('_ocultoDesde');
+    if (!ocultoDesdeStr) return;
+    const transcurrido = Date.now() - parseInt(ocultoDesdeStr, 10);
+    if (transcurrido > AUTO_LOCK_GRACIA_MS) _bloquearAppPorInactividad();
+  }
+});
+
+function _bloquearAppPorInactividad() {
+  // Solo bloquea si hay PIN configurado y la sesión estaba desbloqueada
+  const storedHash = localStorage.getItem('finanzas_pin_hash');
+  if (!storedHash || sessionStorage.getItem('pinVerificado') !== 'true') return;
+  sessionStorage.removeItem('pinVerificado');
+  _sessionPIN = null;
+  _sessionDEK = null;
+  const modal = document.getElementById('modal-pin');
+  if (modal) {
+    modal.style.display = 'flex';
+    const input = document.getElementById('pin-input');
+    if (input) { input.value = ''; input.focus(); }
+  }
+}
 
 // ═════════════════════════════════════════════════════════════
 // FIX: Constantes globales para validación de tasas
@@ -5537,13 +5578,91 @@ function verificarPINmejorado() {
   document.getElementById('pin-input')?.focus();
 }
 
+// ══════════════════════════════════════════════════════════════
+// 🔒 DSS05.04 — Bloqueo progresivo tras intentos fallidos de PIN
+// ──────────────────────────────────────────────────────────────
+// Antes: se podía escribir cualquier PIN, sin límite, cuantas veces se
+// quisiera — quien tuviera el celular en la mano podía probar los 10,000
+// PINs de 4 dígitos posibles sin ninguna fricción. Ahora, tras 5 fallos
+// consecutivos, cada intento adicional exige esperar un tiempo que
+// crece exponencialmente (30s, 1min, 2min... hasta un tope de 30min).
+// El estado se guarda en localStorage para que el bloqueo sobreviva a
+// recargas o cerrar y abrir la app de nuevo.
+// ══════════════════════════════════════════════════════════════
+const PIN_INTENTOS_KEY = 'pin_intentos_fallidos';
+const PIN_BLOQUEO_KEY = 'pin_bloqueo_hasta';
+const PIN_INTENTOS_ANTES_DE_BLOQUEAR = 5;
+
+function _estadoBloqueoPIN() {
+  const hastaStr = localStorage.getItem(PIN_BLOQUEO_KEY);
+  if (!hastaStr) return { bloqueado: false };
+  const hasta = parseInt(hastaStr, 10);
+  const restanteMs = hasta - Date.now();
+  if (!Number.isFinite(hasta) || restanteMs <= 0) {
+    localStorage.removeItem(PIN_BLOQUEO_KEY);
+    return { bloqueado: false };
+  }
+  return { bloqueado: true, segundosRestantes: Math.ceil(restanteMs / 1000) };
+}
+
+function _registrarIntentoFallidoPIN() {
+  const fallos = (parseInt(localStorage.getItem(PIN_INTENTOS_KEY), 10) || 0) + 1;
+  localStorage.setItem(PIN_INTENTOS_KEY, String(fallos));
+  if (fallos >= PIN_INTENTOS_ANTES_DE_BLOQUEAR) {
+    const exceso = fallos - PIN_INTENTOS_ANTES_DE_BLOQUEAR;
+    const segundos = Math.min(30 * Math.pow(2, exceso), 30 * 60); // tope 30 min
+    localStorage.setItem(PIN_BLOQUEO_KEY, String(Date.now() + segundos * 1000));
+  }
+}
+
+function _registrarPINCorrecto() {
+  localStorage.removeItem(PIN_INTENTOS_KEY);
+  localStorage.removeItem(PIN_BLOQUEO_KEY);
+}
+
+function _formatoTiempoBloqueo(segundos) {
+  if (segundos < 60) return segundos + ' segundos';
+  const min = Math.ceil(segundos / 60);
+  return min + ' minuto' + (min === 1 ? '' : 's');
+}
+
+/** Mientras el modal de PIN esté visible, refresca cada segundo si hay
+    un bloqueo activo: deshabilita el botón y muestra la cuenta regresiva;
+    lo reactiva automáticamente en cuanto expira. */
+function _tickBloqueoPIN() {
+  const modal = document.getElementById('modal-pin');
+  const btn = document.getElementById('btn-entrar-pin');
+  const errEl = document.getElementById('pin-error');
+  if (!modal || !btn || !errEl || modal.style.display !== 'flex') return;
+  const estado = _estadoBloqueoPIN();
+  if (estado.bloqueado) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    errEl.style.display = 'block';
+    errEl.textContent = `🔒 Demasiados intentos. Espera ${_formatoTiempoBloqueo(estado.segundosRestantes)}.`;
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    if (errEl.textContent.startsWith('🔒')) errEl.style.display = 'none';
+  }
+}
+(typeof window.createInterval === 'function' ? window.createInterval : setInterval)(_tickBloqueoPIN, 1000);
+
 // P0-1: verificarPIN async con comparación de hash PBKDF2
 var verificarPINoriginal = null; // ya no se usa, se mantiene por compatibilidad
 verificarPIN = async function() {
+  const bloqueo = _estadoBloqueoPIN();
+  if (bloqueo.bloqueado) {
+    const errEl = document.getElementById('pin-error');
+    errEl.style.display = 'block';
+    errEl.textContent = `🔒 Demasiados intentos. Espera ${_formatoTiempoBloqueo(bloqueo.segundosRestantes)}.`;
+    document.getElementById('pin-input').value = '';
+    return;
+  }
   const intento = document.getElementById('pin-input').value;
   const storedHash = localStorage.getItem('finanzas_pin_hash');
   const storedSaltB64 = localStorage.getItem('finanzas_pin_salt');
-  
+
   if (!storedHash || !storedSaltB64) {
     // Sin PIN configurado: acceso directo (onboarding inicial)
     sessionStorage.setItem('pinVerificado','true');
@@ -5558,6 +5677,7 @@ verificarPIN = async function() {
   
   if (intentoHash === storedHash) {
     // ✅ PIN correcto
+    _registrarPINCorrecto();
     sessionStorage.setItem('pinVerificado','true');
     _sessionPIN = intento; // Guardar PIN en memoria para esta sesión
     
@@ -5628,9 +5748,13 @@ verificarPIN = async function() {
     }
   } else {
     // ❌ PIN incorrecto
+    _registrarIntentoFallidoPIN();
     document.getElementById('pin-error').style.display='block';
     document.getElementById('pin-input').value='';
-    setTimeout(function(){ document.getElementById('pin-error').style.display='none'; }, 3000);
+    setTimeout(function(){
+      // No pisar el mensaje de bloqueo si mientras tanto se activó uno
+      if (!_estadoBloqueoPIN().bloqueado) document.getElementById('pin-error').style.display='none';
+    }, 3000);
   }
 };
 
