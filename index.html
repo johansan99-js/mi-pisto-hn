@@ -1576,19 +1576,22 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     </div>
   </div>
 
-  <!-- Modal de login con magic link -->
+  <!-- Modal de login con Google -->
   <div id="modal-cloud-login" class="modal" onclick="closeModalIfBg(event,'modal-cloud-login')">
     <div class="modal-content">
       <h3 style="margin-bottom:6px">☁️ Activar sincronización</h3>
       <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5">
-        Te enviaremos un <strong>enlace mágico</strong> al email para iniciar sesión.
-        Sin contraseñas. Tus datos siguen cifrados con tu PIN local.
+        Inicia sesión con tu cuenta de Google para activar la sincronización.
+        Tus datos siguen cifrados con tu PIN local — Google solo identifica tu cuenta,
+        nunca ve tus movimientos.
       </p>
-      <input type="email" id="cloud-email" class="input-field" placeholder="tu@email.com" autocomplete="email">
       <div id="cloud-login-status" style="font-size:12px;margin-bottom:10px;display:none"></div>
-      <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" onclick="iniciarSesionConGoogle()" id="btn-google-login" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.3-1.8 13.7-5l-6.3-5.3C29.5 35.9 26.9 37 24 37c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 40 16.2 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.3 5.3C41 35.6 44.5 30.5 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+        Continuar con Google
+      </button>
+      <div style="display:flex;gap:10px;margin-top:10px">
         <button class="btn btn-secondary" onclick="closeModal('modal-cloud-login')" style="flex:1">Cancelar</button>
-        <button class="btn btn-primary" onclick="enviarMagicLink()" style="flex:2" id="btn-enviar-magic">📧 Enviar enlace</button>
       </div>
       <p style="font-size:10px;color:var(--text2);margin-top:14px;text-align:center;line-height:1.5">
         🔒 Tus datos viajan cifrados con AES-256.<br>
@@ -7005,20 +7008,23 @@ const cloudSync = {
     }
   },
 
-  /** Envía el magic link al email del usuario */
-  async sendMagicLink(email) {
+  /** Inicia sesión con Google (OAuth vía Supabase, flujo PKCE).
+      Redirige a Google y de vuelta a la misma URL — el listener de
+      onAuthStateChange ya detecta el SIGNED_IN al volver, sin cambios. */
+  async signInWithGoogle() {
     if (!await this.init()) {
       return { ok: false, error: 'No hay conexión con el servidor' };
     }
     try {
-      const { error } = await this.client.auth.signInWithOtp({
-        email: email,
+      const { error } = await this.client.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          emailRedirectTo: window.location.origin + window.location.pathname,
-          shouldCreateUser: true
+          redirectTo: window.location.origin + window.location.pathname
         }
       });
       if (error) return { ok: false, error: error.message };
+      // La página navega a Google; no hay más que hacer aquí.
+      localStorage.setItem(CLOUD_SYNC_CONFIG.enabledKey, 'true');
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e.message };
@@ -7640,59 +7646,33 @@ async function renderCloudSyncUI() {
 window.renderCloudSyncUI = renderCloudSyncUI;
 
 function abrirModalCloudLogin() {
-  const emailInput = document.getElementById('cloud-email');
-  if (emailInput) emailInput.value = '';
   const status = document.getElementById('cloud-login-status');
   if (status) status.style.display = 'none';
-  const btn = document.getElementById('btn-enviar-magic');
-  if (btn) { btn.disabled = false; btn.textContent = '📧 Enviar enlace'; }
+  const btn = document.getElementById('btn-google-login');
+  if (btn) { btn.disabled = false; }
   openModal('modal-cloud-login');
-  setTimeout(() => emailInput?.focus(), 100);
 }
 window.abrirModalCloudLogin = abrirModalCloudLogin;
 
-async function enviarMagicLink() {
-  const emailInput = document.getElementById('cloud-email');
+async function iniciarSesionConGoogle() {
   const status = document.getElementById('cloud-login-status');
-  const btn = document.getElementById('btn-enviar-magic');
-  const email = (emailInput?.value || '').trim().toLowerCase();
-
-  // Validación simple de email
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    if (status) {
-      status.style.display = 'block';
-      status.style.color = 'var(--red)';
-      status.textContent = '⚠️ Ingresa un email válido';
-    }
-    return;
-  }
-
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
+  const btn = document.getElementById('btn-google-login');
+  if (btn) { btn.disabled = true; }
   if (status) {
     status.style.display = 'block';
     status.style.color = 'var(--text2)';
-    status.textContent = 'Conectando con el servidor...';
+    status.textContent = 'Conectando con Google...';
   }
-
-  const result = await cloudSync.sendMagicLink(email);
-
-  if (result.ok) {
-    if (status) {
-      status.style.color = 'var(--green)';
-      status.innerHTML = '✅ ¡Enlace enviado!<br><span style="font-size:11px">Revisa tu bandeja de entrada (y la carpeta de spam) en <strong>' + esc(email) + '</strong>.<br>Toca el enlace para iniciar sesión.</span>';
-    }
-    if (btn) btn.textContent = '✅ Enviado';
-    // Marcar sync como activado (aunque el login se complete después)
-    localStorage.setItem(CLOUD_SYNC_CONFIG.enabledKey, 'true');
-  } else {
+  const result = await cloudSync.signInWithGoogle();
+  if (!result.ok) {
     if (status) {
       status.style.color = 'var(--red)';
       status.textContent = '❌ ' + (result.error || 'Error desconocido');
     }
-    if (btn) { btn.disabled = false; btn.textContent = '📧 Reintentar'; }
+    if (btn) btn.disabled = false;
   }
+  // Si result.ok, la página ya está navegando a Google — no hay nada más que hacer.
 }
-window.enviarMagicLink = enviarMagicLink;
 
 async function cerrarSesionCloud() {
   if (!confirm('¿Cerrar sesión en este dispositivo?\n\nTus datos locales (cifrados con tu PIN) NO se borrarán. Solo se desconectará la sincronización en la nube.')) return;
