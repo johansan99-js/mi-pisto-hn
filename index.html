@@ -10,9 +10,10 @@
 <meta name="theme-color" content="#130507">
 <!-- P1-6: Content Security Policy. unsafe-inline temporal mientras se migra a delegación de eventos.
      Las CDNs listadas son las que carga la app: Chart.js (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
 <title>Mi Pisto HN · Tu dinero, tu control</title>
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <!-- DSS05.02: SRI real, calculado con sha384sum sobre el archivo servido por el
      CDN el 2026-09-21. Si jsDelivr cambia el contenido de esta versión fijada
      (no debería, es inmutable por versión), el navegador bloqueará la carga
@@ -2580,9 +2581,57 @@ const CATEGORIES={vivienda:{label:'🏠 Vivienda',sub:['Hipoteca/Alquiler','Tel�
 
 // ========== FUNCIÓN OCR MEJORADA (PRICESMART, NECHOS, LITTLE CAESARS) ==========
 // ========== FUNCIÓN OCR MEJORADA (DETECCIÓN AVANZADA DE COMERCIOS HONDUREÑOS) ==========
+// FIX: tesseract.js (la librería que expone window.Tesseract) nunca se
+// cargaba con ningún <script> — se había quitado del <head> para no
+// pesar el arranque, pero nunca se agregó la carga bajo demanda que el
+// comentario original prometía. Antes, procesarReciboOCR() SIEMPRE
+// fallaba con "Tesseract no está cargado", incluso recargando la página.
+let _tesseractLibPromise = null;
+function _cargarTesseractLib() {
+    if (typeof Tesseract !== 'undefined') return Promise.resolve();
+    if (_tesseractLibPromise) return _tesseractLibPromise;
+    _tesseractLibPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js';
+        script.integrity = 'sha384-p0lyrUSwAXKW8+KUuu0G96F+bX2fnB1MGFTx5X/Y/99IjrwU1BnTzW+H71bs1Vrn';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve();
+        script.onerror = () => { _tesseractLibPromise = null; reject(new Error('No se pudo cargar el motor OCR (revisa tu conexión).')); };
+        document.head.appendChild(script);
+    });
+    return _tesseractLibPromise;
+}
+
+// FIX: la cámara de un celular normal produce fotos de varios MB en
+// resolución completa; pasarlas tal cual a Tesseract (WASM) puede
+// agotar la memoria en equipos gama media/baja. Se reescala a un
+// máximo razonable para OCR antes de procesar (y antes de guardar la
+// factura), sin perder legibilidad del texto.
+async function _comprimirImagenParaOCR(file, maxDim = 1800, calidad = 0.85) {
+    try {
+        const bitmap = await createImageBitmap(file);
+        let { width, height } = bitmap;
+        if (width > maxDim || height > maxDim) {
+            const ratio = Math.min(maxDim / width, maxDim / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        if (typeof bitmap.close === 'function') bitmap.close();
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', calidad));
+        return blob || file; // si toBlob falla, usar el original
+    } catch (e) {
+        console.warn('⚠️ No se pudo comprimir la imagen, usando original:', e);
+        return file; // degradar sin bloquear el OCR
+    }
+}
+
 async function procesarReciboOCR(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+    const fileOriginal = event.target.files[0];
+    if (!fileOriginal) return;
     const statusEl = document.getElementById('ocr-status');
     const montoInput = document.getElementById('gasto-monto');
     statusEl.style.display = 'block';
@@ -2590,7 +2639,10 @@ async function procesarReciboOCR(event) {
     const updateStatus = (msg, isError = false) => { statusEl.textContent = msg; if (isError) statusEl.style.color = 'var(--red)'; };
 
     try {
-        updateStatus('📥 Verificando motor OCR...');
+        updateStatus('🗜️ Optimizando imagen...');
+        const file = await _comprimirImagenParaOCR(fileOriginal);
+        updateStatus('📥 Cargando motor OCR...');
+        await _cargarTesseractLib();
         if (typeof Tesseract === 'undefined') throw new Error('Tesseract no está cargado. Recarga la página.');
         const workerOptions = {
             logger: m => {
