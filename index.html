@@ -1355,8 +1355,10 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
       <div class="budget-item"><div class="budget-value budget-extra" id="budget-extra-val">15%</div><div class="budget-label">Extra</div></div>
     </div>
     <button class="btn btn-secondary" style="margin-top:10px;padding:8px;font-size:11px" onclick="openModal('modal-budget-rules')">✏️ Editar Reglas</button>
+    <div id="budget-alerts" style="margin-top:10px"></div>
+    <div id="budget-progreso-mes" style="margin-top:10px"></div>
   </div>
-  
+
   </div><!-- /desktop-grid-right -->
   </div><!-- /desktop-grid -->
   <div class="reconcile-box">
@@ -4096,6 +4098,7 @@ function checkNotificacionesPagos(){
   });
   
   localStorage.setItem('alertas_enviadas',JSON.stringify(alertasEnviadas));
+  verificarRegistroDiario();
 }
 
 async function activarNotificacionesPagos(){
@@ -5689,21 +5692,107 @@ function renderPapelera() {
 }
 
 // ALERTAS DE PRESUPUESTO
-function verificarAlertasPresupuesto() {
-  // P0-2: excluir transferencias internas y conciliaciones del cálculo de presupuesto
-  var realTx = state.transactions.filter(function(t) { return !t.deletedAt && !t.esTransferencia && !t.esConciliacion; });
+/** Calcula cuánto se ha gastado ESTE MES en cada bolsillo del presupuesto
+    (fijo/extra) contra lo que la regla 65/20/15 permite según el ingreso
+    del mes. La parte "ahorro" no se puede medir contra gastos (es lo que
+    sobra), así que solo se vigila gastos fijos y extra. */
+function calcularProgresoPresupuestoMes() {
+  var hoy = new Date();
+  var esteMes = function(t) {
+    var f = new Date(t.date);
+    return f.getFullYear() === hoy.getFullYear() && f.getMonth() === hoy.getMonth();
+  };
+  var realTx = state.transactions.filter(function(t) { return !t.deletedAt && !t.esTransferencia && !t.esConciliacion && esteMes(t); });
   var ingresos = realTx.filter(function(t) { return t.type === 'income'; }).reduce(function(a, b) { return a + b.amount; }, 0);
-  var gastos = realTx.filter(function(t) { return t.type === 'expense'; }).reduce(function(a, b) { return a + b.amount; }, 0);
-  var porcentaje = ingresos > 0 ? (gastos / ingresos) * 100 : 0;
+  var gastoFijo = realTx.filter(function(t) { return t.type === 'expense' && t.tipo === 'fijo'; }).reduce(function(a, b) { return a + b.amount; }, 0);
+  var gastoExtra = realTx.filter(function(t) { return t.type === 'expense' && t.tipo === 'extra'; }).reduce(function(a, b) { return a + b.amount; }, 0);
+  var rules = state.budgetRules || { gastos: 65, ahorro: 20, extra: 15 };
+  var limiteFijo = ingresos * (rules.gastos / 100);
+  var limiteExtra = ingresos * (rules.extra / 100);
+  return {
+    ingresos: ingresos,
+    fijo: { gastado: gastoFijo, limite: limiteFijo, pct: limiteFijo > 0 ? (gastoFijo / limiteFijo) * 100 : 0 },
+    extra: { gastado: gastoExtra, limite: limiteExtra, pct: limiteExtra > 0 ? (gastoExtra / limiteExtra) * 100 : 0 }
+  };
+}
+
+function _barraPresupuesto(nombre, info) {
+  var color = info.pct >= 100 ? 'var(--red)' : (info.pct >= 80 ? 'var(--amber)' : 'var(--green)');
+  var pctBarra = Math.min(100, info.pct);
+  return '<div style="margin-bottom:8px">' +
+    '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">' +
+      '<span>' + nombre + '</span>' +
+      '<span style="color:' + color + ';font-weight:700">' + fL(info.gastado) + ' de ' + fL(info.limite) + ' (' + info.pct.toFixed(0) + '%)</span>' +
+    '</div>' +
+    '<div style="background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">' +
+      '<div style="width:' + pctBarra + '%;height:100%;background:' + color + '"></div>' +
+    '</div>' +
+  '</div>';
+}
+
+function verificarAlertasPresupuesto() {
   var alertasDiv = document.getElementById('budget-alerts');
-  if (!alertasDiv) return;
-  var html = '';
-  if (porcentaje >= 100) {
-    html = '<div class="alert-budget-critical"><span style="font-size:20px">🚨</span><div class="alert-content"><div class="alert-title">PRESUPUESTO EXCEDIDO!</div><div class="alert-detail">Gastaste L.' + gastos.toFixed(2) + ' de L.' + ingresos.toFixed(2) + ' (' + porcentaje.toFixed(0) + '%)</div></div></div>';
-  } else if (porcentaje >= 80) {
-    html = '<div class="alert-budget-warning"><span style="font-size:20px">⚠️</span><div class="alert-content"><div class="alert-title">Presupuesto al ' + Math.round(porcentaje) + '%</div><div class="alert-detail">Te quedan L.' + (ingresos - gastos).toFixed(2) + ' para gastar</div></div></div>';
+  var progresoDiv = document.getElementById('budget-progreso-mes');
+  var progreso = calcularProgresoPresupuestoMes();
+
+  if (progresoDiv) {
+    if (progreso.ingresos > 0) {
+      progresoDiv.innerHTML = _barraPresupuesto('🏠 Gastos fijos', progreso.fijo) + _barraPresupuesto('🎉 Gastos extra', progreso.extra);
+    } else {
+      progresoDiv.innerHTML = '';
+    }
   }
-  alertasDiv.innerHTML = html;
+
+  if (alertasDiv) {
+    var peor = progreso.fijo.pct >= progreso.extra.pct ? { nombre: 'Gastos fijos', info: progreso.fijo } : { nombre: 'Gastos extra', info: progreso.extra };
+    var html = '';
+    if (progreso.ingresos > 0 && peor.info.pct >= 100) {
+      html = '<div class="alert-budget-critical"><span style="font-size:20px">🚨</span><div class="alert-content"><div class="alert-title">¡' + peor.nombre + ' excedidos este mes!</div><div class="alert-detail">' + fL(peor.info.gastado) + ' de ' + fL(peor.info.limite) + ' (' + peor.info.pct.toFixed(0) + '%)</div></div></div>';
+    } else if (progreso.ingresos > 0 && peor.info.pct >= 80) {
+      html = '<div class="alert-budget-warning"><span style="font-size:20px">⚠️</span><div class="alert-content"><div class="alert-title">' + peor.nombre + ' al ' + Math.round(peor.info.pct) + '%</div><div class="alert-detail">Te quedan ' + fL(Math.max(0, peor.info.limite - peor.info.gastado)) + ' este mes</div></div></div>';
+    }
+    alertasDiv.innerHTML = html;
+  }
+
+  // Push notification cuando se cruza un umbral (una sola vez por mes+categoría+nivel)
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  var hoy = new Date();
+  var mesClave = hoy.getFullYear() + '-' + hoy.getMonth();
+  var alertasEnviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}');
+  [['fijo', 'Gastos fijos', progreso.fijo], ['extra', 'Gastos extra', progreso.extra]].forEach(function(entry) {
+    var key = entry[0], nombre = entry[1], info = entry[2];
+    if (progreso.ingresos <= 0) return;
+    var nivel = info.pct >= 100 ? 'excedido' : (info.pct >= 80 ? 'aviso' : null);
+    if (!nivel) return;
+    var clave = 'presup_' + key + '_' + mesClave + '_' + nivel;
+    if (alertasEnviadas[clave]) return;
+    if (nivel === 'excedido') {
+      enviarNotificacion('🚨 ' + nombre + ' excedidos', fL(info.gastado) + ' de ' + fL(info.limite) + ' este mes (' + info.pct.toFixed(0) + '%)', null);
+    } else {
+      enviarNotificacion('⚠️ ' + nombre + ' al ' + Math.round(info.pct) + '%', 'Te quedan ' + fL(Math.max(0, info.limite - info.gastado)) + ' este mes', null);
+    }
+    alertasEnviadas[clave] = true;
+  });
+  localStorage.setItem('alertas_enviadas', JSON.stringify(alertasEnviadas));
+}
+
+/** Recordatorio de hábito diario: si ya es de noche y todavía no se ha
+    registrado ningún movimiento hoy, un empujoncito para no dejarlo pasar. */
+function verificarRegistroDiario() {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  var ahora = new Date();
+  if (ahora.getHours() < 20) return; // solo desde las 8pm
+  var hoyStr = ahora.toISOString().slice(0, 10);
+  var alertasEnviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}');
+  var clave = 'diario_' + hoyStr;
+  if (alertasEnviadas[clave]) return;
+  var registroHoy = (state.transactions || []).some(function(t) {
+    return !t.deletedAt && !t.esTransferencia && new Date(t.date).toISOString().slice(0, 10) === hoyStr;
+  });
+  if (registroHoy) return;
+  enviarNotificacion('📝 ¿Todo tranquilo hoy?', 'No has registrado ningún movimiento. Si gastaste algo, anótalo antes de que se te olvide.', null);
+  alertasEnviadas[clave] = true;
+  localStorage.setItem('alertas_enviadas', JSON.stringify(alertasEnviadas));
 }
 
 // PROYECCION DE FLUJO DE CAJA
