@@ -1183,8 +1183,8 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
   <div class="modal-content" style="text-align:center">
     <div style="font-size:48px;margin-bottom:15px">🔒</div>
     <h3 style="margin-bottom:10px">Acceso Seguro</h3>
-    <p style="color:var(--text2);font-size:12px;margin-bottom:20px">Ingresa tu PIN de 4 dígitos</p>
-    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+    <p style="color:var(--text2);font-size:12px;margin-bottom:20px">Ingresa tu PIN</p>
+    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*">
     <button class="btn btn-primary" id="btn-entrar-pin" onclick="verificarPIN()">🔓 Entrar con PIN</button>
     <!-- Botón biométrico — se muestra solo si está registrado -->
     <div id="pin-bio-btn-wrap" style="display:none;margin-top:8px">
@@ -3024,7 +3024,7 @@ async function configurarPIN() {
   const esPrimerPIN = !localStorage.getItem('finanzas_pin_hash');
   const esActualizacion = !esPrimerPIN && _sessionDEK; // Tiene PIN + DEK en sesión
   
-  const nuevoPIN = prompt('Crea un PIN de 4 dígitos:\n(Deja en blanco para eliminar)');
+  const nuevoPIN = prompt('Crea un PIN de 4 a 8 dígitos (mientras más largo, más seguro):\n(Deja en blanco para eliminar)');
   if (nuevoPIN === null) return;
   
   if (nuevoPIN === '') {
@@ -3050,11 +3050,14 @@ async function configurarPIN() {
     return;
   }
   
-  if (!/^\d{4}$/.test(nuevoPIN)) { alert('❌ Debe tener 4 números'); return; }
-  
+  // SEGURIDAD: un PIN de 4 dígitos (10,000 combinaciones) se fuerza por
+  // fuerza bruta offline en minutos si alguien roba el localStorage. Se
+  // permite hasta 8 dígitos — mientras más largo, más seguro.
+  if (!/^\d{4,8}$/.test(nuevoPIN)) { alert('❌ Debe tener entre 4 y 8 números'); return; }
+
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await _derivarHashPIN(nuevoPIN, salt);
-  
+
   // ────────────────────────────────────────────────────────────
   // CASO 1: Primer PIN (creación inicial)
   // ────────────────────────────────────────────────────────────
@@ -3193,6 +3196,11 @@ async function finishOnboarding(){
   const nombre=document.getElementById('ob-nombre').value.trim();
   const saldoInicial=parseFloat(document.getElementById('ob-salario').value)||0;
   if(!nombre||saldoInicial===0)return alert('Completa todos los campos');
+  // SEGURIDAD: state.nombre se interpola en varias plantillas HTML (saludo,
+  // conciliación, etc.). Sin esto, un nombre como "<img src=x onerror=...>"
+  // ejecuta código arbitrario cada vez que se renderiza el dashboard.
+  if(/[<>]/.test(nombre))return alert('El nombre no puede contener los caracteres < o >');
+  if(nombre.length>100)return alert('El nombre es demasiado largo (máximo 100 caracteres)');
   const saldoEfectivo=parseFloat(document.getElementById('ob-efectivo')?.value)||0;
   const saldoAhorro=parseFloat(document.getElementById('ob-ahorro')?.value)||0;
   
@@ -3202,7 +3210,7 @@ async function finishOnboarding(){
   const tienePIN = localStorage.getItem('finanzas_pin_hash');
   if (!tienePIN) {
     const crearPIN = confirm(
-      '🔐 Para proteger tus datos, necesitas crear un PIN de 4 dígitos.\n\n' +
+      '🔐 Para proteger tus datos, necesitas crear un PIN de 4 a 8 dígitos.\n\n' +
       'Tu PIN cifra todos tus movimientos con AES-256.\n' +
       'Sin el PIN, nadie puede acceder a tus datos.\n\n' +
       '¿Crear PIN ahora?'
@@ -3211,11 +3219,13 @@ async function finishOnboarding(){
       alert('⚠️ No puedes continuar sin crear un PIN.');
       return;
     }
-    
-    // Solicitar PIN
-    const nuevoPIN = prompt('Crea tu PIN de 4 dígitos:');
-    if (!nuevoPIN || !/^\d{4}$/.test(nuevoPIN)) {
-      alert('❌ PIN inválido. Debe tener 4 números.');
+
+    // Solicitar PIN. SEGURIDAD: 4 dígitos = solo 10,000 combinaciones,
+    // forzable offline en minutos si alguien roba el localStorage. Se
+    // permite hasta 8 — mientras más largo, más seguro.
+    const nuevoPIN = prompt('Crea tu PIN (4 a 8 dígitos — mientras más largo, más seguro):');
+    if (!nuevoPIN || !/^\d{4,8}$/.test(nuevoPIN)) {
+      alert('❌ PIN inválido. Debe tener entre 4 y 8 números.');
       return;
     }
     
@@ -5341,7 +5351,7 @@ function renderWelcome(){
             font-size:20px;font-weight:900;color:#130507;
             box-shadow:0 4px 12px rgba(245,200,0,.3);
             animation:glowPulse 3s ease-in-out infinite;
-          ">${inicial}</div>
+          ">${esc(inicial)}</div>
           <!-- Texto -->
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:1px">${emoji} ${saludo}</div>
@@ -5352,10 +5362,10 @@ function renderWelcome(){
               background-clip:text;
               line-height:1.1;
               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-            ">${nombre}</div>
+            ">${esc(nombre)}</div>
           </div>
         </div>
-        
+
         <!-- Frase motivacional -->
         <div style="
           margin-top:10px;
@@ -5365,7 +5375,7 @@ function renderWelcome(){
           font-style:italic;
           border-top:1px solid var(--border);
           padding-top:9px;
-        ">"${getMotivationalMsg(nombre, balance)}"</div>
+        ">"${esc(getMotivationalMsg(nombre, balance))}"</div>
       </div>
     `;
   }
