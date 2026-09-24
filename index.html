@@ -2558,6 +2558,7 @@ async function _migrarStatePlanoACifrado(pin, salt) {
     // 5. Cifrar y guardar el state actual (que está en memoria en plano)
     const encryptedState = await _encryptState(state, dek);
     localStorage.setItem(LS_KEY, encryptedState);
+    if (state.setup) await saveStateToDB(state); // reemplaza la copia en plano de IDB
     
     console.log('✅ Migración completada: state cifrado con DEK');
     
@@ -2596,7 +2597,7 @@ function save() {
   // Cifrar state con DEK y guardar
   return _encryptState(state, _sessionDEK).then(encrypted => {
     localStorage.setItem(LS_KEY, encrypted);
-    const idb = guardarIDB(); // IDB sigue en plano (acceso rápido, no crítico)
+    const idb = guardarIDB(); // saveStateToDB también cifra la copia de IDB
     // FASE 3: disparar auto-sync si el usuario tiene la nube activada
     if (typeof cloudSync !== 'undefined') cloudSync._scheduleAutoSync();
     return idb;
@@ -3059,13 +3060,18 @@ async function configurarPIN() {
     // ⚠️ Eliminar PIN cuando hay datos cifrados es DESTRUCTIVO
     if (!esPrimerPIN && _isStateEncrypted()) {
       const confirma = confirm(
-        '⚠️ ADVERTENCIA: Si eliminas el PIN, perderás acceso a todos tus datos cifrados.\n\n' +
-        'Solo podrás recuperarlos con un respaldo cifrado.\n\n' +
+        '⚠️ ADVERTENCIA: Si eliminas el PIN, tus datos quedarán SIN CIFRAR en este teléfono ' +
+        'y cualquiera con acceso a él podrá verlos.\n\n' +
         '¿Estás SEGURO de eliminar el PIN?'
       );
       if (!confirma) return;
     }
     
+    // Guardar en plano ANTES de borrar la DEK: sin ella, las copias cifradas
+    // de localStorage e IndexedDB ya no se podrían leer.
+    _sessionDEK = null;
+    _sessionPIN = null;
+    if (state.setup) await save();
     localStorage.removeItem('finanzas_pin_hash');
     localStorage.removeItem('finanzas_pin_salt');
     localStorage.removeItem('finanzas_dek_encrypted');
@@ -3110,6 +3116,7 @@ async function configurarPIN() {
     if (state.setup) {
       const encryptedState = await _encryptState(state, dek);
       localStorage.setItem(LS_KEY, encryptedState);
+      await saveStateToDB(state); // reemplaza la copia en plano de IDB por una cifrada
       console.log('🔒 State inicial cifrado');
     }
     
@@ -3511,14 +3518,12 @@ function saveGasto(){
 
     if(pago === 'credito'){
         const tarjetaId = document.getElementById('gasto-tarjeta').value; // P1-4: no parseInt
-        if(tarjetaId){
-            const tarjeta = state.tarjetas.find(t => String(t.id) === String(tarjetaId));
-            if(tarjeta){
-                tarjeta.saldo += monto;
-                transaction.tarjetaId = tarjeta.id;
-                transaction.tarjetaNombre = tarjeta.nombre;
-            }
-        }
+        const tarjeta = tarjetaId && state.tarjetas.find(t => String(t.id) === String(tarjetaId));
+        // Sin tarjeta el gasto no bajaría ninguna cuenta ni subiría ninguna deuda
+        if(!tarjeta) return alert('Selecciona la tarjeta de crédito con la que pagaste.');
+        tarjeta.saldo += monto;
+        transaction.tarjetaId = tarjeta.id;
+        transaction.tarjetaNombre = tarjeta.nombre;
     }
     
     state.transactions.push(transaction);
@@ -3991,14 +3996,38 @@ function abonarPagar(id){
 }
 
 // ========== PRÉSTAMOS ==========
-function savePrestamo(){const entidad=document.getElementById('prest-entidad').value,monto=leerMonto(document.getElementById('prest-monto').value);state.prestamos.push({id:uid(),entidad,monto,cuota:calculateLoan(),cuotasPagadas:0,cuotasTotal:parseInt(document.getElementById('prest-cuotas').value)});save();closeModal('modal-prestamo');renderAll();}
+function savePrestamo(){
+  const entidad=document.getElementById('prest-entidad').value.trim(),monto=leerMonto(document.getElementById('prest-monto').value);
+  const cuotasTotal=parseInt(document.getElementById('prest-cuotas').value),tasa=leerMonto(document.getElementById('prest-tasa').value)||0;
+  if(!entidad)return alert('Escribe la entidad del préstamo.');
+  if(!(monto>0))return alert('Escribe un monto válido.');
+  if(!(cuotasTotal>=1))return alert('Escribe el número de cuotas (1 o más).');
+  state.prestamos.push({id:uid(),entidad,monto,tasaInteres:tasa,cuota:calculateLoan(),cuotasPagadas:0,cuotasTotal});save();closeModal('modal-prestamo');renderAll();
+}
+// Tasa mensual implícita en (monto, cuota, n): la cuota puede haberse editado
+// a mano, así que se deduce de ella en vez de usar la tasa guardada.
+function tasaMensualImplicita(monto, cuota, n) {
+  if (!(monto > 0) || !(cuota > 0) || !(n >= 1) || cuota * n <= monto + 0.01) return 0;
+  const cuotaCon = r => monto * r / (1 - Math.pow(1 + r, -n));
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 100; i++) { const mid = (lo + hi) / 2; if (cuotaCon(mid) > cuota) hi = mid; else lo = mid; }
+  return (lo + hi) / 2;
+}
+function saldoPrestamo(p) {
+  const k = p.cuotasPagadas || 0, n = p.cuotasTotal || 0;
+  if (n && k >= n) return 0;
+  const r = tasaMensualImplicita(p.monto, p.cuota, n);
+  const saldo = r === 0 ? p.monto - p.cuota * k
+    : p.monto * Math.pow(1 + r, k) - p.cuota * (Math.pow(1 + r, k) - 1) / r;
+  return Math.max(0, saldo);
+}
 function renderPrestamos(){
     const c=document.getElementById('prestamos-list');if(!c)return;
     if(state.prestamos.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🏦</div><div class="es-title">Sin préstamos registrados</div><div class="es-sub">Agrega tus préstamos bancarios para llevar control de cuotas, intereses y saldo.</div><button class="btn-empty-secondary" onclick="openModal('modal-prestamo')">➕ Agregar préstamo</button></div>`;return;}
     let totalPrestado=0;
     c.innerHTML=state.prestamos.map(p=>{
         totalPrestado+=p.monto;
-        const cuotasPagadas=p.cuotasPagadas||0,progreso=(cuotasPagadas/p.cuotasTotal)*100,restante=p.monto-(p.cuota*cuotasPagadas);
+        const cuotasPagadas=p.cuotasPagadas||0,progreso=p.cuotasTotal?(cuotasPagadas/p.cuotasTotal)*100:0,restante=saldoPrestamo(p);
         return `<div class="card card-debt"><div class="debt-header"><div><div class="debt-title">${esc(p.entidad)}</div><div class="debt-meta">Cuota mensual: ${fL(p.cuota)}</div></div><div class="interest-badge">${p.cuotasPagadas||0}/${p.cuotasTotal} pagadas</div></div><div class="debt-progress"><div class="debt-progress-bar" style="width: ${progreso}%; background: var(--blue);"></div></div><div class="debt-stats"><div class="debt-stat"><span>Total Préstamo</span><strong>${fL(p.monto)}</strong></div><div class="debt-stat"><span>Saldo Aprox.</span><strong>${fL(restante)}</strong></div></div><div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px">
   <button class="btn btn-secondary" onclick=\"pagarCuotaPrestamo('${esc(p.id)}')\"" style="font-size:13px">Registrar Pago (${fL(p.cuota)})</button>
   <button onclick=\"editarPrestamo('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -4118,12 +4147,15 @@ function actualizarSimulador() {
 function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
     const pagoMinimo=tarjeta.calcularMinimo&&tarjeta.saldo>0?Math.min(tarjeta.saldo,Math.max(tarjeta.saldo*0.05,100)):0;
-    const montoStr=prompt(`Ingresa el monto a abonar a ${esc(tarjeta.nombre)}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
+    const montoStr=prompt(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
-    tarjeta.saldo=Math.max(0,tarjeta.saldo-monto);
-    state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${esc(tarjeta.nombre)}`,pago:'efectivo',tipo:'fijo',date:new Date().toISOString(),notas:`Abono a tarjeta ${esc(tarjeta.nombre)}`});
-    save();renderAll();alert(`✅ Pago de ${fL(monto)} registrado.\nNuevo saldo de tarjeta: ${fL(tarjeta.saldo)}`);
+    const cuenta=confirm(`¿De dónde sale el pago de ${fL(monto)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+    tarjeta.saldo=Math.round((tarjeta.saldo-monto)*100)/100;
+    // La compra con tarjeta ya se registró como gasto: el pago solo mueve
+    // dinero de la cuenta a la tarjeta (baja la cuenta, no es un gasto nuevo).
+    state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${tarjeta.nombre}`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:tarjeta.id,date:new Date().toISOString(),notas:`Abono a tarjeta ${tarjeta.nombre}`});
+    save();renderAll();alert(`✅ Pago de ${fL(monto)} registrado.\nNuevo saldo de tarjeta: ${fL(tarjeta.saldo)}${tarjeta.saldo<0?' (saldo a favor)':''}`);
 }
 function ajustarSaldoTarjeta(id){const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;const nuevoSaldo=parseFloat(prompt(`Saldo actual: ${fL(tarjeta.saldo)}\nNuevo saldo:`));if(!isNaN(nuevoSaldo)){tarjeta.saldo=nuevoSaldo;save();renderAll();}}
 function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
@@ -5381,6 +5413,16 @@ function migrarCuentasIniciales() {
     });
   state.cuentasIniciales = c;
   state.cuentasInicialesV = 2;
+}
+
+// Antes, el pago de tarjeta se registraba como un gasto más (la compra ya lo
+// era) y sin cuenta: el balance bajaba dos veces y la cuenta no bajaba.
+function migrarPagosTarjeta() {
+  (state.transactions || []).forEach(t => {
+    if (t.type !== 'expense' || t.cat !== 'Pago Tarjeta' || t.esTransferencia) return;
+    t.esTransferencia = true;
+    if (!t.cuenta) t.cuenta = t.pago === 'ahorro' ? 'ahorro' : 'efectivo';
+  });
 }
 
 function getCuentaBalance(cuenta) {
@@ -6682,6 +6724,12 @@ async function _eliminarFactura(id) {
 }
 
 async function saveStateToDB(stateObj) {
+  // Con PIN desbloqueado, la copia de IDB también va cifrada con la DEK
+  // (antes quedaba en plano y el PIN no protegía nada en reposo).
+  const meta = { _version: '1.0.0', _lastSave: new Date().toISOString() };
+  const toSave = _sessionDEK
+    ? Object.assign({ _enc: await _encryptState(stateObj, _sessionDEK) }, meta)
+    : Object.assign({}, stateObj, meta);
   // FIX: helper interno reutilizable para reintento con conexión fresca
   const _doSave = async () => {
     const db = await initDB();
@@ -6696,7 +6744,6 @@ async function saveStateToDB(stateObj) {
         return reject(e);
       }
       const store = tx.objectStore(IDB_STORE);
-      const toSave = Object.assign({}, stateObj, { _version: '1.0.0', _lastSave: new Date().toISOString() });
       try {
         store.put(toSave, 'current_state');
       } catch (e) {
@@ -6734,9 +6781,17 @@ async function loadStateFromDB() {
       const store = tx.objectStore(IDB_STORE);
       const request = store.get('current_state');
       request.onsuccess = () => {
-        if (request.result) {
+        const rec = request.result;
+        if (rec && rec._enc) {
+          // Copia cifrada: solo se puede leer con la DEK de la sesión
+          if (!_sessionDEK) { resolve(null); return; }
+          _decryptState(rec._enc, _sessionDEK).then(obj => {
+            if (obj) console.log('📂 Estado cifrado cargado desde IndexedDB');
+            resolve(obj || null);
+          }, () => resolve(null));
+        } else if (rec) {
           console.log('📂 Estado cargado desde IndexedDB');
-          resolve(request.result);
+          resolve(rec);
         } else {
           console.log('⚠️ IDB vacío, usando localStorage como respaldo');
           resolve(null);
@@ -6839,6 +6894,7 @@ async function _completarCargaApp() {
     if (state.setup) saveStateToDB(state);
   }
   migrarCuentasIniciales();
+  migrarPagosTarjeta();
   purgarEliminadosViejos();
   // Renderizar la app con los datos ya cargados
   if (state.setup) {
@@ -6909,6 +6965,7 @@ window.onload = async function() {
   }
 
   migrarCuentasIniciales();
+  migrarPagosTarjeta();
   purgarEliminadosViejos();
   verificarPINmejorado();
   renderBiometriaConfig();
@@ -7398,7 +7455,27 @@ const cloudSync = {
     }
   },
 
-
+  /** Metadatos del blob remoto, o null si el usuario aún no tiene blob.
+      Con { strict: true } lanza en error de red/servidor en vez de devolver
+      null, para que quien va a subir no confunda "no pude leer" con "no hay". */
+  async getRemoteInfo({ strict = false } = {}) {
+    if (!this.user || !this.client) {
+      if (strict) throw new Error('No autenticado');
+      return null;
+    }
+    try {
+      const { data, error } = await this.client
+        .from('encrypted_states')
+        .select('version, updated_at, size_bytes, device_id, device_name')
+        .eq('user_id', this.user.id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data || null;
+    } catch (e) {
+      if (strict) throw e;
+      return null;
+    }
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // FASE 3 + 4: AUTO-SYNC, INDICADOR, CHECK ON-OPEN, MERGE INTELIGENTE
@@ -7422,7 +7499,8 @@ const cloudSync = {
   },
 
   _scheduleAutoSync() {
-    if (!this.user || !this.isEnabled() || this._isSyncing) return;
+    if (!this.user || !this.isEnabled()) return;
+    if (this._isSyncing) { this._resyncPendiente = true; return; }
     if (this._autoSyncTimer) clearTimeout(this._autoSyncTimer);
     this._updateIndicator('pending');
     this._autoSyncTimer = setTimeout(async () => {
@@ -7471,7 +7549,7 @@ const cloudSync = {
       const remoteV = info.version || 0;
       const localV  = this.getLocalSyncVersion();
       const diffMs  = Date.now() - new Date(info.updated_at).getTime();
-      if (remoteV > localV && diffMs > 10000 && info.device_name !== this.getDeviceName()) {
+      if (remoteV > localV && diffMs > 10000 && info.device_id !== this.getDeviceId()) {
         this._showNewerVersionBanner(info);
       } else {
         this._updateIndicator('synced', 'v' + remoteV);
@@ -7620,7 +7698,9 @@ const cloudSync = {
       const dekData = (typeof _loadDEKFromStorage === 'function') ? _loadDEKFromStorage() : null;
       if (!dekData || !localStorage.getItem('finanzas_pin_salt')) return { ok: false, error: 'Faltan datos de cifrado' };
 
-      const remoteInfo = await this.getRemoteInfo();
+      let remoteInfo;
+      try { remoteInfo = await this.getRemoteInfo({ strict: true }); }
+      catch (e) { return { ok: false, error: 'No se pudo consultar la nube: ' + e.message }; }
       const localV = this.getLocalSyncVersion();
       let mergeStats = null;
 
@@ -7652,7 +7732,8 @@ const cloudSync = {
             console.log('☁️ Auto-merge OK: +'+ diff.totalRemoteNew +' remotos, +'+ diff.totalLocalNew +' locales');
           }
         } else if (!dl.noRemote) {
-          console.warn('☁️ Auto-merge download falló:', dl.error);
+          // Subir ahora reemplazaría datos más nuevos de otro dispositivo
+          return { ok: false, error: 'No se pudo bajar la versión más nueva de la nube: ' + dl.error };
         }
       }
 
@@ -7661,6 +7742,10 @@ const cloudSync = {
       return uploadResult;
     } finally {
       this._isSyncing = false;
+      if (this._resyncPendiente) {
+        this._resyncPendiente = false;
+        this._scheduleAutoSync();
+      }
     }
   }
 };
@@ -7936,7 +8021,9 @@ async function subirDatosCloud() {
     return;
   }
   // Verificar si hay versión más nueva en la nube
-  const remoteInfo = await cloudSync.getRemoteInfo();
+  let remoteInfo;
+  try { remoteInfo = await cloudSync.getRemoteInfo({ strict: true }); }
+  catch (e) { alert('❌ No se pudo consultar la nube:\n\n' + e.message); return; }
   const localV = cloudSync.getLocalSyncVersion();
 
   if (remoteInfo && remoteInfo.version > localV) {
@@ -7952,8 +8039,10 @@ async function subirDatosCloud() {
         openModal('modal-cloud-merge');
         return;
       }
+    } else if (!dl.noRemote) {
+      if (!confirm('⚠️ La nube tiene una versión más nueva (subida desde ' + (remoteInfo.device_name || 'otro dispositivo') + '), pero no se pudo bajar:\n\n' + dl.error + '\n\nSi subes ahora la reemplazarás y se perderán los cambios hechos en ese dispositivo. ¿Subir de todos modos?')) return;
     }
-    // Si diff vacío o download falló, subir normalmente
+    // Si diff vacío, subir normalmente
   }
   await _doDirectUpload(btn);
 }
