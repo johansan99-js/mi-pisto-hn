@@ -1941,6 +1941,21 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <button class="btn btn-primary" onclick="saveTarjeta()">Guardar Tarjeta</button>
   </div>
 </div>
+<div id="modal-simulador" class="modal" onclick="closeModalIfBg(event,'modal-simulador')">
+  <div class="modal-content">
+    <h3>💸 El verdadero costo</h3>
+    <p id="sim-nombre" style="font-size:12px;color:var(--text2);margin-bottom:12px"></p>
+    <div style="background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);padding:10px;border-radius:8px;margin-bottom:14px;font-size:13px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">⚠️ Si pagas solo el mínimo</div>
+      <div id="sim-minimo"></div>
+    </div>
+    <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">¿Y si pagas cada mes…?</label>
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="sim-pago" class="input-field" placeholder="L 0.00" oninput="actualizarSimulador()">
+    <div id="sim-resultado" style="background:var(--bg3);padding:10px;border-radius:8px;margin:6px 0 12px;font-size:13px;line-height:1.5"></div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Estimación sin nuevas compras, con la tasa de la tarjeta y la regla de pago mínimo de la app (5% del saldo, mínimo L.100). Tu banco puede calcular el mínimo distinto (intereses + % del capital + cargos).</p>
+    <button class="btn btn-secondary" onclick="closeModal('modal-simulador')">Cerrar</button>
+  </div>
+</div>
 <div id="modal-transferencia-prog" class="modal" onclick="closeModalIfBg(event,'modal-transferencia-prog')">
   <div class="modal-content">
     <h3 style="margin-bottom:16px">🔁 Nueva Transferencia Programada</h3>
@@ -4023,9 +4038,9 @@ function renderTarjetas(){
     let totalDeuda=0,totalPagoMinimo=0;
     container.innerHTML=state.tarjetas.map(t=>{
         totalDeuda+=t.saldo;
-        const pagoMinimo=t.calcularMinimo?Math.max(t.saldo*0.05,100):0,interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo;
+        const pagoMinimo=t.calcularMinimo&&t.saldo>0?Math.min(t.saldo,Math.max(t.saldo*0.05,100)):0,interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo;
         const hoy=new Date().getDate();let estadoCorte='';if(hoy>=t.corte&&hoy<=t.pago)estadoCorte='🟡 En periodo de pago';else if(hoy>t.pago)estadoCorte='🔴 Pago vencido';
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div></div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ Pago Mínimo:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo)}</span></div></div><div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">✏️ Ajustar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div></div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ Pago Mínimo:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo)}</span></div></div>${avisoCostoReal(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">✏️ Ajustar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -4033,9 +4048,76 @@ function renderTarjetas(){
         else{resumenContainer.innerHTML='<p style="font-size:12px; color:var(--text2); text-align:center;">Sin saldos en tarjetas de crédito.</p>';}
     }
 }
+// ═══ SIMULADOR "EL VERDADERO COSTO" ═══════════════════════════════════
+// Mes a mes: se suma el interés y luego se paga. Sin pagoFijo usa la
+// regla de pago mínimo de la app (5% del saldo, mínimo L.100).
+const SIM_MAX_MESES = 600;
+function simularPagoTarjeta(saldo, tasaAnual, pagoFijo) {
+  const r = (tasaAnual || 0) / 100 / 12;
+  let meses = 0, interes = 0;
+  while (saldo > 0.005 && meses < SIM_MAX_MESES) {
+    const i = saldo * r;
+    const pago = pagoFijo ? pagoFijo : Math.max(saldo * 0.05, 100);
+    if (pago <= i) return { meses: Infinity, interes: Infinity, nunca: true };
+    interes += i;
+    saldo += i - Math.min(pago, saldo + i);
+    meses++;
+  }
+  if (saldo > 0.005) return { meses: Infinity, interes: Infinity, nunca: true };
+  return { meses, interes, nunca: false };
+}
+function cuotaParaSaldarEn(saldo, tasaAnual, meses) {
+  const r = (tasaAnual || 0) / 100 / 12;
+  return r === 0 ? saldo / meses : saldo * r / (1 - Math.pow(1 + r, -meses));
+}
+function fmtDuracion(meses) {
+  if (meses < 12) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+  const a = Math.floor(meses / 12), m = meses % 12;
+  return `${a} ${a === 1 ? 'año' : 'años'}` + (m ? ` y ${m} ${m === 1 ? 'mes' : 'meses'}` : '');
+}
+function avisoCostoReal(t) {
+  if (!(t.saldo > 0) || !(t.tasaInteres > 0)) return '';
+  const min = simularPagoTarjeta(t.saldo, t.tasaInteres);
+  const texto = min.nunca
+    ? 'Pagando solo el mínimo <strong>nunca terminas</strong> de pagar esta tarjeta'
+    : `Pagando solo el mínimo: <strong>${fmtDuracion(min.meses)}</strong> y <strong>${fL(min.interes)}</strong> en intereses`;
+  return `<div style="margin:-5px 0 12px;padding:9px 10px;border-radius:8px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between"><span>⚠️ ${texto}</span><button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;width:auto;flex-shrink:0;margin:0" onclick="abrirSimuladorTarjeta('${esc(t.id)}')">🔍 Costo real</button></div>`;
+}
+let _simTarjetaId = null;
+function abrirSimuladorTarjeta(id) {
+  const t = state.tarjetas.find(x => x.id === id);
+  if (!t) return;
+  _simTarjetaId = id;
+  document.getElementById('sim-nombre').textContent = `${t.nombre} · Saldo ${fL(t.saldo)} · Tasa ${t.tasaInteres}% anual`;
+  const min = simularPagoTarjeta(t.saldo, t.tasaInteres);
+  document.getElementById('sim-minimo').innerHTML = min.nunca
+    ? 'El pago mínimo no alcanza a bajar la deuda: <strong>nunca terminas de pagar</strong> (más de 50 años).'
+    : `Terminas en <strong>${fmtDuracion(min.meses)}</strong> y pagas <strong>${fL(min.interes)}</strong> en intereses.`;
+  document.getElementById('sim-pago').value = Math.ceil(cuotaParaSaldarEn(t.saldo, t.tasaInteres, 12)).toFixed(2);
+  actualizarSimulador();
+  openModal('modal-simulador');
+}
+function actualizarSimulador() {
+  const t = state.tarjetas.find(x => x.id === _simTarjetaId);
+  const out = document.getElementById('sim-resultado');
+  if (!t || !out) return;
+  const pago = leerMonto(document.getElementById('sim-pago').value);
+  if (!(pago > 0)) { out.innerHTML = '<span style="color:var(--text2)">Escribe un pago mensual.</span>'; return; }
+  const fijo = simularPagoTarjeta(t.saldo, t.tasaInteres, pago);
+  if (fijo.nunca) {
+    out.innerHTML = `Con ${fL(pago)}/mes <strong style="color:var(--red)">nunca terminas</strong>: el interés del primer mes (${fL(t.saldo * t.tasaInteres / 100 / 12)}) es igual o mayor que tu pago.`;
+    return;
+  }
+  const min = simularPagoTarjeta(t.saldo, t.tasaInteres);
+  let ahorro = '';
+  if (min.nunca) ahorro = '<br>✅ En vez de no terminar nunca con el mínimo.';
+  else if (min.interes - fijo.interes >= 1) ahorro = `<br>✅ Te ahorras <strong style="color:var(--green)">${fL(min.interes - fijo.interes)}</strong> en intereses` + (min.meses > fijo.meses ? ` y ${fmtDuracion(min.meses - fijo.meses)}.` : '.');
+  out.innerHTML = `Terminas en <strong>${fmtDuracion(fijo.meses)}</strong> y pagas <strong>${fL(fijo.interes)}</strong> en intereses.${ahorro}`;
+}
+
 function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
-    const pagoMinimo=tarjeta.calcularMinimo?Math.max(tarjeta.saldo*0.05,100):0;
+    const pagoMinimo=tarjeta.calcularMinimo&&tarjeta.saldo>0?Math.min(tarjeta.saldo,Math.max(tarjeta.saldo*0.05,100)):0;
     const montoStr=prompt(`Ingresa el monto a abonar a ${esc(tarjeta.nombre)}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
