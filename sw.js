@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v20-restored';
+const VERSION = 'v21-cdn-offline';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -70,6 +70,14 @@ const ASSETS_REQUIRED = [
 const ASSETS_OPTIONAL = [
   BASE_PATH + 'icon-192.png',
   BASE_PATH + 'icon-512.png'
+];
+
+// Librerías CDN con versión fija (inmutables): se cachean para que gráficas,
+// Excel y el SDK de sync carguen sin conexión. Deben coincidir con index.html.
+const CDN_LIBS = [
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+  'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'
 ];
 
 // ── HELPER: Fetch con timeout compatible ──
@@ -109,6 +117,14 @@ self.addEventListener('install', event => {
         ASSETS_OPTIONAL.map(url =>
           cache.add(url).catch(() => {
             // Silencioso - los iconos pueden no existir
+          })
+        )
+      );
+
+      await Promise.allSettled(
+        CDN_LIBS.map(url =>
+          cache.add(new Request(url, { mode: 'cors', credentials: 'omit' })).catch(err => {
+            console.warn(`⚠️ No se pudo cachear librería ${url}:`, err.message);
           })
         )
       );
@@ -181,7 +197,26 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Ignorar CDNs externos (Tesseract, Chart.js, SheetJS, etc.)
+  // Librerías CDN versionadas: cache-first (el contenido nunca cambia)
+  if (CDN_LIBS.includes(url.href)) {
+    event.respondWith((async () => {
+      const cached = await caches.match(url.href);
+      if (cached) return cached;
+      try {
+        const resp = await timeoutFetch(event.request, TIMEOUTS.EXTERNAL);
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(url.href, clone).catch(() => {}));
+        }
+        return resp;
+      } catch (e) {
+        return new Response('', { status: 503, statusText: 'Offline — librería no disponible' });
+      }
+    })());
+    return;
+  }
+
+  // Resto de externos (Tesseract, API de Supabase, etc.): solo red
   const isExternal = url.origin !== self.location.origin;
   if (isExternal) {
     event.respondWith(
@@ -222,7 +257,7 @@ self.addEventListener('fetch', event => {
         const fresh = await timeoutFetch(event.request, TIMEOUTS.NAVIGATION);
         return fresh;
       } catch (e) {
-        return caches.match(BASE_PATH + 'offline.html') ||
+        return (await caches.match(BASE_PATH + 'offline.html')) ||
                new Response('Offline', { status: 503 });
       }
     })());
@@ -244,10 +279,10 @@ self.addEventListener('fetch', event => {
         })
         .catch(() => null);
 
-      return cachedResponse || fetchPromise || new Response('', {
+      return cachedResponse || fetchPromise.then(r => r || new Response('', {
         status: 503,
         headers: { 'Content-Type': 'text/plain' }
-      });
+      }));
     })
   );
 });
