@@ -137,7 +137,18 @@ async function getRatesFromApi() {
   const midRates = apiResult.midRates;
   const source = apiResult.source;
 
-  const bchUSD = await tryFetchBCHOfficial();
+  let bchUSD = await tryFetchBCHOfficial();
+  // El scraper toma cualquier número en rango del HTML del BCH, así que puede
+  // agarrar una cifra que no es la tasa del día: se contrasta con la API.
+  const MAX_DESVIO_BCH = 0.015;
+  if (bchUSD) {
+    const desvio = Math.abs(bchUSD.mid - midRates.USD) / midRates.USD;
+    if (desvio > MAX_DESVIO_BCH) {
+      console.warn('  ⚠️ BCH (' + bchUSD.mid.toFixed(4) + ') se desvía ' + (desvio * 100).toFixed(1) +
+        '% de la API (' + midRates.USD.toFixed(4) + '), se descarta');
+      bchUSD = null;
+    }
+  }
 
   const ratesOut = {};
   const legacyRates = {};
