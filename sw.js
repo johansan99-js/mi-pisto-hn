@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v21-cdn-offline';
+const VERSION = 'v22-fixes';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -163,16 +163,19 @@ self.addEventListener('fetch', event => {
   // ── tasas.json: NETWORK-FIRST con fallback completo ──
   if (url.pathname.endsWith('/tasas.json')) {
     event.respondWith((async () => {
+      // La app pide tasas.json?d=YYYY-MM-DD: se guarda y busca sin el query
+      // para que, sin conexión, un día nuevo encuentre la última copia.
+      const cacheKey = url.origin + url.pathname;
       try {
         const networkResp = await timeoutFetch(event.request, TIMEOUTS.RATES);
         if (networkResp && networkResp.status === 200) {
           const clone = networkResp.clone();
-          caches.open(CACHE_NAME).then(c => c.put(event.request, clone).catch(() => {}));
+          caches.open(CACHE_NAME).then(c => c.put(cacheKey, clone).catch(() => {}));
           return networkResp;
         }
       } catch (e) { /* offline o timeout */ }
 
-      const cached = await caches.match(event.request);
+      const cached = await caches.match(cacheKey);
       if (cached) return cached;
 
       // Fallback con tasas por defecto

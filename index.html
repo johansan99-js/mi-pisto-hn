@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#130507">
 <!-- P1-6: Content Security Policy. unsafe-inline temporal mientras se migra a delegación de eventos.
      Las CDNs listadas son las que carga la app: Chart.js (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://open.er-api.com https://api.exchangerate-api.com https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
 <title>Mi Pisto HN · Tu dinero, tu control</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -2078,7 +2078,7 @@ const USD_HNL_VALID_RANGE = { min: 20, max: 35 };
 
 // ========== VARIABLES GLOBALES Y ESTADO ==========
 const LS_KEY='mifinanzashn_pro_v20_full';
-let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
+let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
 
 // ────────────────────────────────────────────────────────────────────
 // CARGA INICIAL — detecta si el state está cifrado o en plano
@@ -2155,7 +2155,7 @@ async function loadAndDecryptState() {
   console.log('✅ State descifrado y cargado');
   return true;
 }
-if (state.transactions && state.transactions.length > 0) { state.transactions.forEach(t => { if (t.type === 'expense' && !t.tipo) { t.tipo = (t.cat === 'Vivienda' || t.cat === 'Alimentación' || t.cat === '🏠 Vivienda') ? 'fijo' : 'extra'; } }); save(); }
+if (state.transactions && state.transactions.length > 0) { state.transactions.forEach(t => { if (t.type === 'expense' && !t.tipo) { t.tipo = (t.cat === 'Vivienda' || t.cat === 'Alimentación' || t.cat === '🏠 Vivienda') ? 'fijo' : 'extra'; } }); }
 let mainChart = null;
 // P0-1: appPIN ahora almacena el HASH (no el PIN en crudo)
 // FIX SEGURIDAD: recordarPIN deshabilitado permanentemente — era un bypass
@@ -2293,9 +2293,19 @@ function evaluarExpresionSegura(expr) {
   return result;
 }
 
+// Igual que parseMonto pero devuelve NaN (como parseFloat) si no es válido,
+// para no cambiar las validaciones isNaN()/||0 de quien lo llama.
+function leerMonto(str) {
+  const n = parseMonto(str);
+  return n === null ? NaN : n;
+}
+
 function parseMonto(str) {
   if (str === null || str === undefined) return null;
-  let s = String(str).trim().replace(',', '.');
+  // En Honduras la coma separa miles ("1,500.00"): una coma seguida de
+  // exactamente 3 dígitos se descarta; cualquier otra se toma como decimal.
+  let s = String(str).trim().replace(/\s+/g, '')
+    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(',', '.');
   // Si no es un número simple pero parece una operación (+ - * /), intentar
   // evaluarla como calculadora rápida antes de rechazarla.
   if (!/^-?\d+(\.\d+)?$/.test(s) && /[+\-*/()]/.test(s)) {
@@ -2560,23 +2570,26 @@ const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
 function save() {
   // Si no hay DEK en sesión, significa que el usuario no ha desbloqueado
   // con PIN (ej. durante onboarding inicial). Guardar en plano temporalmente.
+  // Devuelve una promesa que se cumple cuando localStorage e IndexedDB ya
+  // están escritos: quien recarga la página justo después debe esperarla.
+  const guardarIDB = () => saveStateToDB(state).catch(e => console.error('❌ Error guardando en IndexedDB:', e));
   if (!_sessionDEK) {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
-    saveStateToDB(state);
-    return;
+    return guardarIDB();
   }
   
   // Cifrar state con DEK y guardar
-  _encryptState(state, _sessionDEK).then(encrypted => {
+  return _encryptState(state, _sessionDEK).then(encrypted => {
     localStorage.setItem(LS_KEY, encrypted);
-    saveStateToDB(state); // IDB sigue en plano (acceso rápido, no crítico)
+    const idb = guardarIDB(); // IDB sigue en plano (acceso rápido, no crítico)
     // FASE 3: disparar auto-sync si el usuario tiene la nube activada
     if (typeof cloudSync !== 'undefined') cloudSync._scheduleAutoSync();
+    return idb;
   }).catch(error => {
     console.error('❌ Error cifrando state:', error);
     // Fallback: guardar en plano para no perder datos
     localStorage.setItem(LS_KEY, JSON.stringify(state));
-    saveStateToDB(state);
+    return guardarIDB();
   });
 }
 const todayStr=()=>new Date().toISOString().split('T')[0];
@@ -3186,23 +3199,23 @@ function olvidePIN(){
 function toggleRecordarPIN(){recordarPIN=document.getElementById('recordar-pin').checked;localStorage.setItem('finanzas_recordar',recordarPIN);}
 
 function syncObSaldo(){
-  const ef=parseFloat(document.getElementById('ob-efectivo')?.value)||0;
-  const ah=parseFloat(document.getElementById('ob-ahorro')?.value)||0;
+  const ef=leerMonto(document.getElementById('ob-efectivo')?.value)||0;
+  const ah=leerMonto(document.getElementById('ob-ahorro')?.value)||0;
   const total=ef+ah;
   const salEl=document.getElementById('ob-salario');
   if(salEl&&total>0)salEl.value=total.toFixed(2);
 }
 async function finishOnboarding(){
   const nombre=document.getElementById('ob-nombre').value.trim();
-  const saldoInicial=parseFloat(document.getElementById('ob-salario').value)||0;
+  const saldoInicial=leerMonto(document.getElementById('ob-salario').value)||0;
   if(!nombre||saldoInicial===0)return alert('Completa todos los campos');
   // SEGURIDAD: state.nombre se interpola en varias plantillas HTML (saludo,
   // conciliación, etc.). Sin esto, un nombre como "<img src=x onerror=...>"
   // ejecuta código arbitrario cada vez que se renderiza el dashboard.
   if(/[<>]/.test(nombre))return alert('El nombre no puede contener los caracteres < o >');
   if(nombre.length>100)return alert('El nombre es demasiado largo (máximo 100 caracteres)');
-  const saldoEfectivo=parseFloat(document.getElementById('ob-efectivo')?.value)||0;
-  const saldoAhorro=parseFloat(document.getElementById('ob-ahorro')?.value)||0;
+  const saldoEfectivo=leerMonto(document.getElementById('ob-efectivo')?.value)||0;
+  const saldoAhorro=leerMonto(document.getElementById('ob-ahorro')?.value)||0;
   
   // ────────────────────────────────────────────────────────────
   // OBLIGAR creación de PIN antes de finalizar onboarding
@@ -3261,6 +3274,7 @@ async function finishOnboarding(){
     nombre,
     saldoInicial,
     cuentasIniciales:{efectivo:saldoEfectivo,ahorro:saldoAhorro},
+    cuentasInicialesV:2,
     cuentas:{efectivo:saldoEfectivo,ahorro:saldoAhorro}, // legacy
     transactions:[],
     goals:[],
@@ -3287,7 +3301,7 @@ async function finishOnboarding(){
 function toggleFabMenu_legacy(){/* reemplazada por la v2 */}
 document.addEventListener('click_legacy',(e)=>{/* reemplazado por la v2 */});
 
-function calculateLoan(){const P=parseFloat(document.getElementById('prest-monto').value)||0,r=(parseFloat(document.getElementById('prest-tasa').value)||0)/100/12,n=parseInt(document.getElementById('prest-cuotas').value)||1;let cuota=r===0?P/n:P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);document.getElementById('prest-cuota-calc').value=fL(cuota);const interes=P*r,capital=cuota-interes;document.getElementById('prest-breakdown').classList.remove('hidden');document.getElementById('prest-breakdown').innerHTML=`<div class="loan-breakdown-row"><span>Cuota mensual:</span><strong>${fL(cuota)}</strong></div><div class="loan-breakdown-row"><span>→ Interés:</span><span style="color:var(--red)">${fL(interes)}</span></div>`;return cuota}
+function calculateLoan(){const P=leerMonto(document.getElementById('prest-monto').value)||0,r=(leerMonto(document.getElementById('prest-tasa').value)||0)/100/12,n=parseInt(document.getElementById('prest-cuotas').value)||1;let cuota=r===0?P/n:P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);document.getElementById('prest-cuota-calc').value=fL(cuota);const interes=P*r,capital=cuota-interes;document.getElementById('prest-breakdown').classList.remove('hidden');document.getElementById('prest-breakdown').innerHTML=`<div class="loan-breakdown-row"><span>Cuota mensual:</span><strong>${fL(cuota)}</strong></div><div class="loan-breakdown-row"><span>→ Interés:</span><span style="color:var(--red)">${fL(interes)}</span></div>`;return cuota}
 function checkCreditCard(){const cuentaEl=document.getElementById('gasto-cuenta');const pagoType=cuentaEl?cuentaEl.value:document.getElementById('gasto-pago').value;const tarjetaSelect=document.getElementById('gasto-tarjeta');if(pagoType==='credito'){tarjetaSelect.classList.remove('hidden');tarjetaSelect.innerHTML='<option value="">Selecciona tarjeta...</option>';state.tarjetas.forEach(t=>{tarjetaSelect.innerHTML+=`<option value="${t.id}">${esc(t.nombre)} (Saldo: ${fL(t.saldo)})</option>`})}else{tarjetaSelect.classList.add('hidden')}}
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -3672,8 +3686,8 @@ function _showUndoToast(title, sub, onUndo) {
   toast.id = 'undo-toast-el';
   toast.innerHTML = `
     <div class="undo-toast-info">
-      <div class="undo-toast-title">🗑️ ${title}</div>
-      <div class="undo-toast-sub">${sub}</div>
+      <div class="undo-toast-title">🗑️ ${esc(title)}</div>
+      <div class="undo-toast-sub">${esc(sub)}</div>
     </div>
     <button class="btn-undo" onclick="_undoDeleteFromToast()">Deshacer</button>
     <div class="undo-toast-bar"><div class="undo-toast-bar-fill" id="undo-bar" style="width:100%"></div></div>
@@ -3714,7 +3728,7 @@ function _dismissToast() {
 // Alias para compatibilidad con código existente
 function deleteTx(id) { softDeleteTx(id); }
 
-function saveMeta(){const nombre=document.getElementById('meta-nombre').value,objetivo=parseFloat(document.getElementById('meta-objetivo').value);if(!nombre||!objetivo)return alert('Completa nombre y monto');state.goals.push({id:uid(),nombre,objetivo,actual:parseFloat(document.getElementById('meta-actual').value)||0});save();closeModal('modal-meta');renderAll();['meta-nombre','meta-objetivo','meta-actual'].forEach(id=>document.getElementById(id).value=id==='meta-actual'?'0':'')}
+function saveMeta(){const nombre=document.getElementById('meta-nombre').value,objetivo=leerMonto(document.getElementById('meta-objetivo').value);if(!nombre||!objetivo)return alert('Completa nombre y monto');state.goals.push({id:uid(),nombre,objetivo,actual:leerMonto(document.getElementById('meta-actual').value)||0});save();closeModal('modal-meta');renderAll();['meta-nombre','meta-objetivo','meta-actual'].forEach(id=>document.getElementById(id).value=id==='meta-actual'?'0':'')}
 function openAbono(id){
   const g=state.goals.find(x=>String(x.id)===String(id));
   if(!g)return;
@@ -3870,8 +3884,8 @@ function editarMeta(id) {
 function guardarEdicionMeta() {
   const id = document.getElementById('edit-meta-id').value;
   const nombre = document.getElementById('edit-meta-nombre').value.trim();
-  const objetivo = parseFloat(document.getElementById('edit-meta-objetivo').value);
-  const actual = parseFloat(document.getElementById('edit-meta-actual').value) || 0;
+  const objetivo = leerMonto(document.getElementById('edit-meta-objetivo').value);
+  const actual = leerMonto(document.getElementById('edit-meta-actual').value) || 0;
   
   if (!nombre) { alert('⚠️ El nombre es obligatorio'); return; }
   if (!objetivo || objetivo <= 0) { alert('⚠️ El monto objetivo debe ser mayor a 0'); return; }
@@ -3891,7 +3905,7 @@ function guardarEdicionMeta() {
 function renderDashboardGoals(){const container=document.getElementById('dashboard-goals');if(!container)return;container.innerHTML=state.goals.slice(0,3).map(g=>{const pct=Math.min(100,(g.actual/g.objetivo)*100);return `<div class="goal-mini"><div class="goal-mini-header"><span>${esc(g.nombre)}</span><span>${pct.toFixed(0)}%</span></div><div class="goal-mini-bar"><div class="goal-mini-progress" style="width:${pct}%"></div></div></div>`}).join('')}
 
 // ========== COBRAR Y PAGAR (MEJORADO CON FLUJO DE CAJA) ==========
-function saveCobrar(){const persona=document.getElementById('cobrar-persona').value.trim(),monto=parseFloat(document.getElementById('cobrar-monto').value),pagado=parseFloat(document.getElementById('cobrar-pagado').value)||0;if(!persona||!monto)return;state.receivables.push({id:uid(),persona,monto,pagado,fecha:document.getElementById('cobrar-fecha').value});save();closeModal('modal-cobrar');renderAll();}
+function saveCobrar(){const persona=document.getElementById('cobrar-persona').value.trim(),monto=leerMonto(document.getElementById('cobrar-monto').value),pagado=leerMonto(document.getElementById('cobrar-pagado').value)||0;if(!persona||!monto)return;state.receivables.push({id:uid(),persona,monto,pagado,fecha:document.getElementById('cobrar-fecha').value});save();closeModal('modal-cobrar');renderAll();}
 function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)return;if(state.receivables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🤝</div><div class="es-title">Nadie te debe dinero</div><div class="es-sub">Registra aquí los préstamos que has hecho a otras personas para llevar el control.</div><button class="btn-empty-secondary" onclick="openModal('modal-cobrar')">➕ Registrar cobro pendiente</button></div>`;return;}c.innerHTML=state.receivables.map(r=>{
   const pendiente=r.monto-(r.pagado||0);
   return `<div class="card card-receivable">
@@ -3937,36 +3951,32 @@ function abonarCobrar(id){
   if(!r)return;
   const pendiente=r.monto-(r.pagado||0);
   if(pendiente<=0)return alert('Este cobro ya está saldado ✅');
-  const m=parseFloat(prompt(`¿Cuánto te pagó ${esc(r.persona)}?\nPendiente: ${fL(pendiente)}`));
+  const m=leerMonto(prompt(`¿Cuánto te pagó ${esc(r.persona)}?\nPendiente: ${fL(pendiente)}`));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
   r.pagado=(r.pagado||0)+abono;
-  if(!state.cuentas)state.cuentas={efectivo:0,ahorro:0};
-  state.cuentas.efectivo=(state.cuentas.efectivo||0)+abono;
   state.transactions.push({id:uid(),type:'income',amount:abono,cat:'Cobro Deuda',subcat:`Cobro a ${esc(r.persona)}`,cuenta:'efectivo',date:new Date().toISOString()});
   if(r.pagado>=r.monto){if(confirm(`✅ Cobro saldado. ¿Eliminar el registro de "${esc(r.persona)}"?`)){state.receivables=state.receivables.filter(x=>x.id!==id);}}
   save();renderAll();
 }
 
-function savePagar(){const creditor=document.getElementById('pagar-creditor').value.trim(),monto=parseFloat(document.getElementById('pagar-monto').value),pagado=parseFloat(document.getElementById('pagar-pagado').value)||0;if(!creditor||!monto)return;state.payables.push({id:uid(),creditor,monto,pagado,fecha:document.getElementById('pagar-fecha').value});save();closeModal('modal-pagar');renderAll();}
+function savePagar(){const creditor=document.getElementById('pagar-creditor').value.trim(),monto=leerMonto(document.getElementById('pagar-monto').value),pagado=leerMonto(document.getElementById('pagar-pagado').value)||0;if(!creditor||!monto)return;state.payables.push({id:uid(),creditor,monto,pagado,fecha:document.getElementById('pagar-fecha').value});save();closeModal('modal-pagar');renderAll();}
 function abonarPagar(id){
   const p=state.payables.find(x=>x.id===id);
   if(!p)return;
   const pendiente=p.monto-(p.pagado||0);
   if(pendiente<=0)return alert('Esta deuda ya está saldada ✅');
-  const m=parseFloat(prompt(`¿Cuánto le pagas a ${esc(p.creditor)}?\nPendiente: ${fL(pendiente)}`));
+  const m=leerMonto(prompt(`¿Cuánto le pagas a ${esc(p.creditor)}?\nPendiente: ${fL(pendiente)}`));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
   p.pagado=(p.pagado||0)+abono;
-  if(!state.cuentas)state.cuentas={efectivo:0,ahorro:0};
-  state.cuentas.efectivo=Math.max(0,(state.cuentas.efectivo||0)-abono);
   state.transactions.push({id:uid(),type:'expense',amount:abono,cat:'Pago Deuda',subcat:`Pago a ${esc(p.creditor)}`,cuenta:'efectivo',tipo:'fijo',date:new Date().toISOString()});
   if(p.pagado>=p.monto){if(confirm(`✅ Deuda con "${esc(p.creditor)}" saldada. ¿Eliminar el registro?`)){state.payables=state.payables.filter(x=>x.id!==id);}}
   save();renderAll();
 }
 
 // ========== PRÉSTAMOS ==========
-function savePrestamo(){const entidad=document.getElementById('prest-entidad').value,monto=parseFloat(document.getElementById('prest-monto').value);state.prestamos.push({id:uid(),entidad,monto,cuota:calculateLoan(),cuotasPagadas:0,cuotasTotal:parseInt(document.getElementById('prest-cuotas').value)});save();closeModal('modal-prestamo');renderAll();}
+function savePrestamo(){const entidad=document.getElementById('prest-entidad').value,monto=leerMonto(document.getElementById('prest-monto').value);state.prestamos.push({id:uid(),entidad,monto,cuota:calculateLoan(),cuotasPagadas:0,cuotasTotal:parseInt(document.getElementById('prest-cuotas').value)});save();closeModal('modal-prestamo');renderAll();}
 function renderPrestamos(){
     const c=document.getElementById('prestamos-list');if(!c)return;
     if(state.prestamos.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🏦</div><div class="es-title">Sin préstamos registrados</div><div class="es-sub">Agrega tus préstamos bancarios para llevar control de cuotas, intereses y saldo.</div><button class="btn-empty-secondary" onclick="openModal('modal-prestamo')">➕ Agregar préstamo</button></div>`;return;}
@@ -3993,9 +4003,6 @@ function pagarCuotaPrestamo(id){
   const cuentaOpc=confirm(`¿Pagar cuota de ${fL(prestamo.cuota)}?\n\n[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo`);
   const cuenta=cuentaOpc?'ahorro':'efectivo';
   prestamo.cuotasPagadas=(prestamo.cuotasPagadas||0)+1;
-  if(!state.cuentas)state.cuentas={efectivo:0,ahorro:0};
-  if(cuenta==='ahorro')state.cuentas.ahorro=Math.max(0,(state.cuentas.ahorro||0)-prestamo.cuota);
-  else state.cuentas.efectivo=Math.max(0,(state.cuentas.efectivo||0)-prestamo.cuota);
   state.transactions.push({id:uid(),type:'expense',amount:prestamo.cuota,cat:'Préstamo',subcat:`Cuota ${prestamo.entidad}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
   const restantes=(prestamo.cuotasTotal||0)-(prestamo.cuotasPagadas||0);
   const msg=restantes<=0?`🎉 ¡Préstamo con ${prestamo.entidad} pagado completamente!`:`✅ Cuota registrada. Quedan ${restantes} cuotas.`;
@@ -4004,7 +4011,7 @@ function pagarCuotaPrestamo(id){
 
 // ========== TARJETAS (MEJORADO) ==========
 function saveTarjeta(){
-    const nombre=document.getElementById('tc-nombre').value.trim(),corte=parseInt(document.getElementById('tc-corte').value)||1,pago=parseInt(document.getElementById('tc-pago').value)||15,limite=parseFloat(document.getElementById('tc-limite').value)||0,saldo=parseFloat(document.getElementById('tc-saldo').value)||0,tasa=parseFloat(document.getElementById('tc-tasa').value)||48,calcMinimo=document.getElementById('tc-calcular-minimo').checked;
+    const nombre=document.getElementById('tc-nombre').value.trim(),corte=parseInt(document.getElementById('tc-corte').value)||1,pago=parseInt(document.getElementById('tc-pago').value)||15,limite=leerMonto(document.getElementById('tc-limite').value)||0,saldo=leerMonto(document.getElementById('tc-saldo').value)||0,tasa=leerMonto(document.getElementById('tc-tasa').value)||48,calcMinimo=document.getElementById('tc-calcular-minimo').checked;
     if(!nombre)return alert('Nombre requerido');
     state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[]});
     save();closeModal('modal-tarjeta');renderAll();limpiarFormTarjeta();
@@ -4030,7 +4037,7 @@ function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
     const pagoMinimo=tarjeta.calcularMinimo?Math.max(tarjeta.saldo*0.05,100):0;
     const montoStr=prompt(`Ingresa el monto a abonar a ${esc(tarjeta.nombre)}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
-    if(!montoStr)return;const monto=parseFloat(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
+    if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
     tarjeta.saldo=Math.max(0,tarjeta.saldo-monto);
     state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${esc(tarjeta.nombre)}`,pago:'efectivo',tipo:'fijo',date:new Date().toISOString(),notas:`Abono a tarjeta ${esc(tarjeta.nombre)}`});
@@ -4040,14 +4047,14 @@ function ajustarSaldoTarjeta(id){const tarjeta=state.tarjetas.find(t=>t.id===id)
 function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
 
 // ========== PAGOS RECURRENTES ==========
-function savePagoRecurrente(){const servicio=document.getElementById('pago-servicio').value,monto=parseFloat(document.getElementById('pago-monto').value),dia=parseInt(document.getElementById('pago-dia').value);state.pagosRecurrentes.push({id:uid(),servicio,monto,dia,pagado:0});save();closeModal('modal-pago-recurrente');renderAll();}
+function savePagoRecurrente(){const servicio=document.getElementById('pago-servicio').value,monto=leerMonto(document.getElementById('pago-monto').value),dia=parseInt(document.getElementById('pago-dia').value);state.pagosRecurrentes.push({id:uid(),servicio,monto,dia,pagado:0});save();closeModal('modal-pago-recurrente');renderAll();}
 
 // ── EDITAR / ELIMINAR COBRAR (dinero que me deben) ──────────
 function editarCobrar(id){
   const r=state.receivables.find(x=>x.id===id);if(!r)return;
   const nuevo=prompt(`Editar nombre de "${esc(r.persona)}":`,r.persona);
   if(nuevo===null)return;
-  const monto=parseFloat(prompt('Monto total:',r.monto));
+  const monto=leerMonto(prompt('Monto total:',r.monto));
   if(isNaN(monto)||monto<=0)return;
   r.persona=nuevo.trim()||r.persona;
   r.monto=monto;
@@ -4065,7 +4072,7 @@ function editarPagar(id){
   const p=state.payables.find(x=>x.id===id);if(!p)return;
   const nuevo=prompt(`Editar acreedor "${esc(p.creditor)}":`,p.creditor);
   if(nuevo===null)return;
-  const monto=parseFloat(prompt('Monto total:',p.monto));
+  const monto=leerMonto(prompt('Monto total:',p.monto));
   if(isNaN(monto)||monto<=0)return;
   p.creditor=nuevo.trim()||p.creditor;
   p.monto=monto;
@@ -4083,7 +4090,7 @@ function editarPrestamo(id){
   const p=state.prestamos.find(x=>x.id===id);if(!p)return;
   const entidad=prompt('Entidad bancaria:',p.entidad);
   if(entidad===null)return;
-  const cuota=parseFloat(prompt('Cuota mensual (L):',p.cuota));
+  const cuota=leerMonto(prompt('Cuota mensual (L):',p.cuota));
   if(isNaN(cuota)||cuota<=0)return;
   p.entidad=entidad.trim()||p.entidad;
   p.cuota=cuota;
@@ -4103,7 +4110,7 @@ function editarRecurrente(id){
   if(servicio===null)return;
   const dia=parseInt(prompt('Día de pago (1-31):',p.dia));
   if(isNaN(dia)||dia<1||dia>31)return;
-  const monto=parseFloat(prompt('Monto estimado (L):',p.monto||0));
+  const monto=leerMonto(prompt('Monto estimado (L):',p.monto||0));
   p.servicio=servicio.trim()||p.servicio;
   p.dia=dia;
   if(!isNaN(monto))p.monto=monto;
@@ -4349,7 +4356,7 @@ function renderGastos(){
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div style="flex:1;min-width:0">
                     <div style="font-weight:700;font-size:14px">${concBadge}${esc(t.cat)}${tieneFactura?' 🧾':''}</div>
-                    <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(t.subcat||'')} ${t.banco?'· '+t.banco:''}</div>
+                    <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(t.subcat||'')} ${t.banco?'· '+esc(t.banco):''}</div>
                     <div style="font-size:11px;color:var(--text2)">${new Date(t.date).toLocaleDateString('es-HN')}</div>
                     ${etiqPill}
                     ${splitsHtml}
@@ -4475,7 +4482,7 @@ function renderDashboard(){
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
                 <div style="flex:1;min-width:0">
                     <div style="font-weight:600">${esc(t.cat)} ${tieneFactura?'🧾':''} ${t.esConciliacion?'<span class="badge-conciliacion">⚖️</span>':''}</div>
-                    <div style="font-size:11px;color:var(--text2)">${esc(t.subcat||'')} ${t.banco?'('+t.banco+')':''}</div>
+                    <div style="font-size:11px;color:var(--text2)">${esc(t.subcat||'')} ${t.banco?'('+esc(t.banco)+')':''}</div>
                     ${etiqPill}
                     ${splitsHtml}
                 </div>
@@ -5032,8 +5039,7 @@ function importData(event) {
     }
 
     state = datosRecuperados;
-    save();
-    location.reload();
+    save().then(() => location.reload());
   };
   reader.readAsText(file);
 }
@@ -5055,6 +5061,11 @@ async function verFactura(id) {
         alert('No hay factura adjunta a este gasto.');
         return;
     }
+    // Viene de IDB o de un respaldo importado: solo se acepta una imagen en base64
+    if (!/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/i.test(imagenBase64)) {
+        alert('La factura adjunta no es una imagen válida.');
+        return;
+    }
     
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;justify-content:center;align-items:center;padding:20px';
@@ -5062,7 +5073,7 @@ async function verFactura(id) {
         <div style="position:relative;max-width:90%;max-height:90%">
             <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-40px;right:0;background:var(--red);color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer">✕ Cerrar</button>
             <img src="${imagenBase64}" style="max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
-            <div style="position:absolute;bottom:-40px;left:0;color:var(--text2);font-size:12px">Factura #${gasto.numeroFactura || 'N/A'} • ${new Date(gasto.date).toLocaleDateString()}</div>
+            <div style="position:absolute;bottom:-40px;left:0;color:var(--text2);font-size:12px">Factura #${esc(gasto.numeroFactura || 'N/A')} • ${new Date(gasto.date).toLocaleDateString()}</div>
         </div>
     `;
     document.body.appendChild(modal);
@@ -5266,6 +5277,30 @@ function calcBalance(){
 // el saldo de cada cuenta individualmente, aunque el balance global sea
 // neutral.
 // ═══════════════════════════════════════════════════════════════════════
+// Versiones anteriores sumaban/restaban cobros, abonos y cuotas en state.cuentas
+// además de registrar la transacción, y cuentasIniciales no sobrevivía a la
+// recarga: el saldo contaba esos movimientos dos veces. Se reconstruye el saldo
+// inicial deshaciendo esas mutaciones (de la más reciente a la más antigua; si
+// el Math.max(0) de entonces recortó, se toma el mínimo posible).
+function migrarCuentasIniciales() {
+  if (!state.setup || state.cuentasInicialesV >= 2) return;
+  const c = {
+    efectivo: (state.cuentas && typeof state.cuentas.efectivo === 'number') ? state.cuentas.efectivo : 0,
+    ahorro:   (state.cuentas && typeof state.cuentas.ahorro   === 'number') ? state.cuentas.ahorro   : 0,
+  };
+  (state.transactions || [])
+    .filter(t => (t.cuenta === 'efectivo' || t.cuenta === 'ahorro') && typeof t.amount === 'number' &&
+      ((t.type === 'income' && t.cat === 'Cobro Deuda') ||
+       (t.type === 'expense' && (t.cat === 'Pago Deuda' || t.cat === 'Préstamo'))))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .forEach(t => {
+      if (t.type === 'income') c[t.cuenta] -= t.amount;
+      else c[t.cuenta] = c[t.cuenta] > 0 ? c[t.cuenta] + t.amount : 0;
+    });
+  state.cuentasIniciales = c;
+  state.cuentasInicialesV = 2;
+}
+
 function getCuentaBalance(cuenta) {
   // Migración invisible: si el usuario viene de versión vieja, copiar state.cuentas
   if (!state.cuentasIniciales) {
@@ -5870,9 +5905,9 @@ function renderPapelera() {
   for (var i = 0; i < deleted.length; i++) {
     var t = deleted[i];
     html += '<div class="trash-item">';
-    html += '<div><strong>' + (t.cat || 'Sin categoria') + '</strong> - L.' + t.amount.toFixed(2);
+    html += '<div><strong>' + esc(t.cat || 'Sin categoria') + '</strong> - L.' + t.amount.toFixed(2);
     html += '<br/><small>' + new Date(t.date).toLocaleDateString() + '</small></div>';
-    html += '<button class="btn btn-restore" onclick="restaurarGastoDePapelera(' + t.id + ')">Restaurar</button>';
+    html += '<button class="btn btn-restore" onclick="restaurarGastoDePapelera(\'' + esc(t.id) + '\')">Restaurar</button>';
     html += '</div>';
   }
   trashList.innerHTML = html;
@@ -6026,8 +6061,8 @@ function detectarDuplicados() {
       var fechaCercana = Math.abs(new Date(t1.date) - new Date(t2.date)) < 5 * 60 * 1000;
       if (mismaCantidad && mismaCategoria && fechaCercana) {
         var html = '<div class="duplicate-warning">';
-        html += '<span><strong>⚠️ Duplicado posible:</strong> ' + t1.cat + ' L.' + t1.amount + '</span>';
-        html += '<button class="btn btn-duplicate-action" onclick="eliminarGastoConPapelera(' + t2.id + ')">Eliminar</button>';
+        html += '<span><strong>⚠️ Duplicado posible:</strong> ' + esc(t1.cat) + ' L.' + t1.amount + '</span>';
+        html += '<button class="btn btn-duplicate-action" onclick="eliminarGastoConPapelera(\'' + esc(t2.id) + '\')">Eliminar</button>';
         html += '</div>';
         duplicadosHtml.push(html);
         procesados[t2.id] = true;
@@ -6217,7 +6252,7 @@ function guardarEdicionTx() {
   const id = document.getElementById('edit-tx-id').value; // P1-4: UUID string, no parseInt
   const t = state.transactions.find(x => String(x.id) === String(id));
   if (!t) return;
-  const nuevoMonto = parseFloat(document.getElementById('edit-monto').value);
+  const nuevoMonto = leerMonto(document.getElementById('edit-monto').value);
   if (!nuevoMonto || nuevoMonto <= 0) { alert('Monto inválido'); return; }
   // Ajustar saldo si cambió el monto o tipo
   const montoDiff = nuevoMonto - t.amount;
@@ -6275,9 +6310,9 @@ function renderEtiquetaDropdown(matches, query) {
   const dd = document.getElementById('etiqueta-dropdown');
   if(!dd) return;
   if(matches.length===0 && !query){ dd.classList.remove('open'); return; }
-  let html = matches.map(e=>`<div class="etiqueta-option" onclick="selectEtiqueta('${e.label}')"><span>${e.label}</span><span class="etiqueta-option-count">${e.count}x</span></div>`).join('');
+  let html = matches.map(e=>`<div class="etiqueta-option" data-v="${esc(e.label)}" onclick="selectEtiqueta(this.dataset.v)"><span>${esc(e.label)}</span><span class="etiqueta-option-count">${e.count}x</span></div>`).join('');
   const exact = matches.find(e=>e.label===query);
-  if(query && !exact) html += `<div class="etiqueta-option" onclick="selectEtiqueta('${query}')"><span class="etiqueta-option-new">+ Crear "${query}"</span></div>`;
+  if(query && !exact) html += `<div class="etiqueta-option" data-v="${esc(query)}" onclick="selectEtiqueta(this.dataset.v)"><span class="etiqueta-option-new">+ Crear "${esc(query)}"</span></div>`;
   if(!html){ dd.classList.remove('open'); return; }
   dd.innerHTML = html;
   dd.classList.add('open');
@@ -6310,7 +6345,7 @@ function renderChipsRapidas() {
   const top5 = getEtiquetasGuardadas().slice(0,5);
   if(top5.length===0){ container.innerHTML=''; return; }
   const activa = document.getElementById('etiqueta-input')?.value||'';
-  container.innerHTML = top5.map(e=>`<span class="chip-etiqueta ${e.label===activa?'active':''}" onclick="selectEtiqueta('${e.label}')">${e.label}</span>`).join('');
+  container.innerHTML = top5.map(e=>`<span class="chip-etiqueta ${e.label===activa?'active':''}" data-v="${esc(e.label)}" onclick="selectEtiqueta(this.dataset.v)">${esc(e.label)}</span>`).join('');
 }
 
 // ==========================================
@@ -6721,6 +6756,7 @@ async function _completarCargaApp() {
     if (!state.budgetRules) state.budgetRules = { gastos: 65, ahorro: 20, extra: 15 };
     if (state.setup) saveStateToDB(state);
   }
+  migrarCuentasIniciales();
   purgarEliminadosViejos();
   // Renderizar la app con los datos ya cargados
   if (state.setup) {
@@ -6752,8 +6788,9 @@ window.onload = async function() {
     state = {
       setup: false, nombre: '', saldoInicial: 0,
       cuentas: { efectivo: 0, ahorro: 0 },
+      cuentasIniciales: null, cuentasInicialesV: 0,
       transactions: [], goals: [], receivables: [], payables: [],
-      prestamos: [], tarjetas: [], pagosRecurrentes: [],
+      prestamos: [], tarjetas: [], pagosRecurrentes: [], transferenciasProgramadas: [],
       budgetRules: { gastos: 65, ahorro: 20, extra: 15 }
     };
     // Mostrar modal de PIN (o biometría si está disponible)
@@ -6789,6 +6826,7 @@ window.onload = async function() {
     if (state.setup) saveStateToDB(state);
   }
 
+  migrarCuentasIniciales();
   purgarEliminadosViejos();
   verificarPINmejorado();
   renderBiometriaConfig();
@@ -7370,7 +7408,7 @@ const cloudSync = {
     banner.id = 'cloud-newer-banner';
     banner.className = 'cloud-banner';
     banner.innerHTML =
-      '<span>☁️ Datos nuevos en la nube (' + cuando + ', desde <strong>' + (info.device_name||'otro dispositivo') + '</strong>)</span>' +
+      '<span>☁️ Datos nuevos en la nube (' + cuando + ', desde <strong>' + esc(info.device_name||'otro dispositivo') + '</strong>)</span>' +
       '<button onclick="window._onCloudBannerDownload()">⬇️ Combinar</button>' +
       '<button onclick="document.getElementById(\'cloud-newer-banner\')?.remove()" style="background:rgba(255,255,255,.1)">✕</button>';
     document.body.appendChild(banner);
@@ -7405,7 +7443,7 @@ const cloudSync = {
     const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0 };
     const merged = {};
     // Escalares: remoto gana
-    ['nombre','saldoInicial','cuentas','cuentasIniciales','budgetRules','setup'].forEach(f => {
+    ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','setup'].forEach(f => {
       merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
     });
     // Arrays: unión inteligente por ID
@@ -8281,6 +8319,9 @@ console.log('✅ Mi Pisto HN v2.0 listo');
         );
         if (!r.ok) return false;
         const data = await r.json();
+        // El service worker responde con tasas de emergencia y un campo `error`
+        // cuando no hay red ni caché: no deben reemplazar las tasas guardadas.
+        if (data.error) return false;
 
         // Validar estructura: { updated_at, base, rates: { USD: ... } }
         if (!data.rates || typeof data.rates !== 'object') return false;
@@ -9009,8 +9050,8 @@ console.log('✅ Mi Pisto HN v2.0 listo');
     window.guardarEdicionMeta = function () {
       const id = document.getElementById('edit-meta-id').value;
       const nombre = document.getElementById('edit-meta-nombre').value.trim();
-      const objetivo = parseFloat(document.getElementById('edit-meta-objetivo').value);
-      const actual = parseFloat(document.getElementById('edit-meta-actual').value) || 0;
+      const objetivo = leerMonto(document.getElementById('edit-meta-objetivo').value);
+      const actual = leerMonto(document.getElementById('edit-meta-actual').value) || 0;
       if (!nombre || !objetivo || objetivo <= 0) { alert('⚠️ Datos inválidos'); return; }
       const g = window.state.goals.find(x => String(x.id) === String(id));
       if (!g) return;

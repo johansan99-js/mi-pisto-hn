@@ -354,11 +354,11 @@
 
   <script>
     // ─────────────────────────────────────────────────────
-    // FIX #6: Rutas absolutas en lugar de relativas
+    // FIX #6: Ruta relativa: la app vive bajo /mi-pisto-hn/, no en la raíz
     // FIX #9: Memory leak del timer
     // ─────────────────────────────────────────────────────
     
-    const APP_ROOT = '/mis-finanzas/';
+    const APP_ROOT = './';
     let timerInterval = null;
 
     function retryConnection() {
@@ -367,7 +367,6 @@
       btn.style.animation = 'none';
       btn.style.opacity = '.7';
       
-      // FIX #6: Usar ruta absoluta
       setTimeout(() => {
         window.location.href = APP_ROOT;
       }, 300);
@@ -386,7 +385,6 @@
         timerInterval = null;
       }
       
-      // FIX #6: Usar ruta absoluta
       setTimeout(() => window.location.href = APP_ROOT, 1000);
     });
 
