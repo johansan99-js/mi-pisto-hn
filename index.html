@@ -51,6 +51,19 @@
 @keyframes slideUpFade{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 @keyframes coinShine{0%,100%{opacity:.6}50%{opacity:1}}
 
+/* ── TUTORIAL DE PRIMEROS PASOS ── */
+.tour-paso{display:none;text-align:center}
+.tour-paso.activo{display:block;animation:slideUpFade .3s ease}
+.tour-icono{font-size:46px;margin-bottom:8px}
+.tour-paso h3{margin:0 0 8px;font-size:19px}
+.tour-paso p{font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 14px}
+.tour-puntos{display:flex;justify-content:center;gap:6px;margin:16px 0 12px}
+.tour-puntos span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);transition:all .2s}
+.tour-puntos span.activo{background:#F5C800;width:22px;border-radius:4px}
+.pasos-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:13px;cursor:pointer}
+.pasos-item.hecho{color:var(--text2);text-decoration:line-through;cursor:default}
+.pasos-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.pasos-item.hecho .pasos-check{background:var(--green);border-color:var(--green);color:#130507}
 /* ── ONBOARDING REDISEÑO ── */
 .onboarding-title{font-size:24px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(90deg,#FF4444,#F5C800,#FF4444);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite;margin-bottom:6px}
 .onboarding-badge{display:inline-block;background:linear-gradient(135deg,#F5C800,#FF7043);color:#130507;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-left:6px;animation:glowPulse 2s infinite}
@@ -1307,6 +1320,7 @@ body.modo-discreto canvas{filter:blur(10px)}
 <div id="view-dashboard" class="view active">
   <div id="desktop-grid">
   <div id="desktop-grid-left">
+  <div id="primeros-pasos" class="card" style="display:none"></div>
   <div class="balance-card">
     <div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Patrimonio Neto Disponible</div>
@@ -1666,6 +1680,12 @@ body.modo-discreto canvas{filter:blur(10px)}
     <input type="time" id="recordatorio-hora" class="input-field" value="20:00" onchange="guardarRecordatorio()" style="margin:0">
     <div id="recordatorio-nota" style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5"></div>
   </div>
+  <div class="card">
+    <h4 style="margin-bottom:6px">💬 Comentarios y errores</h4>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">¿Algo no funciona o se te ocurre una mejora? Escríbenos: leemos todos los mensajes. El correo incluye la versión de la app y del teléfono, nunca tus datos financieros.</p>
+    <button class="btn btn-secondary" onclick="enviarComentarios()">✉️ Enviar comentarios</button>
+    <p style="font-size:11px;color:var(--text2);margin-top:8px">Si no se abre tu app de correo, escribe a <strong>mipistohn@gmail.com</strong></p>
+  </div>
   <a href="privacidad.html" target="_blank" rel="noopener" class="card" style="display:block;text-decoration:none;color:inherit;font-size:13px">🔒 Política de privacidad y cómo eliminar tus datos →</a>
   <div class="card" style="border-color:var(--red)">
     <h4 style="margin-bottom:10px;color:var(--red)">🗑️ Zona de Peligro</h4>
@@ -1984,6 +2004,41 @@ body.modo-discreto canvas{filter:blur(10px)}
       <button class="btn btn-secondary" id="btn-cloud-pass-cancel" style="flex:1">Cancelar</button>
       <button class="btn btn-primary" id="btn-cloud-pass-ok" style="flex:2">Continuar</button>
     </div>
+  </div>
+</div>
+
+<!-- TUTORIAL DE PRIMEROS PASOS -->
+<div id="modal-tour" class="modal">
+  <div class="modal-content">
+    <div class="tour-paso" data-paso="0">
+      <div class="tour-icono">🔒</div>
+      <h3 id="tour-bienvenida">Tus datos están protegidos</h3>
+      <p>Todo lo que anotas se guarda <strong>cifrado en este teléfono</strong> con tu PIN. Nadie más puede verlo, ni nosotros.</p>
+      <p>Si olvidas el PIN, solo lo recuperas con un <strong>kit de recuperación</strong>. Créalo ahora y guárdalo fuera del teléfono.</p>
+      <button class="btn btn-secondary" onclick="tourCrearKit()">🔑 Crear mi kit de recuperación</button>
+      <div id="tour-kit-estado" style="font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="tour-paso" data-paso="1">
+      <div class="tour-icono">💸</div>
+      <h3>Anota tus gastos en segundos</h3>
+      <p>Toca el botón <strong>＋</strong> y elige <em>Gasto</em>. Si pagaste con tarjeta, usa <strong>💬 Pegar SMS del banco</strong>: el monto, el comercio y la tarjeta se llenan solos.</p>
+      <p>Mientras más constante seas, más te dirá la app sobre a dónde se va tu pisto.</p>
+      <button class="btn btn-primary" onclick="tourRegistrarGasto()">➕ Registrar mi primer gasto</button>
+    </div>
+    <div class="tour-paso" data-paso="2">
+      <div class="tour-icono">🔔</div>
+      <h3>Que no se te olvide</h3>
+      <p>Te avisamos a la hora que elijas, solo los días en que no hayas anotado nada.</p>
+      <input type="time" id="tour-hora" class="input-field" value="20:00" style="margin:0 0 10px">
+      <button class="btn btn-primary" onclick="tourActivarRecordatorio()">🔔 Activar recordatorio</button>
+      <div id="tour-recordatorio-estado" style="font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="tour-puntos"><span></span><span></span><span></span></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" id="tour-atras" onclick="tourIr(-1)" style="flex:1">← Atrás</button>
+      <button class="btn btn-primary" id="tour-siguiente" onclick="tourIr(1)" style="flex:1">Siguiente →</button>
+    </div>
+    <button onclick="cerrarTour()" style="background:none;border:none;color:var(--text2);font-size:12px;margin-top:12px;width:100%;cursor:pointer">Saltar tutorial</button>
   </div>
 </div>
 
@@ -3359,6 +3414,7 @@ async function generarKitRecuperacion() {
   };
   openModal('modal-kit-rec');
   renderEstadoKitRecuperacion();
+  renderPrimerosPasos();
 }
 function renderEstadoKitRecuperacion() {
   const el = document.getElementById('kit-rec-estado');
@@ -3573,7 +3629,8 @@ function syncObSaldo(){
 async function finishOnboarding(){
   const nombre=document.getElementById('ob-nombre').value.trim();
   const saldoInicial=leerMonto(document.getElementById('ob-salario').value)||0;
-  if(!nombre||saldoInicial===0)return alert('Completa todos los campos');
+  // El saldo puede ser 0: hay quien empieza a anotar desde el día de pago
+  if(!nombre)return alert('Escribe tu nombre para comenzar');
   // SEGURIDAD: state.nombre se interpola en varias plantillas HTML (saludo,
   // conciliación, etc.). Sin esto, un nombre como "<img src=x onerror=...>"
   // ejecuta código arbitrario cada vez que se renderiza el dashboard.
@@ -3650,9 +3707,7 @@ async function finishOnboarding(){
   document.getElementById('onboarding').style.display='none';
   renderAll();
   renderWelcome();
-  
-  // Notificar al usuario
-  alert('✅ ¡Bienvenido a Mi Pisto HN!\n\n🔒 Tus datos están protegos con cifrado AES-256.');
+  abrirTour(0);
 }
 
 function toggleFabMenu_legacy(){/* reemplazada por la v2 */}
@@ -5836,6 +5891,7 @@ function renderAll(){
     if (typeof renderWelcome === 'function') renderWelcome();
     setTimeout(function(){ renderLiquidez7Dias(); renderChipsRapidas(); }, 50);
     renderRecordatorioConfig();
+    renderPrimerosPasos();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }
 }
 // ========== INICIALIZACIÓN ==========
@@ -6720,6 +6776,7 @@ async function guardarRecordatorio() {
     } catch (e) { /* sin permiso de sincronización periódica: queda el aviso con la app abierta */ }
   }
   renderRecordatorioConfig();
+  renderPrimerosPasos();
 }
 /** Si ya pasó la hora elegida y hoy no hay movimientos, avisa una vez al día. */
 function verificarRegistroDiario(ahora = new Date()) {
@@ -6840,9 +6897,106 @@ function validarMonto(input) {
 }
 
 // VER TUTORIAL DE NUEVO
-function mostrarTutorialDeNuevo() {
-  document.getElementById('onboarding').style.display = 'flex';
+// Antes abría la pantalla de configuración inicial, y al tocar "Comenzar"
+// reemplazaba el state completo: se perdían todos los datos.
+function mostrarTutorialDeNuevo() { abrirTour(0); }
+
+// ═══ TUTORIAL Y PRIMEROS PASOS ════════════════════════════════════════════
+let _tourPaso = 0;
+function abrirTour(paso) {
+  if (!state.setup) return;
+  const t = document.getElementById('tour-bienvenida');
+  t.textContent = state.nombre ? '¡Bienvenido, ' + state.nombre + '!' : 'Tus datos están protegidos';
+  document.getElementById('tour-hora').value = leerRecordatorio().hora;
+  _tourPaso = 0;
+  tourIr(paso || 0);
+  openModal('modal-tour');
 }
+function tourIr(delta) {
+  if (delta === 1 && _tourPaso === 2) return cerrarTour();
+  _tourPaso = Math.max(0, Math.min(2, _tourPaso + delta));
+  document.querySelectorAll('#modal-tour .tour-paso').forEach(el => el.classList.toggle('activo', +el.dataset.paso === _tourPaso));
+  document.querySelectorAll('#modal-tour .tour-puntos span').forEach((el, i) => el.classList.toggle('activo', i === _tourPaso));
+  document.getElementById('tour-atras').style.visibility = _tourPaso === 0 ? 'hidden' : 'visible';
+  document.getElementById('tour-siguiente').textContent = _tourPaso === 2 ? '¡Listo!' : 'Siguiente →';
+  _renderEstadoTour();
+}
+function _renderEstadoTour() {
+  const kit = document.getElementById('tour-kit-estado');
+  kit.textContent = tieneKitRecuperacion() ? '✅ Kit creado. Guárdalo en un lugar seguro.' : '';
+  kit.style.color = 'var(--green)';
+  const rec = leerRecordatorio(), el = document.getElementById('tour-recordatorio-estado');
+  el.textContent = rec.activo ? '✅ Te avisaremos a las ' + rec.hora + '.' : '';
+  el.style.color = 'var(--green)';
+}
+function cerrarTour() {
+  closeModal('modal-tour');
+  renderPrimerosPasos();
+}
+async function tourCrearKit() {
+  await generarKitRecuperacion();
+  _renderEstadoTour();
+  renderPrimerosPasos();
+}
+function tourRegistrarGasto() {
+  cerrarTour();
+  openModal('modal-gasto');
+}
+async function tourActivarRecordatorio() {
+  document.getElementById('recordatorio-activo').checked = true;
+  document.getElementById('recordatorio-hora').value = document.getElementById('tour-hora').value || '20:00';
+  await guardarRecordatorio();
+  _renderEstadoTour();
+  if (!leerRecordatorio().activo) {
+    const el = document.getElementById('tour-recordatorio-estado');
+    el.textContent = '⚠️ Sin permiso de notificaciones no podemos avisarte. Puedes activarlo después en Config.';
+    el.style.color = 'var(--amber)';
+  }
+  renderPrimerosPasos();
+}
+
+// Lista del dashboard: desaparece al completar los 3 pasos o si el usuario la oculta
+function pasosPendientes() {
+  return [
+    { id: 'kit', texto: 'Crea tu kit de recuperación del PIN', hecho: tieneKitRecuperacion(), accion: 'generarKitRecuperacion().then(renderPrimerosPasos)' },
+    { id: 'gasto', texto: 'Registra tu primer gasto', hecho: (state.transactions || []).some(t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.esConciliacion), accion: "openModal('modal-gasto')" },
+    { id: 'recordatorio', texto: 'Activa el recordatorio diario', hecho: leerRecordatorio().activo, accion: 'abrirTour(2)' },
+  ];
+}
+function renderPrimerosPasos() {
+  const card = document.getElementById('primeros-pasos');
+  if (!card) return;
+  let oculto = false;
+  try { oculto = localStorage.getItem('mph_primeros_pasos') === 'oculto'; } catch (e) {}
+  const pasos = pasosPendientes(), hechos = pasos.filter(p => p.hecho).length;
+  if (!state.setup || oculto || hechos === pasos.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+      '<strong style="font-size:14px">🚀 Primeros pasos · ' + hechos + ' de ' + pasos.length + '</strong>' +
+      '<button onclick="ocultarPrimerosPasos()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer">Ocultar</button></div>' +
+    pasos.map(p => '<div class="pasos-item' + (p.hecho ? ' hecho' : '') + '" data-paso="' + p.id + '"' + (p.hecho ? '' : ' onclick="' + p.accion + '"') + '>' +
+      '<span class="pasos-check">' + (p.hecho ? '✓' : '') + '</span><span>' + p.texto + '</span></div>').join('');
+}
+function ocultarPrimerosPasos() {
+  try { localStorage.setItem('mph_primeros_pasos', 'oculto'); } catch (e) {}
+  renderPrimerosPasos();
+}
+
+// ═══ COMENTARIOS ══════════════════════════════════════════════════════════
+// Solo datos técnicos para reproducir un error; nada de montos ni nombres.
+async function urlComentarios() {
+  let version = '';
+  try { version = ((await caches.keys()).find(k => k.startsWith('mipistohn-')) || '').replace('mipistohn-', ''); } catch (e) {}
+  const modo = window.matchMedia('(display-mode: standalone)').matches ? 'app instalada' : 'navegador';
+  const cuerpo = 'Cuéntanos qué pasó o qué te gustaría mejorar:\n\n\n\n' +
+    '— Datos técnicos (no incluyen tus finanzas) —\n' +
+    'Versión: ' + (version || 'desconocida') + '\n' +
+    'Modo: ' + modo + '\n' +
+    'Pantalla: ' + screen.width + '×' + screen.height + '\n' +
+    'Navegador: ' + navigator.userAgent;
+  return 'mailto:mipistohn@gmail.com?subject=' + encodeURIComponent('Comentarios sobre Mi Pisto HN') + '&body=' + encodeURIComponent(cuerpo);
+}
+async function enviarComentarios() { location.href = await urlComentarios(); }
 
 // INYECTAR ELEMENTOS NUEVOS EN DOM
 function inyectarElementosNuevos() {
