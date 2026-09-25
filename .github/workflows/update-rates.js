@@ -45,30 +45,33 @@ async function fetchWithTimeout(url, ms) {
 async function tryFetchBCHOfficial() {
   try {
     console.log('🌐 Intentando BCH oficial...');
-    const r = await fetchWithTimeout(BCH_URL, 8000);
+    const r = await fetchWithTimeout(BCH_URL, 20000); // el sitio del BCH es lento: con 8 s a veces no respondía
     const html = await r.text();
     const lower = html.toLowerCase();
     if (lower.indexOf('compra') < 0 || lower.indexOf('venta') < 0) {
       console.warn('  ❌ HTML del BCH sin etiquetas compra/venta');
       return null;
     }
-    const numRegex = /(\d{2}\.\d{2,4})/g;
-    const matches = [...html.matchAll(numRegex)]
-      .map(m => parseFloat(m[1]))
-      .filter(n => n >= USD_HNL_RANGE.min && n <= USD_HNL_RANGE.max);
-    if (matches.length < 2) {
-      console.warn('  ❌ Insuficientes números en rango USD/HNL');
-      return null;
+    // Primero, el número pegado a "compra" y a "venta" en el texto visible.
+    // Antes se tomaba cualquier número en rango de todo el HTML y salía uno
+    // viejo (25.20 cuando la tasa del día era ~26.9).
+    const texto = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+    const ctx = [...texto.matchAll(/.{0,80}(compra|venta).{0,80}/gi)].slice(0, 6).map(m => m[0].trim());
+    console.log('  🔎 Contexto BCH:\n    ' + ctx.join('\n    '));
+    const par = texto.match(/compra\D{0,40}(\d{2}\.\d{2,4})\D{0,80}?venta\D{0,40}(\d{2}\.\d{2,4})/i);
+    if (par) {
+      const bid = parseFloat(par[1]), ask = parseFloat(par[2]);
+      if (bid >= USD_HNL_RANGE.min && ask <= USD_HNL_RANGE.max && ask >= bid && ask - bid < 1) {
+        console.log('  ✅ BCH oficial (compra/venta juntas): USD bid=' + bid + ', ask=' + ask);
+        return { bid: bid, ask: ask, mid: (bid + ask) / 2 };
+      }
     }
-    const sorted = [...new Set(matches)].sort((a, b) => a - b);
-    const bid = sorted[0];
-    const ask = sorted[sorted.length - 1] !== bid ? sorted[sorted.length - 1] : bid * (1 + DEFAULT_SPREAD * 2);
-    if (ask < bid || ask - bid > 1) {
-      console.warn('  ⚠️ Spread USD irrazonable, descartando');
-      return null;
-    }
-    console.log('  ✅ BCH oficial: USD bid=' + bid + ', ask=' + ask);
-    return { bid: bid, ask: ask, mid: (bid + ask) / 2 };
+    // La página del BCH solo trae el título: la tasa del día se carga después
+    // con JavaScript desde otro sistema. Tomar "cualquier número en rango"
+    // daba cifras que no eran la tasa (25.20), así que sin compra/venta
+    // juntas en el texto se usa la referencia del mercado.
+    console.warn('  ❌ El HTML del BCH no trae compra/venta del día');
+    return null;
   } catch (e) {
     console.warn('  ❌ BCH no accesible:', e.message);
     return null;
