@@ -72,8 +72,8 @@ function checkNotificacionesPagos(){
     const diasPago=t.pago>=diaHoy?t.pago-diaHoy:31-diaHoy+t.pago;
     const clave=`tc_${t.id}_${claveHoy}`;
     if(!alertasEnviadas[clave]&&diasPago<=3){
-      const pagoMin=Math.max(t.saldo*0.05,100);
-      enviarNotificacion(`💳 TC ${esc(t.nombre)} — ${diasPago===0?'¡VENCE HOY!':diasPago+'d restantes'}`,`Saldo: L. ${t.saldo.toLocaleString('es-HN',{minimumFractionDigits:2})} · Pago mín: L. ${pagoMin.toFixed(2)}`,null);
+      const pagoMin=Math.max(pagoMinimoTarjeta(t),t.saldo>0?100:0);
+      enviarNotificacion(`💳 TC ${esc(t.nombre)} — ${diasPago===0?'¡VENCE HOY!':diasPago+'d restantes'}`,`Saldo: ${typeof textoSaldoTarjeta==='function'?textoSaldoTarjeta(t):'L. '+t.saldo.toFixed(2)} · Pago mín: L. ${pagoMin.toFixed(2)}`,null);
       alertasEnviadas[clave]=true;
     }
   });
@@ -595,7 +595,7 @@ function exportFullReport() {
         if (state.tarjetas && state.tarjetas.length > 0) {
             csv += 'TARJETAS DE CREDITO\nNombre,Saldo,Limite,Tasa,Dia Corte,Dia Pago\n';
             state.tarjetas.forEach(t => {
-                csv += t.nombre + ',' + t.saldo.toFixed(2) + ',' + (t.limite || 0).toFixed(2) + ',' + (t.tasaInteres || 0) + '%,' + t.corte + ',' + t.pago + '\n';
+                csv += t.nombre + ',' + (typeof deudaTarjetaL==='function'?deudaTarjetaL(t):t.saldo).toFixed(2) + ',' + (t.limite || 0).toFixed(2) + ',' + (t.tasaInteres || 0) + '%,' + t.corte + ',' + t.pago + '\n';
             });
         }
         const BOM = '\uFEFF';

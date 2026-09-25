@@ -1251,6 +1251,8 @@
     </div>
     
     <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="tc-saldo" class="input-field" placeholder="Saldo actual (L)" value="0">
+    <label class="tc-check"><input type="checkbox" id="tc-bimoneda" onchange="toggleTarjetaDolares()"> <span>💱 Tiene saldo en dólares también<small>Las compras en dólares van aparte y cada saldo se paga por separado.</small></span></label>
+    <div id="tc-dolares-wrap" style="display:none"><input type="text" inputmode="decimal" id="tc-saldo-usd" class="input-field" placeholder="Saldo actual en dólares (US$)"></div>
     
     <div style="background: var(--bg3); padding: 10px; border-radius: 8px; margin: 10px 0;">
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
@@ -1262,6 +1264,28 @@
     <button class="btn btn-primary" onclick="saveTarjeta()">Guardar Tarjeta</button>
   </div>
 </div>
+<!-- PAGAR UNA TARJETA EN LEMPIRAS Y DÓLARES (js/32-tarjetas-dolares.js) -->
+<div id="modal-pago-tc" class="modal" onclick="closeModalIfBg(event,'modal-pago-tc')">
+  <div class="modal-content">
+    <h3 id="ptc-titulo" style="margin-bottom:12px">💳 Pagar tarjeta</h3>
+    <div id="ptc-moneda" class="an-segmentos" role="tablist">
+      <button type="button" class="an-seg-btn" data-m="HNL" onclick="_pagoTCMoneda('HNL')">Saldo en lempiras</button>
+      <button type="button" class="an-seg-btn" data-m="USD" onclick="_pagoTCMoneda('USD')">Saldo en dólares</button>
+    </div>
+    <p id="ptc-saldo" class="ptc-saldo"></p>
+    <div id="ptc-rapidos" class="rem-chips"></div>
+    <input type="text" inputmode="decimal" id="ptc-monto" class="input-field" oninput="_renderPagoTC()" autocomplete="off">
+    <label class="ptc-label">¿De qué cuenta sale el pago?</label>
+    <select id="ptc-cuenta" class="input-field" onchange="_renderPagoTC()"></select>
+    <p id="ptc-conversion" class="rem-ayuda"></p>
+    <div id="ptc-cobrado-wrap" style="display:none">
+      <input type="text" inputmode="decimal" id="ptc-cobrado" class="input-field" placeholder="¿Cuánto te cobraron en lempiras? (opcional)" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" onclick="guardarPagoTarjeta()">✓ Registrar pago</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-pago-tc')">Cancelar</button>
+  </div>
+</div>
+
 <!-- Modal de contraseña de la nube (crear o escribir la existente) -->
 <div id="modal-cloud-pass" class="modal">
   <div class="modal-content">
@@ -1640,5 +1664,6 @@
 <script src="js/29-busqueda-y-recurrentes.js"></script>
 <script src="js/30-remesas.js"></script>
 <script src="js/31-dictado.js"></script>
+<script src="js/32-tarjetas-dolares.js"></script>
 </body>
 </html>

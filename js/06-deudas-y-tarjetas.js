@@ -287,20 +287,20 @@ function saveTarjeta(){
     if(!nombre)return alert('Nombre requerido');
     const ultimos4=(document.getElementById('tc-ultimos4')?.value||'').trim();
     if(ultimos4&&!/^\d{4}$/.test(ultimos4))return alert('Los últimos dígitos deben ser 4 números.');
-    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,saldoBase:saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[],...(ultimos4?{ultimos4}:{})});
+    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,saldoBase:saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[],...(ultimos4?{ultimos4}:{}),...(typeof datosDolaresFormTarjeta==='function'?datosDolaresFormTarjeta():{})});
     save();closeModal('modal-tarjeta');renderAll();limpiarFormTarjeta();
 }
-function limpiarFormTarjeta(){['tc-nombre','tc-ultimos4','tc-corte','tc-pago','tc-limite','tc-saldo','tc-tasa'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('tc-calcular-minimo').checked=true;}
+function limpiarFormTarjeta(){['tc-nombre','tc-ultimos4','tc-corte','tc-pago','tc-limite','tc-saldo','tc-tasa'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('tc-calcular-minimo').checked=true;const bm=document.getElementById('tc-bimoneda');if(bm){bm.checked=false;document.getElementById('tc-saldo-usd').value='';toggleTarjetaDolares();}}
 function renderTarjetas(){
     const container=document.getElementById('tarjetas-list'),resumenContainer=document.getElementById('resumen-pagos-minimos');if(!container)return;
     if(state.tarjetas.length===0){container.innerHTML=`<div class="empty-state-simple"><div class="es-icon">💳</div><div class="es-title">Sin tarjetas registradas</div><div class="es-sub">Agrega tus tarjetas de crédito para monitorear saldos, fechas de corte y pagos mínimos.</div><button class="btn-empty-secondary" onclick="openModal('modal-tarjeta')">➕ Agregar tarjeta</button></div>`;return;}
     let totalDeuda=0,totalPagoMinimo=0,totalCuotasMes=0;
     container.innerHTML=state.tarjetas.map(t=>{
         const comprometido=cupoComprometido(t),cuotasMes=cuotasDelMes(t);
-        totalDeuda+=t.saldo+comprometido;
-        const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
+        totalDeuda+=deudaTarjetaL(t)+comprometido;
+        const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=deudaTarjetaL(t)*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
         const hoy=new Date().getDate(),estadoCorte=estadoCicloTarjeta(t,hoy);
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}${t.ultimos4?` <span style="font-size:12px;color:var(--text2);font-weight:400">•••• ${esc(t.ultimos4)}</span>`:''}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlBeneficiosTarjeta(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}${t.ultimos4?` <span style="font-size:12px;color:var(--text2);font-weight:400">•••• ${esc(t.ultimos4)}</span>`:''}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;">${htmlSaldoTarjeta(t)}<div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&(comprometido>0||t.bimoneda)?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(disponibleTarjeta(t))}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${t.bimoneda&&pagoMinimoUSD(t)>0?`<span style="display:block;font-size:10px;color:var(--text2)">${fL(pagoMinimoTarjeta(t,true))} + ${_usdTxt(pagoMinimoUSD(t))}</span>`:''}${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlBeneficiosTarjeta(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 ${t.bimoneda?'L':'Conciliar'}</button>${t.bimoneda?`<button class="btn btn-secondary" style="padding: 8px;" title="Conciliar el saldo en dólares" onclick="ajustarSaldoTarjetaUSD('${esc(t.id)}')">🧾 US$</button>`:''}<button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div>${t.bimoneda?'':`<button type="button" class="tc-activar-usd" onclick="activarDolaresTarjeta('${esc(t.id)}')">💱 ¿Tu tarjeta tiene saldo en dólares? Actívalo</button>`}</div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -405,8 +405,10 @@ function estadoCicloTarjeta(t, hoy) {
   const trasPago = cruza ? (hoy > t.pago && hoy < t.corte) : hoy > t.pago;
   return trasPago && t.saldo > 0 ? '🔴 Pago vencido' : '';
 }
-function pagoMinimoTarjeta(t) {
-  return t.calcularMinimo && t.saldo > 0 ? Math.min(t.saldo, Math.max(t.saldo * 0.05, 100)) : 0;
+function pagoMinimoTarjeta(t, soloLempiras) {
+  const l = t.calcularMinimo && t.saldo > 0 ? Math.min(t.saldo, Math.max(t.saldo * 0.05, 100)) : 0;
+  // Con saldo en dólares: más su mínimo en dólares, en lempiras (32-tarjetas-dolares.js)
+  return soloLempiras || typeof pagoMinimoUSD !== 'function' ? l : Math.round((l + pagoMinimoUSD(t) * tasaUSD('ask')) * 100) / 100;
 }
 // ═══ BENEFICIOS DE TARJETAS: ¿CON CUÁL ME CONVIENE PAGAR? ═══════════════
 // Cada tarjeta guarda reglas { id, porcentaje, categoria | comercio, tope }.
@@ -673,6 +675,8 @@ function eliminarPlanCuotas(tarjetaId, planId) {
 
 function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
+    // Lempiras y dólares: se elige qué saldo se paga (32-tarjetas-dolares.js)
+    if(tarjeta.bimoneda&&typeof abrirPagoTarjeta==='function')return abrirPagoTarjeta(id);
     const pagoMinimo=pagoMinimoTarjeta(tarjeta);
     const montoStr=prompt(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');

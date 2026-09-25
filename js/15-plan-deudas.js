@@ -16,7 +16,8 @@ const PLAN_KEY = 'mph_plan_deudas';
 function deudasParaPlan() {
   const d = [];
   (state.tarjetas || []).forEach(t => {
-    if (t.saldo > 0.5) d.push({ id: 'tc:' + t.id, nombre: t.nombre, tipo: 'tarjeta', saldo: t.saldo, tasa: Number(t.tasaInteres) || 0 });
+    const saldoTc = (typeof deudaTarjetaL==='function'?deudaTarjetaL(t):t.saldo);
+    if (saldoTc > 0.5) d.push({ id: 'tc:' + t.id, nombre: t.nombre, tipo: 'tarjeta', saldo: saldoTc, tasa: Number(t.tasaInteres) || 0 });
     (t.cuotas || []).filter(planActivo).forEach(c => d.push({ id: 'cuotas:' + c.id, nombre: (c.descripcion || 'Compra a cuotas') + ' · ' + t.nombre, tipo: 'cuotas', saldo: pendientePlan(c), tasa: 0, minimo: montoCuota(c) }));
   });
   (state.prestamos || []).forEach(p => {

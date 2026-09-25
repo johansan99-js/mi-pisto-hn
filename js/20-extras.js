@@ -64,7 +64,7 @@ function htmlReporteMes(y, m) {
   const fila = (a, b, c) => '<tr><td>' + a + '</td><td>' + b + '</td><td class="n">' + c + '</td></tr>';
   const cuentas = listaCuentas().map(c => '<tr><td>' + esc(nombreCompletoCuenta(c)) + '</td><td class="n">' + _lps(getCuentaBalance(c.id)) + '</td></tr>').join('');
   const deudas = (state.payables || []).filter(deudaActiva).map(p => '<tr><td>' + esc(p.creditor) + '</td><td class="n">' + _lps(pendienteDeuda(p)) + '</td></tr>').join('') +
-    (state.tarjetas || []).filter(t => t.saldo > 0.005).map(t => '<tr><td>💳 ' + esc(t.nombre) + '</td><td class="n">' + _lps(t.saldo) + '</td></tr>').join('') +
+    (state.tarjetas || []).filter(t => deudaTarjetaL(t) > 0.005).map(t => '<tr><td>💳 ' + esc(t.nombre) + (esBimoneda(t) ? ' <small>(' + esc(textoSaldoTarjeta(t)) + ')</small>' : '') + '</td><td class="n">' + _lps(deudaTarjetaL(t)) + '</td></tr>').join('') +
     (state.prestamos || []).filter(p => saldoPrestamo(p) > 0.5).map(p => '<tr><td>🏦 ' + esc(p.entidad) + '</td><td class="n">' + _lps(saldoPrestamo(p)) + '</td></tr>').join('');
   const presus = (state.presupuestos || []).filter(p => p.periodo === 'mes').map(p => {
     const g = gastadoEn(p.cat, { inicio: new Date(y, m, 1), fin: new Date(y, m + 1, 1) });

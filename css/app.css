@@ -1353,3 +1353,16 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .dic-ejemplos{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2);background:var(--bg3);border-radius:12px;padding:10px 12px}
 .dic-ejemplos small{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
 @media (prefers-reduced-motion:reduce){.dic-mic.escuchando::before,.dic-mic.escuchando::after{animation:none}}
+/* Tarjetas en lempiras y dólares (js/32-tarjetas-dolares.js) */
+.tc-bimoneda{display:flex;gap:8px;justify-content:flex-end;text-align:right}
+.tc-bimoneda small{display:block;font-size:10px;color:var(--text2)}
+.tc-bimoneda b{color:var(--red);font-size:13px;white-space:nowrap}
+.tc-total{font-size:11px;color:var(--text2);margin-top:2px}
+.tc-activar-usd{display:block;width:100%;margin-top:10px;background:none;border:1px dashed var(--border);border-radius:10px;padding:8px;font:inherit;font-size:12px;color:var(--text2);cursor:pointer}
+.tc-check{display:flex;gap:10px;align-items:flex-start;background:var(--bg3);padding:10px;border-radius:8px;margin:10px 0;cursor:pointer;font-size:13px;font-weight:600}
+.tc-check small{display:block;font-size:11px;font-weight:400;color:var(--text2);margin-top:2px}
+.ptc-saldo{font-size:13px;color:var(--text2);margin:6px 0 8px}
+.ptc-label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin:8px 0 4px}
+#modal-pago-tc .rem-chips{margin-bottom:8px}
+.reg-moneda.cambiable{cursor:pointer;border:1.5px solid rgba(var(--amber-rgb),.6);border-radius:8px;padding:2px 6px;color:var(--amber)}
+.reg-moneda.cambiable::after{content:' ⇄';font-size:12px}
