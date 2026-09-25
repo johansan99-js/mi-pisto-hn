@@ -114,6 +114,8 @@ function _validarSchemaBackup(obj) {
     }
   }
   
+  if (obj.diasSinGastos !== undefined && !(Array.isArray(obj.diasSinGastos) && obj.diasSinGastos.length <= 1000 && obj.diasSinGastos.every(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)))) return 'días sin gastos inválidos';
+  if (obj.mejorRacha !== undefined && !(Number.isInteger(obj.mejorRacha) && obj.mejorRacha >= 0 && obj.mejorRacha < 100000)) return 'racha inválida';
   if (obj.premium !== undefined && obj.premium !== null && (typeof obj.premium !== 'object' || Array.isArray(obj.premium))) return 'premium inválido';
 
   // ── Validar mis cuentas ──
@@ -463,6 +465,7 @@ function renderAll(){
     if (typeof renderConfigTema === 'function') { renderConfigTema(); aplicarTema(temaActual()); }
     if (typeof renderAvisoCuadre === 'function') renderAvisoCuadre();
     if (typeof renderPremium === 'function') renderPremium();
+    if (typeof renderRacha === 'function') renderRacha();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

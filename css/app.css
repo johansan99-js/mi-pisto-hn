@@ -1040,3 +1040,17 @@ html.oled body{background:#000}
 .premium-precio{font-size:12px;color:var(--text2);margin:0 0 6px;line-height:1.5}
 .premium-precio strong{color:var(--text)}
 .premium-garantia{font-size:11px;color:var(--text2);background:var(--bg3);border-left:3px solid var(--green);border-radius:6px;padding:8px 10px;margin:0 0 10px;line-height:1.5}
+
+/* Racha de días anotando */
+#racha-card{border-color:rgba(255,112,67,.4)}
+.racha-num{font-size:14px;color:var(--text2)}
+.racha-num strong{font-size:24px;font-weight:900;color:var(--text)}
+.racha-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0 4px}
+.racha-dia{display:flex;flex-direction:column;align-items:center;gap:3px}
+.racha-dia span{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px}
+.racha-dia.hecho span{background:rgba(255,112,67,.15);border-color:rgba(255,112,67,.55)}
+.racha-dia.hoy span{box-shadow:0 0 0 2px var(--amber)}
+.racha-dia small{font-size:10px;color:var(--text2)}
+.racha-nota{font-size:12px;color:var(--text2);line-height:1.5;margin:6px 0 0}
+.racha-nota.riesgo{color:var(--amber)}
+.racha-hito{font-size:13px;font-weight:700;color:var(--amber);background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.35);border-radius:10px;padding:8px 10px;margin-top:8px;line-height:1.4}

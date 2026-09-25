@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v53-premium';
+const VERSION = 'v54-racha';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -88,6 +88,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/19-cuentas.js',
   BASE_PATH + 'js/20-extras.js',
   BASE_PATH + 'js/21-premium.js',
+  BASE_PATH + 'js/22-racha.js',
   BASE_PATH + 'css/app.css'
 ];
 
@@ -377,7 +378,9 @@ async function revisarRecordatorio(ahora = new Date()) {
   const [h, m] = String(ficha.hora || '20:00').split(':').map(Number);
   const minutos = ahora.getHours() * 60 + ahora.getMinutes();
   if (!ficha.activo || minutos < h * 60 + (m || 0) || ficha.ultimoRegistro === hoy || ficha.avisado === hoy) return false;
-  await self.registration.showNotification('📝 ¿Anotaste tus gastos de hoy?', {
+  // Con racha, el aviso invita a no perderla (la ficha trae solo el número)
+  const titulo = ficha.racha >= 2 ? '🔥 No pierdas tu racha de ' + ficha.racha + ' días' : '📝 ¿Anotaste tus gastos de hoy?';
+  await self.registration.showNotification(titulo, {
     body: 'Tómate un minuto para registrar lo que gastaste hoy.',
     icon: BASE_PATH + 'icon-192.png',
     badge: BASE_PATH + 'icon-192.png',

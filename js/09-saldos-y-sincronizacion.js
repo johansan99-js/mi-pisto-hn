@@ -886,7 +886,8 @@ function leerRecordatorio() {
   catch (e) { return { activo: false, hora: '20:00' }; }
 }
 function ultimoDiaConMovimientos() {
-  let max = '';
+  // "Hoy no gasté nada" (racha) también cuenta como día anotado
+  let max = (state.diasSinGastos || []).reduce((a, d) => d > a ? d : a, '');
   (state.transactions || []).forEach(t => {
     if (t.deletedAt || t.esTransferencia || t.esConciliacion) return;
     const f = fechaLocal(new Date(t.date)); if (f > max) max = f;
@@ -899,7 +900,8 @@ async function _actualizarFichaRecordatorio(extra) {
   try {
     const c = await caches.open('mph-recordatorio');
     const previa = await c.match('ficha.json').then(r => r ? r.json() : {}).catch(() => ({}));
-    const ficha = Object.assign(previa, leerRecordatorio(), { ultimoRegistro: ultimoDiaConMovimientos() }, extra || {});
+    const racha = typeof calcularRacha === 'function' ? calcularRacha().actual : 0;
+    const ficha = Object.assign(previa, leerRecordatorio(), { ultimoRegistro: ultimoDiaConMovimientos(), racha }, extra || {});
     await c.put('ficha.json', new Response(JSON.stringify(ficha), { headers: { 'Content-Type': 'application/json' } }));
   } catch (e) {}
 }
@@ -938,7 +940,8 @@ function verificarRegistroDiario(ahora = new Date()) {
   try { enviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}'); } catch (e) {}
   const clave = 'diario_' + hoy;
   if (enviadas[clave] || ultimoDiaConMovimientos() === hoy) return false;
-  enviarNotificacion('📝 ¿Todo tranquilo hoy?', 'Todavía no has anotado nada. Si gastaste algo, regístralo antes de que se te olvide.', null,
+  const racha = typeof calcularRacha === 'function' ? calcularRacha(ahora).actual : 0;
+  enviarNotificacion(racha >= 2 ? '🔥 No pierdas tu racha de ' + racha + ' días' : '📝 ¿Todo tranquilo hoy?', 'Todavía no has anotado nada. Si gastaste algo, regístralo antes de que se te olvide.', null,
     { tag: 'mph-recordatorio', url: './?action=new-expense', actions: [{ action: 'new-expense', title: '➕ Registrar gasto' }] });
   enviadas[clave] = true;
   localStorage.setItem('alertas_enviadas', JSON.stringify(enviadas));
