@@ -63,6 +63,7 @@ async function _completarCargaApp() {
   }
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  migrarDatosViejos();
   recalcularSaldosTarjetas();
   _tomarBaseSync();
   purgarEliminadosViejos();
@@ -136,6 +137,7 @@ window.onload = async function() {
 
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  migrarDatosViejos();
   recalcularSaldosTarjetas();
   _tomarBaseSync();
   purgarEliminadosViejos();

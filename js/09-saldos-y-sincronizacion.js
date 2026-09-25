@@ -149,6 +149,19 @@ function recalcularSaldosTarjetas() {
   });
 }
 
+// Datos de versiones anteriores:
+// - los abonos a metas eran gastos: pasan a movimiento interno
+// - cobros y pagos a personas guardaban el nombre escapado ("José &amp; María")
+// - la cuota del préstamo se guardaba con todos los decimales
+function migrarDatosViejos() {
+  const des = s => String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  (state.transactions || []).forEach(t => {
+    if (t.type === 'expense' && !t.esTransferencia && (t.metaId || (t.cat === 'Ahorros' && /^Meta: /.test(t.subcat || '')))) t.esTransferencia = true;
+    if ((t.cat === 'Cobro Deuda' || t.cat === 'Pago Deuda') && /&(amp|lt|gt|quot|#39);/.test(t.subcat || '')) t.subcat = des(t.subcat);
+  });
+  (state.prestamos || []).forEach(p => { if (typeof p.cuota === 'number') p.cuota = Math.round(p.cuota * 100) / 100; });
+}
+
 function getCuentaBalance(cuenta) {
   // Migración invisible: si el usuario viene de versión vieja, copiar state.cuentas
   if (!state.cuentasIniciales) {
@@ -987,8 +1000,14 @@ function calcularProyeccionCaja() {
 }
 
 // DETECCION DE DUPLICADOS
+function marcarNoDuplicado(a, b) {
+  state.transactions.forEach(function(t) { if (t.id === a || t.id === b) t.noDuplicado = true; });
+  save(); renderAll();
+}
 function detectarDuplicados() {
-  var recientes = state.transactions.filter(function(t) { return !t.deletedAt; }).sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 20);
+  // Las dos partes de una transferencia (o un ajuste) tienen el mismo monto y
+  // hora: no son duplicados, y "Eliminar" dejaba la transferencia a medias.
+  var recientes = state.transactions.filter(function(t) { return !t.deletedAt && !t.esTransferencia && !t.esConciliacion && !t.noDuplicado; }).sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 20);
   var duplicadosHtml = [];
   var procesados = {};
   for (var i = 0; i < recientes.length - 1; i++) {
@@ -998,12 +1017,13 @@ function detectarDuplicados() {
       var t2 = recientes[j];
       if (procesados[t2.id]) continue;
       var mismaCantidad = t1.amount === t2.amount;
-      var mismaCategoria = t1.cat === t2.cat;
+      var mismaCategoria = t1.cat === t2.cat && t1.type === t2.type && (t1.cuenta || null) === (t2.cuenta || null) && String(t1.tarjetaId || '') === String(t2.tarjetaId || '');
       var fechaCercana = Math.abs(new Date(t1.date) - new Date(t2.date)) < 5 * 60 * 1000;
       if (mismaCantidad && mismaCategoria && fechaCercana) {
         var html = '<div class="duplicate-warning">';
-        html += '<span><strong>⚠️ Duplicado posible:</strong> ' + esc(t1.cat) + ' L.' + t1.amount + '</span>';
+        html += '<span><strong>⚠️ Duplicado posible:</strong> ' + esc(t1.cat) + ' ' + fL(t1.amount) + '</span>';
         html += '<button class="btn btn-duplicate-action" onclick="eliminarGastoConPapelera(\'' + esc(t2.id) + '\')">Eliminar</button>';
+        html += '<button class="btn btn-duplicate-action" style="background:none;border:1px solid var(--border);color:var(--text2)" onclick="marcarNoDuplicado(\'' + esc(t1.id) + '\',\'' + esc(t2.id) + '\')">No es duplicado</button>';
         html += '</div>';
         duplicadosHtml.push(html);
         procesados[t2.id] = true;

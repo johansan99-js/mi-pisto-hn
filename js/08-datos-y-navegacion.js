@@ -421,6 +421,7 @@ function renderAll(){
     renderPrimerosPasos();
     renderMargenExtranjero();
     renderBeneficiosMes();
+    if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }

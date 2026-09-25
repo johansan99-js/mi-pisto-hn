@@ -116,11 +116,11 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
       <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${urgente?'rgba(255,68,68,.15)':'rgba(76,175,80,.15)'};color:${urgente?'var(--red)':'var(--green)'}">Día ${p.dia}</span>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
-      ${p.monto?'L. '+p.monto.toLocaleString('es-HN',{minimumFractionDigits:2}):'Sin monto'} · 
-      ${diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--amber);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
+      ${p.monto?fL(p.monto):'Sin monto'} · 
+      ${_pagadoEsteMes(p)?'<span style="color:var(--green);font-weight:700">✅ Pagado este mes</span>':diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--amber);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
     </div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
-      <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px">✓ Pagado</button>
+      <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px${_pagadoEsteMes(p)?';opacity:.6':''}">${_pagadoEsteMes(p)?'✓ Pagado':'✓ Marcar pagado'}</button>
       <button onclick=\"editarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
@@ -129,7 +129,18 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
       </button>
     </div>
   </div>`;}).join('')}
-function marcarPagoRecurrente(id){const p=state.pagosRecurrentes.find(x=>x.id===id);if(p){p.pagado+=p.monto;save();renderAll()}}
+const _pagadoEsteMes = p => { if (!p.ultimoPago) return false; const d = new Date(p.ultimoPago), h = new Date(); return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth(); };
+// Antes solo sumaba a p.pagado: no quedaba ningún gasto ni se veía que ya se pagó
+function marcarPagoRecurrente(id){
+  const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
+  if(_pagadoEsteMes(p)&&!confirm(`Ya registraste el pago de "${p.servicio}" este mes. ¿Registrar otro pago?`))return;
+  let monto=p.monto;
+  if(!(monto>0)){monto=parseMonto(prompt(`¿Cuánto pagaste de "${p.servicio}"?`));if(!(monto>0))return;}
+  const cuenta=confirm(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
+  p.pagado=(p.pagado||0)+monto;p.ultimoPago=new Date().toISOString();
+  save();renderAll();
+}
 
 // ========== CONCILIACIÓN v2 — ASIENTO COMPENSATORIO (Opción 3) ==========
 function previewConciliacion(){
@@ -138,11 +149,12 @@ function previewConciliacion(){
   const saldoActual=getCuentaBalance(cuentaSel);
   const currentEl=document.getElementById('reconcile-current');
   if(currentEl)currentEl.textContent=fL(saldoActual);
-  const realInput=parseFloat(document.getElementById('reconcile-balance')?.value);
+  // parseMonto entiende "1,200.50"; parseFloat cortaba en la coma y dejaba el saldo en 1
+  const realInput=parseMonto(document.getElementById('reconcile-balance')?.value);
   const preview=document.getElementById('reconcile-diff-preview');
   const notaWrap=document.getElementById('reconcile-nota-wrap');
   if(!preview)return;
-  if(isNaN(realInput)){preview.innerHTML='';if(notaWrap)notaWrap.style.display='none';return;}
+  if(realInput===null){preview.innerHTML='';if(notaWrap)notaWrap.style.display='none';return;}
   const diff=realInput-saldoActual;
   if(Math.abs(diff)<0.01){
     preview.innerHTML=`<span style="color:var(--green)">✅ Saldo exacto — no se necesita ajuste</span>`;
@@ -161,8 +173,8 @@ function reconcileBalance(){
   const cuentaSel=document.getElementById('reconcile-cuenta')?.value||'efectivo';
   const cuentaNombre=cuentaSel==='ahorro'?'Cuenta de Ahorro':'Efectivo';
   const saldoActual=getCuentaBalance(cuentaSel);
-  const saldoReal=parseFloat(document.getElementById('reconcile-balance')?.value);
-  if(isNaN(saldoReal))return alert('Ingresa el saldo real de tu '+cuentaNombre);
+  const saldoReal=parseMonto(document.getElementById('reconcile-balance')?.value);
+  if(saldoReal===null)return alert('Ingresa el saldo real de tu '+cuentaNombre);
   const diff=saldoReal-saldoActual;
   if(Math.abs(diff)<0.01)return alert('✅ El saldo ya está correcto. No se necesita ajuste.');
   const nota=document.getElementById('reconcile-nota')?.value||`Conciliación ${cuentaNombre} — ajuste automático`;
@@ -203,7 +215,9 @@ function _coincideBusquedaTx(t, query){
 function renderGastos(){
     // P0-2: ocultar transferencias internas y conciliaciones del listado y del KPI
     const gastos = state.transactions.filter(t => t.type === 'expense' && !t.deletedAt && !t.esTransferencia && !t.esConciliacion);
-    const total = gastos.reduce((a,b) => a + b.amount, 0);
+    // "Este mes": antes sumaba todos los gastos de la historia
+    const hoy = new Date();
+    const total = gastos.filter(t => { const d = new Date(t.date); return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth(); }).reduce((a,b) => a + b.amount, 0);
     document.getElementById('gastos-mes').textContent = fL(total);
     const container = document.getElementById('gastos-list');
     if (!container) return;
@@ -222,7 +236,10 @@ function renderGastos(){
           <div class="es-title">Sin resultados</div>
           <div class="es-sub">Ningún gasto coincide con "${esc(query)}".</div>
         </div>`; return; }
-    container.innerHTML = gastosFiltrados.slice().reverse().map(t => {
+    // Con miles de movimientos, dibujarlos todos tardaba más de medio segundo
+    const lista = gastosFiltrados.slice().reverse();
+    const visibles = lista.slice(0, _gastosVisibles);
+    container.innerHTML = visibles.map(t => {
         const tieneFactura = t.facturaImagenId || t.facturaImagen; // P0-2: IDB o legacy
         const etiqPill = t.etiqueta ? `<span class="etiqueta-pill">#${esc(t.etiqueta)}</span>` : '';
         const concBadge = t.esConciliacion ? `<span class="badge-conciliacion">⚖️</span> ` : '';
@@ -248,8 +265,13 @@ function renderGastos(){
                 <button class="btn-tx-delete" onclick=\"softDeleteTx('${esc(t.id)}')\"">🗑️ Eliminar</button>
             </div>
         </div>`;
-    }).join('');
+    }).join('') + (lista.length > visibles.length
+        ? `<button class="btn btn-secondary" id="btn-mas-gastos" onclick="verMasGastos()">Ver ${Math.min(GASTOS_POR_PAGINA, lista.length - visibles.length)} más (${lista.length - visibles.length} restantes)</button>`
+        : '');
 }
+const GASTOS_POR_PAGINA = 50;
+let _gastosVisibles = GASTOS_POR_PAGINA;
+function verMasGastos() { _gastosVisibles += GASTOS_POR_PAGINA; renderGastos(); }
 
 function renderIngresos(){
     // P0-2: ocultar transferencias internas y conciliaciones
@@ -503,6 +525,7 @@ function calcularResumenMes(year, month) {
     gastosPrev, hayMesAnterior: txPrev.length > 0, top,
     hormiga: { cantidad: hormiga.length, total: hormiga.reduce((a, t) => a + t.amount, 0) },
     fijo, promedioDiario: dias ? gastos / dias : 0,
+    aMetas: state.transactions.filter(t => !t.deletedAt && t.metaId && t.esTransferencia && t.type === 'expense' && (d => d.getFullYear() === year && d.getMonth() === month)(new Date(t.date))).reduce((a, t) => a + t.amount, 0),
   };
 }
 
@@ -527,6 +550,7 @@ function ideasDelResumen(r) {
     const pct = Math.round(r.fijo / r.ingresos * 100);
     ideas.push('🏠 Tus gastos fijos fueron el ' + pct + '% de tus ingresos' + (pct > reglas.gastos ? ', arriba de tu meta de ' + reglas.gastos + '%.' : ' (tu meta: hasta ' + reglas.gastos + '%).'));
   }
+  if (r.aMetas > 0) ideas.push('🎯 Guardaste ' + fL(r.aMetas) + ' en tus metas.');
   const benef = resumenBeneficiosMes(r.year, r.month);
   if (benef.ganado >= 1) ideas.push('🎁 Tus tarjetas te devolvieron ~' + fL(benef.ganado) + (benef.perdido >= 20 ? '; con la mejor tarjeta en cada compra ganabas ' + fL(benef.perdido) + ' más.' : '.'));
   else if (benef.perdido >= 20) ideas.push('🎁 Pagando con la tarjeta adecuada en cada compra ganabas ~' + fL(benef.perdido) + '.');
