@@ -2248,6 +2248,17 @@ let recordarPIN = false;
 // Mantiene fallback a L. para no romper nada antes de que cargue.
 // El state SIEMPRE guarda en HNL (moneda base); fL solo cambia el display.
 // ─────────────────────────────────────────────────────────────────
+// Descarga un Blob como archivo. La URL se libera más tarde: revocarla justo
+// después del click puede cancelar la descarga en equipos lentos, y un
+// alert() síncrono inmediato también puede frenarla antes de que empiece.
+function descargarArchivo(blob, nombre, aviso) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  if (aviso) setTimeout(() => alert(aviso), 300);
+}
 const fL = n => {
   let txt;
   if (window.currencyManager && typeof window.currencyManager.formatFromBase === 'function') {
@@ -3197,10 +3208,7 @@ async function generarKitRecuperacion() {
       'Si olvidas tu PIN, en la pantalla de desbloqueo toca "¿Olvidaste tu PIN?" y escribe esta clave.\n' +
       'Funciona solo en el teléfono donde la generaste. Guarda este archivo fuera del teléfono\n' +
       '(impreso, en otro dispositivo o en un gestor de contraseñas) y no lo compartas.';
-    const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = 'MiPistoHN_kit_recuperacion.txt';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    descargarArchivo(new Blob([texto], { type: 'text/plain' }), 'MiPistoHN_kit_recuperacion.txt');
   };
   openModal('modal-kit-rec');
   renderEstadoKitRecuperacion();
@@ -5126,16 +5134,8 @@ function exportFullReport() {
             });
         }
         const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Finanzas_' + (state.nombre || 'Usuario') + '_' + todayStr() + '.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        alert('✅ Reporte CSV generado');
+        descargarArchivo(new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' }),
+          'Finanzas_' + (state.nombre || 'Usuario') + '_' + todayStr() + '.csv', '✅ Reporte CSV generado');
     } catch (error) {
         alert('❌ Error: ' + error.message);
     }
@@ -5204,16 +5204,9 @@ async function exportDataEncriptado() {
       iv:   _b64Encode(iv),
       datos: _b64Encode(cipherBuf)
     };
-    const blob = new Blob([JSON.stringify(archivoFinal, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Backup_MiPistoHN_' + todayStr() + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    alert('✅ Respaldo cifrado generado con AES-GCM-256.\n⚠️ NO OLVIDES TU CONTRASEÑA — sin ella el archivo es irrecuperable.');
+    descargarArchivo(new Blob([JSON.stringify(archivoFinal, null, 2)], { type: 'application/json' }),
+      'Backup_MiPistoHN_' + todayStr() + '.json',
+      '✅ Respaldo cifrado generado con AES-GCM-256.\n⚠️ NO OLVIDES TU CONTRASEÑA — sin ella el archivo es irrecuperable.');
   } catch (error) {
     console.error('Error al exportar:', error);
     alert('❌ Error al cifrar el respaldo: ' + error.message);
