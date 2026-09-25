@@ -224,6 +224,10 @@
       <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🎯</div>
       <div><div>Metas de Ahorro</div><div style="font-size:11px;color:var(--text2);font-weight:400">Progreso y abonos</div></div>
     </div>
+    <div class="hamburger-item" onclick="switchView('presupuestos');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">📅</div>
+      <div><div>Presupuestos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Límite por categoría</div></div>
+    </div>
     <div class="hamburger-item" onclick="switchView('pagos');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">🔔</div>
       <div><div>Pagos Recurrentes</div><div style="font-size:11px;color:var(--text2);font-weight:400">Servicios y suscripciones</div></div>
@@ -648,6 +652,11 @@
 <div id="view-metas" class="view">
   <h2 style="margin-bottom:15px">🎯 Metas de Ahorro</h2>
   <div id="metas-list"></div>
+</div>
+
+<div id="view-presupuestos" class="view">
+  <h2 style="margin-bottom:15px">📅 Presupuestos</h2>
+  <div id="presupuestos-vista" class="card registros-card analisis-card"></div>
 </div>
 
 <div id="view-historico" class="view">
@@ -1332,6 +1341,22 @@
   </div>
 </div>
 
+<!-- PONER O EDITAR UN PRESUPUESTO (js/27-presupuestos-categoria.js) -->
+<div id="modal-presu-cat" class="modal" onclick="closeModalIfBg(event,'modal-presu-cat')">
+  <div class="modal-content">
+    <h3 id="pc-titulo" class="pc-titulo"></h3>
+    <input type="hidden" id="pc-id"><input type="hidden" id="pc-cat">
+    <label class="pc-label" for="pc-monto">¿Cuánto quieres gastar como máximo?</label>
+    <input type="text" inputmode="decimal" id="pc-monto" class="input-field pc-monto" placeholder="L 0.00" autocomplete="off">
+    <div id="pc-sugerencia" class="pc-sugerencia" style="display:none"></div>
+    <label class="pc-label" for="pc-periodo">Cada cuánto</label>
+    <select id="pc-periodo" class="input-field" onchange="_sugerenciaPresu()"><option value="quincena">Por quincena</option><option value="semana">A la semana</option><option value="mes">Al mes</option></select>
+    <button class="btn btn-primary" onclick="guardarPresupuestoCat()">💾 Guardar presupuesto</button>
+    <button class="btn btn-secondary" id="pc-quitar" onclick="quitarPresupuestoCat()" style="color:var(--red)">🗑️ Quitar presupuesto</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-presu-cat')">Cancelar</button>
+  </div>
+</div>
+
 <!-- GASTOS COMPARTIDOS -->
 <div id="modal-grupo" class="modal" onclick="closeModalIfBg(event,'modal-grupo')">
   <div class="modal-content">
@@ -1554,5 +1579,6 @@
 <script src="js/24-registro-rapido.js"></script>
 <script src="js/25-registros-del-mes.js"></script>
 <script src="js/26-analisis.js"></script>
+<script src="js/27-presupuestos-categoria.js"></script>
 </body>
 </html>

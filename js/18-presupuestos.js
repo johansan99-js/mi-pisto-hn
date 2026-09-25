@@ -88,7 +88,7 @@ function renderPresupuestos() {
   const lista = (state.presupuestos || []).filter(p => vista === 'dia' || p.periodo === vista);
   const barras = lista.map(p => {
     const e = estadoPresupuesto(p);
-    const color = e.nivel === 'pasado' ? 'var(--red)' : e.nivel === 'aviso' ? 'var(--amber)' : 'var(--green)';
+    const color = e.nivel === 'pasado' ? 'var(--red)' : e.nivel === 'aviso' ? 'var(--purple)' : 'var(--green)';
     const detalle = e.queda >= 0
       ? 'Quedan ' + fL(e.queda) + (e.dias > 1 && e.queda > 0 ? ' · ' + fL(e.porDia) + ' por día' : '')
       : 'Te pasaste ' + fL(-e.queda);
@@ -99,14 +99,16 @@ function renderPresupuestos() {
   const vacio = !(state.presupuestos || []).length;
   card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
       <strong style="font-size:14px">📅 Mi presupuesto</strong>
-      <button onclick="abrirPresupuestos()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer">${vacio ? '' : '⚙️ Ajustar'}</button></div>
+      <button onclick="switchView('presupuestos')" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer">${vacio ? '' : 'Ver todos ›'}</button></div>
     <div class="presu-chips" role="tablist">${Object.keys(PERIODOS).map(k => `<button role="tab" data-periodo="${k}" class="${k === vista ? 'activa' : ''}" onclick="elegirPeriodoInicio('${k}')">${PERIODOS[k]}</button>`).join('')}</div>
     <div class="presu-rango">${esc(textoRango(vista, r))}</div>
     <div class="presu-totales"><div><small>Entró</small><strong style="color:var(--green)">${fL(tot.ingresos)}</strong></div><div><small>Gastaste</small><strong style="color:var(--red)">${fL(tot.gastos)}</strong></div><div><small>Te queda</small><strong style="color:${tot.ingresos - tot.gastos >= 0 ? 'var(--text)' : 'var(--red)'}">${fL(tot.ingresos - tot.gastos)}</strong></div></div>
     ${barras || (vacio
-      ? `<p style="font-size:12px;color:var(--text2);line-height:1.5;margin:10px 0">Ponle un tope a lo que gastas: por ejemplo, <strong>Comida ${fL(3000)} por quincena</strong>. Te avisamos al 80% y te decimos cuánto puedes gastar por día.</p><button class="btn btn-primary" onclick="abrirPresupuestos()">➕ Crear mi presupuesto</button>`
-      : `<p style="font-size:12px;color:var(--text2);margin:10px 0 0">No tienes presupuestos ${PERIODO_TXT[vista] || ''}. <a href="#" onclick="abrirPresupuestos();return false" style="color:var(--blue)">Agregar</a></p>`)}`;
+      ? `<p style="font-size:12px;color:var(--text2);line-height:1.5;margin:10px 0">Ponle un tope a lo que gastas: por ejemplo, <strong>Comida ${fL(3000)} por quincena</strong>. Te avisamos al 80% y te decimos cuánto puedes gastar por día.</p><button class="btn btn-primary" onclick="switchView('presupuestos')">➕ Crear mi presupuesto</button>`
+      : `<p style="font-size:12px;color:var(--text2);margin:10px 0 0">No tienes presupuestos ${PERIODO_TXT[vista] || ''}. <a href="#" onclick="switchView('presupuestos');return false" style="color:var(--blue)">Agregar</a></p>`)}`;
   avisarPresupuestos();
+  // La pantalla de Presupuestos (27-presupuestos-categoria.js) se mantiene al día
+  if (typeof renderVistaPresupuestos === 'function') renderVistaPresupuestos();
 }
 
 // Una notificación por presupuesto, período y nivel
