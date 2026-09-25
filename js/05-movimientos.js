@@ -315,6 +315,8 @@ function saveGasto(){
     
     ['gasto-monto','gasto-cat','gasto-subcat','gasto-banco','gasto-cobrado'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('gasto-cobrado-wrap').style.display = 'none';
+    const sugerencia = document.getElementById('gasto-sugerencia-tc');
+    if (sugerencia) { sugerencia.style.display = 'none'; sugerencia.innerHTML = ''; sugerencia.dataset.html = ''; }
     document.getElementById('gasto-tipo').value = 'extra';
     const esCuotas = document.getElementById('gasto-es-cuotas');
     if (esCuotas) { esCuotas.checked = false; document.getElementById('gasto-cuotas-meses').classList.add('hidden'); }

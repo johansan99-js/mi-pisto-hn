@@ -723,6 +723,7 @@
     </div>
   </div>
   <div id="tarjetas-list"></div>
+  <div id="beneficios-mes" class="card" style="display:none"></div>
   <div id="margen-dolares" class="card" style="display:none"></div>
   
   <!-- NUEVA SECCIÓN: ALERTAS DE PAGO MÍNIMO -->
@@ -1162,6 +1163,7 @@
     <select id="gasto-tarjeta" class="input-field hidden">
       <option value="">Selecciona tarjeta...</option>
     </select>
+    <div id="gasto-sugerencia-tc" class="sugerencia-tc" style="display:none"></div>
     <div id="gasto-cuotas-wrap" class="hidden" style="background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:10px">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px">
         <input type="checkbox" id="gasto-es-cuotas" onchange="document.getElementById('gasto-cuotas-meses').classList.toggle('hidden',!this.checked)">
@@ -1229,6 +1231,7 @@
 <div id="modal-tarjeta" class="modal" onclick="closeModalIfBg(event,'modal-tarjeta')">
   <div class="modal-content">
     <h3>💳 Nueva Tarjeta de Crédito</h3>
+    <div class="aviso-seguridad-tc">🔒 <strong>No pedimos el número de tu tarjeta, la fecha de vencimiento ni el CVV.</strong> Solo un nombre para reconocerla y, si quieres, los últimos 4 dígitos. Todo se guarda cifrado en tu teléfono.</div>
     <input type="text" id="tc-nombre" class="input-field" placeholder="Nombre (Ej. BAC Oro, Visa)">
     <input type="text" id="tc-ultimos4" class="input-field" inputmode="numeric" maxlength="4" placeholder="Últimos 4 dígitos (opcional, para leer los SMS)">
     
@@ -1329,6 +1332,28 @@
     </div>
   </div>
 </div>
+<!-- BENEFICIOS DE UNA TARJETA (cashback, puntos, millas) -->
+<div id="modal-beneficios" class="modal" onclick="closeModalIfBg(event,'modal-beneficios')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">🎁 Beneficios de <span id="benef-tarjeta-nombre"></span></h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">Anota lo que te devuelve la tarjeta en cada compra. Así, al registrar un gasto, la app te dice con qué tarjeta te conviene pagar.</p>
+    <div id="benef-lista" style="margin-bottom:14px"></div>
+    <h4 style="margin-bottom:8px;font-size:14px">Agregar beneficio</h4>
+    <input type="text" inputmode="decimal" id="benef-porcentaje" class="input-field" placeholder="% que te devuelve (ej. 3)">
+    <select id="benef-aplica" class="input-field" onchange="document.getElementById('benef-valor').style.display=this.value==='todo'?'none':'block';document.getElementById('benef-valor').placeholder=this.value==='comercio'?'Comercio (ej. PriceSmart)':'Categoría (ej. Alimentación)'">
+      <option value="todo">En todas las compras</option>
+      <option value="categoria">En una categoría</option>
+      <option value="comercio">En un comercio</option>
+    </select>
+    <input type="text" id="benef-valor" class="input-field" list="benef-sugerencias" maxlength="60" style="display:none">
+    <datalist id="benef-sugerencias"></datalist>
+    <input type="text" inputmode="decimal" id="benef-tope" class="input-field" placeholder="Tope al mes en L (opcional)">
+    <p style="font-size:11px;color:var(--text2);margin:-4px 0 12px;line-height:1.5">¿Da puntos o millas? Conviértelos a %: 1 punto por cada L 50 y cada punto vale L 1 → 2%.</p>
+    <button class="btn btn-primary" onclick="guardarBeneficio()">➕ Agregar beneficio</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-beneficios')">Listo</button>
+  </div>
+</div>
+
 <div id="modal-cuotas" class="modal" onclick="closeModalIfBg(event,'modal-cuotas')">
   <div class="modal-content">
     <h3>🧾 Compra a cuotas Tasa Cero</h3>

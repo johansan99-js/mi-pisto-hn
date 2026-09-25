@@ -148,7 +148,7 @@ function renderTarjetas(){
         totalDeuda+=t.saldo+comprometido;
         const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
         const hoy=new Date().getDate(),estadoCorte=estadoCicloTarjeta(t,hoy);
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}${t.ultimos4?` <span style="font-size:12px;color:var(--text2);font-weight:400">•••• ${esc(t.ultimos4)}</span>`:''}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}${t.ultimos4?` <span style="font-size:12px;color:var(--text2);font-weight:400">•••• ${esc(t.ultimos4)}</span>`:''}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlBeneficiosTarjeta(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -256,6 +256,200 @@ function estadoCicloTarjeta(t, hoy) {
 function pagoMinimoTarjeta(t) {
   return t.calcularMinimo && t.saldo > 0 ? Math.min(t.saldo, Math.max(t.saldo * 0.05, 100)) : 0;
 }
+// ═══ BENEFICIOS DE TARJETAS: ¿CON CUÁL ME CONVIENE PAGAR? ═══════════════
+// Cada tarjeta guarda reglas { id, porcentaje, categoria | comercio, tope }.
+// Para una compra aplica la regla más específica (comercio > categoría >
+// todas) y, si tiene tope mensual, solo lo que queda del tope de ese mes.
+// Los puntos y millas se anotan como su equivalente en %. Las compras a
+// cuotas Tasa Cero no cuentan: casi ningún banco da beneficios en ellas.
+const _norm = x => _sinAcentos(String(x || '')).trim();
+function _prioridadRegla(b, cat, subcat) {
+  if (b.comercio) return _norm(subcat).includes(_norm(b.comercio)) || _norm(cat) === _norm(b.comercio) ? 3 : 0;
+  if (b.categoria) return _norm(cat) === _norm(b.categoria) ? 2 : 0;
+  return 1;
+}
+function _reglaPara(tc, cat, subcat) {
+  let mejor = null, pri = 0;
+  (tc.beneficios || []).forEach(b => {
+    const p = _prioridadRegla(b, cat, subcat);
+    if (p > pri || (p === pri && p > 0 && b.porcentaje > mejor.porcentaje)) { mejor = b; pri = p; }
+  });
+  return mejor;
+}
+function textoRegla(b) {
+  return b.porcentaje + '% ' + (b.comercio ? 'en ' + b.comercio : b.categoria ? 'en ' + b.categoria : 'en todo') + (b.tope ? ' (tope ' + fL(b.tope) + '/mes)' : '');
+}
+const _cuentaParaBeneficio = t => t && !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.planCuotasId && typeof t.amount === 'number';
+// Lo ya ganado en el mes por regla, recorriendo las compras en orden
+function _usadoDelMes(tc, fecha, excluirId) {
+  const f = new Date(fecha), usado = {};
+  state.transactions.filter(t => _cuentaParaBeneficio(t) && String(t.tarjetaId) === String(tc.id) && t.id !== excluirId)
+    .filter(t => { const d = new Date(t.date); return d.getFullYear() === f.getFullYear() && d.getMonth() === f.getMonth(); })
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach(t => { const r = beneficioDeCompra(tc, t, usado); if (r.regla) usado[r.regla.id] = (usado[r.regla.id] || 0) + r.ganancia; });
+  return usado;
+}
+/** Lo que devuelve la tarjeta por una compra { cat, subcat, amount }. */
+function beneficioDeCompra(tc, compra, usado) {
+  const regla = _reglaPara(tc, compra.cat, compra.subcat);
+  if (!regla || !(compra.amount > 0)) return { ganancia: 0, regla: null };
+  let g = compra.amount * regla.porcentaje / 100;
+  if (regla.tope) g = Math.min(g, Math.max(0, regla.tope - ((usado || {})[regla.id] || 0)));
+  return { ganancia: Math.round(g * 100) / 100, regla };
+}
+/** Tarjetas con beneficios, de la que más devuelve a la que menos. */
+function recomendarTarjeta(compra, fecha, excluirId) {
+  return (state.tarjetas || []).filter(tc => (tc.beneficios || []).length)
+    .map(tc => Object.assign({ tarjeta: tc }, beneficioDeCompra(tc, compra, _usadoDelMes(tc, fecha || new Date(), excluirId))))
+    .sort((a, b) => b.ganancia - a.ganancia);
+}
+
+// Vista previa en el formulario de gasto
+function _montoGastoHNL() {
+  const monto = parseMonto(document.getElementById('gasto-monto')?.value);
+  const moneda = document.getElementById('gasto-moneda')?.value || 'HNL';
+  if (!(monto > 0)) return 0;
+  if (moneda === 'HNL') return monto;
+  const cobrado = parseMonto(document.getElementById('gasto-cobrado')?.value);
+  if (cobrado > 0) return cobrado;
+  const rate = window.currencyManager && window.currencyManager.getRate(moneda);
+  return rate ? monto * rate.ask : 0;
+}
+function actualizarSugerenciaTarjeta() {
+  const el = document.getElementById('gasto-sugerencia-tc');
+  if (!el) return;
+  const ocultar = () => { el.style.display = 'none'; el.innerHTML = ''; el.dataset.html = ''; };
+  const amount = _montoGastoHNL(), cat = document.getElementById('gasto-cat').value, subcat = document.getElementById('gasto-subcat').value;
+  if (!amount || document.getElementById('gasto-es-cuotas')?.checked) return ocultar();
+  const recs = recomendarTarjeta({ cat, subcat, amount });
+  const mejor = recs[0];
+  if (!mejor || mejor.ganancia <= 0) return ocultar();
+  const cuenta = document.getElementById('gasto-cuenta').value, sel = document.getElementById('gasto-tarjeta').value;
+  const nombre = '<strong>' + esc(mejor.tarjeta.nombre) + '</strong>', gana = '~' + fL(mejor.ganancia) + ' (' + esc(textoRegla(mejor.regla)) + ')';
+  const boton = '<button type="button" class="btn btn-secondary" onclick="usarTarjetaSugerida(\'' + esc(mejor.tarjeta.id) + '\')">💳 Pagar con ' + esc(mejor.tarjeta.nombre) + '</button>';
+  let html;
+  if (cuenta === 'credito' && sel === String(mejor.tarjeta.id)) html = '🎁 Buena elección: con ' + nombre + ' te devuelven ' + gana + '.';
+  else if (cuenta === 'credito' && sel) {
+    const actual = recs.find(r => String(r.tarjeta.id) === sel);
+    const dif = mejor.ganancia - (actual ? actual.ganancia : 0);
+    if (dif < 0.01) return ocultar();
+    html = '💡 Con ' + nombre + ' te devuelven ' + gana + ': ' + fL(dif) + ' más que con la tarjeta elegida.' + boton;
+  } else html = '💡 Si pagas con ' + nombre + ' te devuelven ' + gana + '.' + boton;
+  // Solo se redibuja si cambió: al tocar el botón, el campo que pierde el foco
+  // dispara "change" y reemplazar el botón a mitad del toque lo anularía
+  if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
+  el.style.display = 'block';
+}
+function usarTarjetaSugerida(id) {
+  document.getElementById('gasto-cuenta').value = 'credito';
+  checkCreditCard();
+  document.getElementById('gasto-tarjeta').value = id;
+  actualizarSugerenciaTarjeta();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('modal-gasto');
+  if (!modal) return;
+  // Un solo escucha para todos los campos que cambian la recomendación
+  ['input', 'change'].forEach(ev => modal.addEventListener(ev, e => {
+    if (e.target && ['gasto-monto', 'gasto-moneda', 'gasto-cobrado', 'gasto-cat', 'gasto-subcat', 'gasto-cuenta', 'gasto-tarjeta', 'gasto-es-cuotas'].includes(e.target.id)) actualizarSugerenciaTarjeta();
+  }));
+});
+
+// Configuración de los beneficios de una tarjeta
+let _benefTarjetaId = null;
+function abrirBeneficios(id) {
+  const tc = state.tarjetas.find(x => x.id === id);
+  if (!tc) return;
+  _benefTarjetaId = id;
+  document.getElementById('benef-tarjeta-nombre').textContent = tc.nombre;
+  const nombres = new Set();
+  state.transactions.forEach(t => { if (t.type === 'expense' && !t.esTransferencia) { if (t.cat) nombres.add(t.cat); if (t.subcat) nombres.add(t.subcat); } });
+  ['Alimentación', 'Transporte', 'Combustible', 'Salud', 'Ocio', 'Compras', 'Vivienda', 'Educación'].forEach(n => nombres.add(n));
+  document.getElementById('benef-sugerencias').innerHTML = [...nombres].slice(0, 60).map(n => '<option value="' + esc(n) + '">').join('');
+  _renderListaBeneficios();
+  openModal('modal-beneficios');
+}
+function _renderListaBeneficios() {
+  const tc = state.tarjetas.find(x => x.id === _benefTarjetaId), el = document.getElementById('benef-lista');
+  if (!tc || !el) return;
+  const reglas = tc.beneficios || [];
+  el.innerHTML = reglas.length ? reglas.map(b => '<div class="benef-regla"><span>🎁 ' + esc(textoRegla(b)) + '</span><button onclick="eliminarBeneficio(\'' + esc(b.id) + '\')" aria-label="Eliminar">✕</button></div>').join('')
+    : '<p style="font-size:12px;color:var(--text2)">Todavía no tiene beneficios anotados.</p>';
+}
+function guardarBeneficio() {
+  const tc = state.tarjetas.find(x => x.id === _benefTarjetaId);
+  if (!tc) return;
+  const porcentaje = parseMonto(document.getElementById('benef-porcentaje').value);
+  if (!(porcentaje > 0) || porcentaje > 30) return alert('Escribe el porcentaje que te devuelve, entre 0.1 y 30.');
+  const aplica = document.getElementById('benef-aplica').value, valor = document.getElementById('benef-valor').value.trim();
+  if (aplica !== 'todo' && !valor) return alert(aplica === 'comercio' ? 'Escribe el comercio.' : 'Escribe la categoría.');
+  if (/[<>]/.test(valor)) return alert('El nombre no puede contener < o >.');
+  const topeTxt = document.getElementById('benef-tope').value.trim(), tope = topeTxt ? parseMonto(topeTxt) : null;
+  if (topeTxt && !(tope > 0)) return alert('El tope debe ser un monto mayor que 0.');
+  const b = { id: uid(), porcentaje: Math.round(porcentaje * 100) / 100 };
+  if (aplica === 'categoria') b.categoria = valor;
+  if (aplica === 'comercio') b.comercio = valor;
+  if (tope) b.tope = tope;
+  (tc.beneficios = tc.beneficios || []).push(b);
+  ['benef-porcentaje', 'benef-valor', 'benef-tope'].forEach(i => document.getElementById(i).value = '');
+  save(); renderAll(); _renderListaBeneficios();
+}
+function eliminarBeneficio(id) {
+  const tc = state.tarjetas.find(x => x.id === _benefTarjetaId);
+  if (!tc) return;
+  tc.beneficios = (tc.beneficios || []).filter(b => b.id !== id);
+  save(); renderAll(); _renderListaBeneficios();
+}
+function htmlBeneficiosTarjeta(t) {
+  const reglas = t.beneficios || [];
+  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px;font-size:11px;color:var(--text2)">' +
+    '<span>' + (reglas.length ? '🎁 ' + reglas.map(b => esc(textoRegla(b))).join(' · ') : '🎁 Sin beneficios anotados') + '</span>' +
+    '<button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;width:auto;margin:0;flex-shrink:0" onclick="abrirBeneficios(\'' + esc(t.id) + '\')">' + (reglas.length ? 'Editar' : '➕ Beneficios') + '</button></div>';
+}
+
+// Resumen del mes: lo que devolvieron las tarjetas y lo que se dejó de ganar
+function resumenBeneficiosMes(year, month) {
+  const conBenef = (state.tarjetas || []).filter(tc => (tc.beneficios || []).length);
+  const r = { ganado: 0, perdido: 0, mayorPerdida: null, hayBeneficios: conBenef.length > 0 };
+  if (!conBenef.length) return r;
+  const compras = state.transactions.filter(t => _cuentaParaBeneficio(t) && t.tarjetaId).filter(t => { const d = new Date(t.date); return d.getFullYear() === year && d.getMonth() === month; })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const usado = {};
+  compras.forEach(t => {
+    const propia = state.tarjetas.find(tc => String(tc.id) === String(t.tarjetaId));
+    const u = usado[t.tarjetaId] = usado[t.tarjetaId] || {};
+    const real = propia ? beneficioDeCompra(propia, t, u) : { ganancia: 0 };
+    if (real.regla) u[real.regla.id] = (u[real.regla.id] || 0) + real.ganancia;
+    r.ganado += real.ganancia;
+    // La alternativa se estima con los topes que esa tarjeta ya usó en el mes
+    const alt = conBenef.filter(tc => String(tc.id) !== String(t.tarjetaId))
+      .map(tc => Object.assign({ tarjeta: tc }, beneficioDeCompra(tc, t, usado[tc.id] || {}))).sort((a, b) => b.ganancia - a.ganancia)[0];
+    const dif = alt ? alt.ganancia - real.ganancia : 0;
+    if (dif > 0.009) {
+      r.perdido += dif;
+      if (!r.mayorPerdida || dif > r.mayorPerdida.dif) r.mayorPerdida = { dif, tarjeta: alt.tarjeta.nombre, compra: t.subcat || t.cat };
+    }
+  });
+  r.ganado = Math.round(r.ganado * 100) / 100; r.perdido = Math.round(r.perdido * 100) / 100;
+  return r;
+}
+function renderBeneficiosMes() {
+  const card = document.getElementById('beneficios-mes');
+  if (!card) return;
+  if (!(state.tarjetas || []).length) { card.style.display = 'none'; return; }
+  const h = new Date(), r = resumenBeneficiosMes(h.getFullYear(), h.getMonth());
+  card.style.display = 'block';
+  if (!r.hayBeneficios) {
+    card.innerHTML = '<h4 style="margin-bottom:6px">🎁 ¿Con qué tarjeta te conviene pagar?</h4><p style="font-size:12px;color:var(--text2);line-height:1.5">Anota el cashback o los puntos de cada tarjeta con el botón <strong>➕ Beneficios</strong>. Al registrar un gasto, la app te dirá con cuál ganas más.</p>';
+    return;
+  }
+  card.innerHTML = '<h4 style="margin-bottom:6px">🎁 Beneficios de este mes</h4>' +
+    '<div style="font-size:13px;line-height:1.6">Tus tarjetas te devuelven <strong style="color:var(--green)">~' + fL(r.ganado) + '</strong>.</div>' +
+    (r.perdido > 0 ? '<div style="font-size:12px;color:var(--amber);margin-top:4px;line-height:1.5">Dejaste de ganar ~' + fL(r.perdido) + ' pagando con otra tarjeta' +
+      (r.mayorPerdida ? ': en ' + esc(r.mayorPerdida.compra || 'una compra') + ', ' + esc(r.mayorPerdida.tarjeta) + ' te daba ' + fL(r.mayorPerdida.dif) + ' más.' : '.') + '</div>' : '') +
+    '<p style="font-size:10px;color:var(--text2);margin-top:6px">Estimado con los beneficios que anotaste; tu banco puede redondear distinto.</p>';
+}
+
 function htmlCuotasTarjeta(t) {
   const planes = t.cuotas || [];
   const activos = planes.filter(planActivo);

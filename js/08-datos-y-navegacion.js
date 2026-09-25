@@ -127,6 +127,15 @@ function _validarSchemaBackup(obj) {
       if (!esStringSeguro(tc.nombre, 100)) return 'nombre de tarjeta sospechoso';
       if (tc.ultimos4 !== undefined && !/^\d{4}$/.test(String(tc.ultimos4))) return 'últimos dígitos de tarjeta inválidos';
       if (tc.saldoBase !== undefined && (typeof tc.saldoBase !== 'number' || !isFinite(tc.saldoBase) || Math.abs(tc.saldoBase) > 1e12)) return 'saldo base de tarjeta inválido';
+      if (tc.beneficios !== undefined) {
+        if (!Array.isArray(tc.beneficios) || tc.beneficios.length > 30) return 'beneficios de tarjeta inválidos';
+        for (const b of tc.beneficios) {
+          if (!b || !esIdValido(b.id)) return `ID inválido en beneficio: ${b && b.id}`;
+          if (typeof b.porcentaje !== 'number' || !(b.porcentaje > 0) || b.porcentaje > 30) return 'porcentaje de beneficio inválido';
+          if (!esStringSeguro(b.categoria, 60) || !esStringSeguro(b.comercio, 60) || /[<>]/.test((b.categoria || '') + (b.comercio || ''))) return 'beneficio de tarjeta sospechoso';
+          if (b.tope !== undefined && b.tope !== null && (typeof b.tope !== 'number' || !(b.tope > 0))) return 'tope de beneficio inválido';
+        }
+      }
       if (tc.cuotas !== undefined) {
         if (!Array.isArray(tc.cuotas)) return 'cuotas de tarjeta inválidas';
         for (const c of tc.cuotas) {
@@ -411,6 +420,7 @@ function renderAll(){
     renderRecordatorioConfig();
     renderPrimerosPasos();
     renderMargenExtranjero();
+    renderBeneficiosMes();
     renderResumenMes();
     renderAvisoResumen();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }

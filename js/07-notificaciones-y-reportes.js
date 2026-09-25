@@ -527,6 +527,9 @@ function ideasDelResumen(r) {
     const pct = Math.round(r.fijo / r.ingresos * 100);
     ideas.push('🏠 Tus gastos fijos fueron el ' + pct + '% de tus ingresos' + (pct > reglas.gastos ? ', arriba de tu meta de ' + reglas.gastos + '%.' : ' (tu meta: hasta ' + reglas.gastos + '%).'));
   }
+  const benef = resumenBeneficiosMes(r.year, r.month);
+  if (benef.ganado >= 1) ideas.push('🎁 Tus tarjetas te devolvieron ~' + fL(benef.ganado) + (benef.perdido >= 20 ? '; con la mejor tarjeta en cada compra ganabas ' + fL(benef.perdido) + ' más.' : '.'));
+  else if (benef.perdido >= 20) ideas.push('🎁 Pagando con la tarjeta adecuada en cada compra ganabas ~' + fL(benef.perdido) + '.');
   if (r.enCurso && r.gastos > 0) ideas.push('📆 Vas gastando ' + fL(r.promedioDiario) + ' por día este mes.');
   return ideas;
 }
