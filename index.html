@@ -2788,6 +2788,7 @@ function save() {
   // Devuelve una promesa que se cumple cuando localStorage e IndexedDB ya
   // están escritos: quien recarga la página justo después debe esperarla.
   const guardarIDB = () => saveStateToDB(state).catch(e => console.error('❌ Error guardando en IndexedDB:', e));
+  recalcularSaldosTarjetas();
   sellarCambios();
   if (leerRecordatorio().activo) _actualizarFichaRecordatorio();
   if (!_sessionDEK) {
@@ -3968,9 +3969,8 @@ function saveGasto(){
             const plan = nuevoPlanCuotas(subcat || cat, monto, meses, 0);
             (tarjeta.cuotas = tarjeta.cuotas || []).push(plan);
             transaction.planCuotasId = plan.id;
-        } else {
-            tarjeta.saldo += monto;
         }
+        // Sin cuotas, la compra sube el saldo al recalcularse en save()
     }
     
     state.transactions.push(transaction);
@@ -4508,7 +4508,7 @@ function saveTarjeta(){
     if(!nombre)return alert('Nombre requerido');
     const ultimos4=(document.getElementById('tc-ultimos4')?.value||'').trim();
     if(ultimos4&&!/^\d{4}$/.test(ultimos4))return alert('Los últimos dígitos deben ser 4 números.');
-    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[],...(ultimos4?{ultimos4}:{})});
+    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,saldoBase:saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[],...(ultimos4?{ultimos4}:{})});
     save();closeModal('modal-tarjeta');renderAll();limpiarFormTarjeta();
 }
 function limpiarFormTarjeta(){['tc-nombre','tc-ultimos4','tc-corte','tc-pago','tc-limite','tc-saldo','tc-tasa'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('tc-calcular-minimo').checked=true;}
@@ -4704,7 +4704,6 @@ function pagarTarjeta(id){
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
     const cuenta=confirm(`¿De dónde sale el pago de ${fL(monto)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
-    tarjeta.saldo=Math.round((tarjeta.saldo-monto)*100)/100;
     // La compra con tarjeta ya se registró como gasto: el pago solo mueve
     // dinero de la cuenta a la tarjeta (baja la cuenta, no es un gasto nuevo).
     state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${tarjeta.nombre}`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:tarjeta.id,date:new Date().toISOString(),notas:`Abono a tarjeta ${tarjeta.nombre}`});
@@ -4715,6 +4714,7 @@ function pagarTarjeta(id){
 // gasto; si cobra menos, puede ser un pago que no se anotó.
 function ajustarSaldoTarjeta(id){
   const t=state.tarjetas.find(x=>x.id===id);if(!t)return;
+  recalcularSaldosTarjetas();
   const cuotas=cupoComprometido(t);
   const txt=prompt(`Conciliar ${t.nombre} con tu estado de cuenta\n\nSaldo en la app: ${fL(t.saldo)}${cuotas>0?`\n(sin contar ${fL(cuotas)} de compras a cuotas Tasa Cero)`:''}\n\n¿Qué saldo dice tu estado de cuenta? (usa - para saldo a favor)`,t.saldo.toFixed(2));
   if(txt===null)return;
@@ -4723,15 +4723,19 @@ function ajustarSaldoTarjeta(id){
   const nuevo=neg?-valor:valor,dif=Math.round((nuevo-t.saldo)*100)/100;
   t.ultimaConciliacion=new Date().toISOString();
   if(dif===0){save();renderAll();return alert('✅ El saldo coincide con tu estado de cuenta.');}
+  let registrado=false;
   if(dif>0){
     if(confirm(`El banco cobra ${fL(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (seguro de deuda, membresía, comisiones…)?\n\n[Cancelar] = solo corregir el saldo`)){
       state.transactions.push({id:uid(),type:'expense',amount:dif,cat:'Cargos Bancarios',subcat:`Conciliación ${t.nombre}`,pago:'credito',cuenta:null,tipo:'fijo',tarjetaId:t.id,tarjetaNombre:t.nombre,date:new Date().toISOString()});
+      registrado=true;
     }
   }else if(confirm(`El estado de cuenta dice ${fL(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`)){
     const cuenta=confirm(`¿De dónde salió ese pago de ${fL(-dif)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
     state.transactions.push({id:uid(),type:'expense',amount:-dif,cat:'Pago Tarjeta',subcat:`Pago a ${t.nombre} (conciliación)`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:t.id,date:new Date().toISOString()});
+    registrado=true;
   }
-  t.saldo=nuevo;
+  // El movimiento registrado ya mueve el saldo; si no, la diferencia va a la base
+  if(!registrado)t.saldoBase=Math.round((t.saldoBase+dif)*100)/100;
   save();renderAll();alert(`✅ Tarjeta conciliada. Nuevo saldo: ${fL(nuevo)}`);
 }
 function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
@@ -5782,6 +5786,7 @@ function _validarSchemaBackup(obj) {
       if (!esIdValido(tc.id)) return `ID inválido en tarjeta: ${tc.id}`;
       if (!esStringSeguro(tc.nombre, 100)) return 'nombre de tarjeta sospechoso';
       if (tc.ultimos4 !== undefined && !/^\d{4}$/.test(String(tc.ultimos4))) return 'últimos dígitos de tarjeta inválidos';
+      if (tc.saldoBase !== undefined && (typeof tc.saldoBase !== 'number' || !isFinite(tc.saldoBase) || Math.abs(tc.saldoBase) > 1e12)) return 'saldo base de tarjeta inválido';
       if (tc.cuotas !== undefined) {
         if (!Array.isArray(tc.cuotas)) return 'cuotas de tarjeta inválidas';
         for (const c of tc.cuotas) {
@@ -6055,6 +6060,7 @@ document.addEventListener('click',e=>{
 });
 
 function renderAll(){
+    recalcularSaldosTarjetas();
     renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderTransferenciasProgramadas();renderHistorico();renderBudgetRules();
     // FIX: el saludo/topbar (nombre, fecha, avatar) tiene su propio ciclo de
     // render independiente de renderAll(). Sin esto, cualquier flujo que solo
@@ -6186,6 +6192,34 @@ function migrarPagosTarjeta() {
     if (t.type !== 'expense' || t.cat !== 'Pago Tarjeta' || t.esTransferencia) return;
     t.esTransferencia = true;
     if (!t.cuenta) t.cuenta = t.pago === 'ahorro' ? 'ahorro' : 'efectivo';
+  });
+}
+
+// ═══ SALDO DE TARJETAS DERIVADO DE LOS MOVIMIENTOS ══════════════════════
+// Antes el saldo se sumaba y restaba a mano en cada compra y pago: borrar,
+// restaurar o editar una compra no lo tocaba, y al combinar dos teléfonos
+// ganaba el saldo de uno solo. Ahora saldo = saldoBase + compras - pagos.
+// saldoBase es el saldo inicial más los ajustes de conciliación; las compras
+// y cuotas Tasa Cero (planCuotasId) van por su propio plan y no cuentan.
+// t.saldo se sigue guardando como copia calculada para el resto del código.
+function _movimientosPorTarjeta() {
+  const neto = {};
+  (state.transactions || []).forEach(t => {
+    if (!t || t.deletedAt || !t.tarjetaId || t.planCuotasId || typeof t.amount !== 'number' || t.type !== 'expense') return;
+    const id = String(t.tarjetaId);
+    if (t.esTransferencia) { if (t.cat === 'Pago Tarjeta') neto[id] = (neto[id] || 0) - t.amount; }
+    else neto[id] = (neto[id] || 0) + t.amount;
+  });
+  return neto;
+}
+function recalcularSaldosTarjetas() {
+  if (!Array.isArray(state.tarjetas) || !state.tarjetas.length) return;
+  const neto = _movimientosPorTarjeta(), r2 = n => Math.round(n * 100) / 100;
+  state.tarjetas.forEach(tc => {
+    const n = neto[String(tc.id)] || 0;
+    // Migración: la tarjeta conserva el saldo que tenía y la diferencia queda como base
+    if (typeof tc.saldoBase !== 'number' || !isFinite(tc.saldoBase)) tc.saldoBase = r2((Number(tc.saldo) || 0) - n);
+    tc.saldo = r2(tc.saldoBase + n);
   });
 }
 
@@ -7893,6 +7927,7 @@ async function _completarCargaApp() {
   }
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  recalcularSaldosTarjetas();
   _tomarBaseSync();
   purgarEliminadosViejos();
   // Renderizar la app con los datos ya cargados
@@ -7965,6 +8000,7 @@ window.onload = async function() {
 
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  recalcularSaldosTarjetas();
   _tomarBaseSync();
   purgarEliminadosViejos();
   verificarPINmejorado();
