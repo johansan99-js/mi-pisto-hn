@@ -39,7 +39,7 @@ function renderLiquidez7Dias() {
   const ratio = saldoActual>0 ? Math.max(0, liquidezReal/saldoActual) : 0;
   let estado, barColor;
   if (liquidezReal<0)    { estado='danger';  barColor='var(--red)'; }
-  else if (ratio<0.3)    { estado='warning'; barColor='var(--amber)'; }
+  else if (ratio<0.3)    { estado='warning'; barColor='var(--aviso)'; }
   else                   { estado='safe';    barColor='var(--green)'; }
   const badges = {safe:'badge-liq-safe',warning:'badge-liq-warning',danger:'badge-liq-danger'};
   const labels = {safe:'✅ Liquidez Saludable',warning:'⚠️ Liquidez Ajustada',danger:'🚨 Riesgo de Iliquidez'};
@@ -403,7 +403,7 @@ async function requestPersistence() {
         if (isPersisted) {
           persistDiv.innerHTML = '<div class="card" style="border-left:4px solid var(--green);margin-top:15px"><h4 style="color:var(--green);margin-bottom:8px">✅ Almacenamiento Persistente Activado</h4><p style="font-size:12px;color:var(--text2)">Tu navegador garantiza que los datos no se limpiarán automáticamente. Igual se recomienda hacer respaldos periódicos.</p></div>';
         } else {
-          persistDiv.innerHTML = '<div class="card" style="border-left:4px solid var(--amber);margin-top:15px"><h4 style="color:var(--amber);margin-bottom:8px">⚠️ Almacenamiento No Persistente</h4><p style="font-size:12px;color:var(--text2)">Safari/iOS puede borrar los datos después de 7 días sin uso. Exporta un respaldo regularmente.</p><button class="btn btn-primary" onclick="exportDataEncriptado()" style="margin-top:10px">💾 Exportar Respaldo Ahora</button></div>';
+          persistDiv.innerHTML = '<div class="card" style="border-left:4px solid var(--aviso);margin-top:15px"><h4 style="color:var(--aviso);margin-bottom:8px">⚠️ Almacenamiento No Persistente</h4><p style="font-size:12px;color:var(--text2)">Safari/iOS puede borrar los datos después de 7 días sin uso. Exporta un respaldo regularmente.</p><button class="btn btn-primary" onclick="exportDataEncriptado()" style="margin-top:10px">💾 Exportar Respaldo Ahora</button></div>';
         }
       }
     } catch (error) {

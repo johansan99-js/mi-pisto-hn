@@ -110,6 +110,39 @@ describe('Registro rápido con teclado', () => {
       ['flex', '75.5', 'Salud', 'Farmacia Kielsa', 'fijo']);
     assert.deepEqual(page.errores, []);
   });
+  it('al elegir la categoría muestra su presupuesto y avisa si con el gasto te pasas', async () => {
+    const page = await env.pagina();
+    await page.clock.setFixedTime(HOY);
+    await sembrar(page, estadoBase({ cuentasIniciales: { efectivo: 9000, ahorro: 0 },
+      transactions: [{ id: 'gas00001', type: 'expense', amount: 1100, cat: 'Comida', date: dia(20), cuenta: 'efectivo', tipo: 'fijo' }],
+      presupuestos: [{ id: 'pre00001', cat: 'Comida', monto: 3000, periodo: 'quincena' }, { id: 'pre00002', cat: '*', monto: 20000, periodo: 'mes' }] }));
+    await page.evaluate(() => abrirRegistro('gasto'));
+    const presu = () => page.evaluate(() => { const e = document.getElementById('reg-presu'); return e.style.display === 'none' ? null : [e.className, e.textContent]; });
+    assert.equal(await presu(), null, 'sin categoría no dice nada');
+    await page.evaluate(() => elegirCatRegistro('Comida'));
+    assert.deepEqual(await presu(), ['reg-presu bien', '📅 Comida: te quedan L. 1,900.00 de L. 3,000.00 esta quincena']);
+    await teclear(page, '1600');
+    assert.deepEqual(await presu(), ['reg-presu aviso', '⚠️ Comida: después de este gasto te quedan L. 300.00 de L. 3,000.00 esta quincena']);
+    await teclear(page, '0');
+    assert.deepEqual(await presu(), ['reg-presu pasado', '🚨 Con este gasto te pasas en Comida por L. 14,100.00 (te quedan L. 1,900.00 de L. 3,000.00 esta quincena)']);
+    // Sin tope propio usa el de todos los gastos
+    await page.evaluate(() => { ['borrar', 'borrar', 'borrar', 'borrar', 'borrar'].forEach(teclaRegistro); elegirCatRegistro('Ropa'); });
+    assert.deepEqual(await presu(), ['reg-presu bien', '📅 Todos tus gastos: te quedan L. 18,900.00 de L. 20,000.00 este mes']);
+    // En ingresos no aplica
+    await page.evaluate(() => { cambiarTipoRegistro('ingreso'); elegirCatRegistro('Salario'); });
+    assert.equal(await presu(), null);
+  });
+
+  it('las advertencias van en amarillo, no en el verde principal', async () => {
+    for (const esquema of ['light', 'dark']) {
+      const page = await env.pagina({ colorScheme: esquema });
+      await sembrar(page, estadoBase());
+      const [acento, aviso] = await page.evaluate(() => { const c = getComputedStyle(document.documentElement); return [c.getPropertyValue('--amber').trim(), c.getPropertyValue('--aviso').trim()]; });
+      assert.ok(aviso && aviso !== acento, esquema);
+      assert.equal(await page.evaluate(() => { const d = document.createElement('span'); d.className = 'survival-status warning'; document.body.appendChild(d); return getComputedStyle(d).color; }),
+        esquema === 'light' ? 'rgb(180, 83, 9)' : 'rgb(245, 181, 68)');
+    }
+  });
 });
 
 describe('Inicio: movimientos del mes por día', () => {

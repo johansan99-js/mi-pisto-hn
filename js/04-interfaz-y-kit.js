@@ -108,7 +108,7 @@ function renderEstadoKitRecuperacion() {
   if (!el) return;
   const f = localStorage.getItem('finanzas_rec_fecha');
   el.textContent = f ? '✅ Kit creado el ' + new Date(f).toLocaleDateString('es-HN') : '⚠️ Sin kit: si olvidas tu PIN, perderás tus datos.';
-  el.style.color = f ? 'var(--green)' : 'var(--amber)';
+  el.style.color = f ? 'var(--green)' : 'var(--aviso)';
 }
 /** Olvido de PIN: abre la DEK con la clave y crea un PIN nuevo. */
 async function recuperarConKit() {

@@ -88,7 +88,7 @@ function renderPresupuestos() {
   const lista = (state.presupuestos || []).filter(p => vista === 'dia' || p.periodo === vista);
   const barras = lista.map(p => {
     const e = estadoPresupuesto(p);
-    const color = e.nivel === 'pasado' ? 'var(--red)' : e.nivel === 'aviso' ? 'var(--purple)' : 'var(--green)';
+    const color = e.nivel === 'pasado' ? 'var(--red)' : e.nivel === 'aviso' ? 'var(--aviso)' : 'var(--green)';
     const detalle = e.queda >= 0
       ? 'Quedan ' + fL(e.queda) + (e.dias > 1 && e.queda > 0 ? ' · ' + fL(e.porDia) + ' por día' : '')
       : 'Te pasaste ' + fL(-e.queda);

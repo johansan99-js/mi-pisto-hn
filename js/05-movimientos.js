@@ -135,7 +135,7 @@ function renderMargenExtranjero() {
     if (r.tasaBancoUSD) html += '<div style="font-size:12px;color:var(--text2);margin-top:4px">Tasa promedio del banco: <strong>L. ' + r.tasaBancoUSD.toFixed(4) + '</strong> · referencia: L. ' + r.tasaRefUSD.toFixed(4) + '</div>';
   }
   if (r.pendientes.length) {
-    html += '<div style="font-size:12px;margin-top:12px;color:var(--amber)">⚠️ ' + r.pendientes.length + (r.pendientes.length === 1 ? ' compra' : ' compras') +
+    html += '<div style="font-size:12px;margin-top:12px;color:var(--aviso)">⚠️ ' + r.pendientes.length + (r.pendientes.length === 1 ? ' compra' : ' compras') +
       ' sin confirmar lo que te cobró el banco. Búscalo en tu estado de cuenta:</div>' +
       r.pendientes.slice(0, 5).map(t => '<div class="pasos-item" data-tx="' + esc(t.id) + '" onclick="abrirEdicionTx(\'' + esc(t.id) + '\')"><span style="flex:1">' + esc(t.subcat || t.cat || 'Compra') +
         ' <span style="color:var(--text2);font-size:11px">· ' + new Date(t.date).toLocaleDateString('es-HN') + '</span></span><span>' + esc(window.currencyManager ? window.currencyManager.format(t.originalAmount, t.originalCurrency) : t.originalAmount + ' ' + t.originalCurrency) + ' ›</span></div>').join('');
@@ -402,7 +402,7 @@ function updateGastoSplitTotal() {
         totalEl.style.color = 'var(--green)';
         totalEl.textContent = `✅ Asignado: L.${suma.toFixed(2)} de L.${montoTotal.toFixed(2)}`;
     } else if (restante > 0) {
-        totalEl.style.color = 'var(--amber)';
+        totalEl.style.color = 'var(--aviso)';
         totalEl.textContent = `Asignado: L.${suma.toFixed(2)} · Falta: L.${restante.toFixed(2)}`;
     } else {
         totalEl.style.color = 'var(--red)';
@@ -570,7 +570,7 @@ function actualizarSaldoAbono(){
   const cuenta=sel.value;
   const saldo=getCuentaBalance(cuenta);
   const nombre=etiquetaCuenta(cuenta);
-  const color=saldo<=0?'var(--red)':(saldo<100?'var(--amber)':'var(--green)');
+  const color=saldo<=0?'var(--red)':(saldo<100?'var(--aviso)':'var(--green)');
   info.innerHTML=`Saldo disponible en ${nombre}: <strong style="color:${color}">${fL(saldo)}</strong>`;
 }
 function saveAbono(){

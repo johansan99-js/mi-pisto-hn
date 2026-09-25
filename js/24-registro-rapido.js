@@ -186,6 +186,38 @@ function renderMontoRegistro() {
   const conOp = /\d[+\-*/]\d/.test(e);
   const v = conOp ? _regValor() : null;
   if (res) res.textContent = conOp ? (v !== null ? '= ' + fL(v) : '= ?') : '';
+  renderPresuRegistro();
+}
+
+// ─── El presupuesto de la categoría, antes de gastar ────────────────────
+// "Te quedan L 1,900 de L 3,000 esta quincena" y, con el monto escrito,
+// si con este gasto te pasas. Usa el tope de la categoría o, si no tiene,
+// el de "Todos mis gastos" (18-presupuestos.js).
+const _PERIODO_ESTE = { semana: 'esta semana', quincena: 'esta quincena', mes: 'este mes' };
+function presupuestoParaRegistro(cat) {
+  const ps = state.presupuestos || [];
+  const orden = { semana: 0, quincena: 1, mes: 2 };
+  const deCat = ps.filter(p => p.cat !== TODOS_LOS_GASTOS && _mismaCat(p.cat, cat)).sort((a, b) => orden[a.periodo] - orden[b.periodo]);
+  return deCat[0] || ps.filter(p => p.cat === TODOS_LOS_GASTOS).sort((a, b) => orden[a.periodo] - orden[b.periodo])[0] || null;
+}
+function renderPresuRegistro() {
+  const el = document.getElementById('reg-presu');
+  if (!el) return;
+  const p = _reg.tipo === 'gasto' && _reg.cat && typeof estadoPresupuestoEn === 'function' ? presupuestoParaRegistro(_reg.cat) : null;
+  if (!p) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const e = estadoPresupuestoEn(p, rangoPeriodo(p.periodo, fechaRegistro()));
+  const monto = _regValor() || 0;
+  const despues = _c2(e.queda - monto);
+  const quien = p.cat === TODOS_LOS_GASTOS ? 'Todos tus gastos' : esc(nombreCatPresupuesto(p.cat));
+  const en = p.cat === TODOS_LOS_GASTOS ? 'en tus gastos' : 'en ' + esc(nombreCatPresupuesto(p.cat));
+  let nivel, txt;
+  if (e.queda <= 0) { nivel = 'pasado'; txt = `🚨 Ya te pasaste ${en} por ${fL(-e.queda)} (tope ${fL(p.monto)} ${_PERIODO_ESTE[p.periodo]})`; }
+  else if (monto > 0 && despues < 0) { nivel = 'pasado'; txt = `🚨 Con este gasto te pasas ${en} por ${fL(-despues)} (te quedan ${fL(e.queda)} de ${fL(p.monto)} ${_PERIODO_ESTE[p.periodo]})`; }
+  else if (monto > 0) { nivel = despues < p.monto * 0.2 ? 'aviso' : 'bien'; txt = `${nivel === 'aviso' ? '⚠️' : '📅'} ${quien}: después de este gasto te quedan ${fL(despues)} de ${fL(p.monto)} ${_PERIODO_ESTE[p.periodo]}`; }
+  else { nivel = e.nivel === 'aviso' ? 'aviso' : 'bien'; txt = `${nivel === 'aviso' ? '⚠️' : '📅'} ${quien}: te quedan ${fL(e.queda)} de ${fL(p.monto)} ${_PERIODO_ESTE[p.periodo]}`; }
+  el.className = 'reg-presu ' + nivel;
+  el.innerHTML = txt;
+  el.style.display = '';
 }
 
 // ─── Pantalla ───────────────────────────────────────────────────────────
