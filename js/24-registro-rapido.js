@@ -25,6 +25,7 @@ const CATS_GASTO = [
   { n: 'Suscripciones', i: '📺', c: '#5E35B1', f: false, k: ['netflix', 'spotify', 'suscripcion', 'disney', 'hbo', 'youtube'] },
   { n: 'Mascotas', i: '🐶', c: '#8D6E63', f: false, k: ['mascota', 'perro', 'gato', 'veterinari'] },
   { n: 'Regalos', i: '🎁', c: '#EC407A', f: false, k: ['regalo', 'cumpleanos'] },
+  { n: 'Día a día', i: '🪙', c: '#A1887F', f: false, k: ['dia a dia', 'menudo', 'cuadre'] },
   { n: 'Otros', i: '📦', c: '#78909C', f: false, k: ['otro', 'general', 'varios'] },
 ];
 // `tipo` es el que ya usaba el formulario de ingresos

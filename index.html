@@ -243,7 +243,7 @@
     </div>
     <div class="hamburger-item" onclick="switchView('pagos');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">🔔</div>
-      <div><div>Pagos Recurrentes</div><div style="font-size:11px;color:var(--text2);font-weight:400">Servicios y suscripciones</div></div>
+      <div><div>Pagos fijos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Salario, servicios y cuotas que se anotan solos</div></div>
     </div>
 
     <!-- ── VISTAS DE DETALLE ── -->
@@ -449,6 +449,7 @@
   <div id="primeros-pasos" class="card" style="display:none"></div>
   <div id="aviso-resumen" class="card" style="display:none;border-color:rgba(var(--amber-rgb),.45)"></div>
   <div id="fondo-emergencia-card" class="card" style="display:none"></div>
+  <div id="auto-anotados" class="card auto-anotados" style="display:none"></div>
   <div id="aviso-cuadre" class="card" style="display:none;border-color:rgba(var(--blue-rgb),.45)"></div>
   <div id="racha-card" class="card" style="display:none"></div>
   <div class="balance-card">
@@ -643,15 +644,15 @@
 </div>
 
 <div id="view-pagos" class="view">
-  <h2 style="margin-bottom:15px">🔔 Pagos Recurrentes</h2>
-  <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Registra tus pagos de servicios y recibe notificaciones antes del vencimiento.</p>
+  <h2 style="margin-bottom:15px">🔁 Pagos fijos</h2>
+  <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Salario, alquiler, luz, Netflix, la cuota: anótalos una vez y se registran solos el día que tocan. Si el monto cambia, lo corriges desde el Inicio.</p>
   <button id="btn-activar-notif" onclick="activarNotificacionesPagos().then(ok=>{if(ok)document.getElementById('btn-activar-notif').innerHTML='<span style=\'color:var(--green)\'>✓ Alertas activas</span>'})" style="display:flex;align-items:center;gap:8px;background:rgba(var(--amber-rgb),.12);border:1.5px solid rgba(var(--amber-rgb),.4);border-radius:10px;padding:10px 14px;color:var(--amber);font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-bottom:14px;justify-content:center">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     Activar notificaciones de vencimiento
   </button>
   <div id="pagos-alertas" style="margin-bottom:20px"></div>
   <div id="pagos-list"></div>
-  <button class="btn btn-secondary" onclick="openModal('modal-pago-recurrente')">+ Nuevo Pago Recurrente</button>
+  <button class="btn btn-secondary" onclick="abrirPagoFijo()">+ Nuevo pago fijo</button>
 
   <h2 style="margin:26px 0 6px">🔁 Transferencias Programadas</h2>
   <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Automatiza transferencias entre tus cuentas (ej. ahorro mensual, cuota de préstamo) — se ejecutan solas el día que elijas.</p>
@@ -1581,7 +1582,19 @@
     <button class="btn btn-primary" onclick="saveTransferenciaProgramada()">Guardar</button>
   </div>
 </div>
-<div id="modal-pago-recurrente" class="modal" onclick="closeModalIfBg(event,'modal-pago-recurrente')"><div class="modal-content"><h3>🔔 Nuevo Pago Recurrente</h3><input type="text" id="pago-servicio" class="input-field" placeholder="Servicio (Ej. Agua, Luz, Teléfono)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="pago-monto" class="input-field" placeholder="Monto estimado (L)"><input type="number" id="pago-dia" class="input-field" placeholder="Día de pago (1-31)" min="1" max="31"><select id="pago-alerta" class="input-field"><option value="5">Alertarme 5 días antes</option><option value="3" selected>Alertarme 3 días antes</option><option value="1">Alertarme 1 día antes</option></select><label style="display:flex;align-items:center;gap:10px;margin:10px 0;cursor:pointer"><input type="checkbox" id="pago-notificacion" checked><span style="font-size:12px">Activar notificaciones push</span></label><button class="btn btn-secondary" onclick="closeModal('modal-pago-recurrente')">Cancelar</button><button class="btn btn-primary" onclick="savePagoRecurrente()">Guardar Pago</button></div></div>
+<div id="modal-pago-recurrente" class="modal" onclick="closeModalIfBg(event,'modal-pago-recurrente')"><div class="modal-content">
+  <h3 id="pf-titulo" style="margin-bottom:12px">🔁 Nuevo pago fijo</h3>
+  <div id="pf-tipo" class="an-segmentos" role="tablist"><button type="button" class="an-seg-btn activa" data-t="gasto" onclick="tipoPagoFijo('gasto')">Gasto</button><button type="button" class="an-seg-btn" data-t="ingreso" onclick="tipoPagoFijo('ingreso')">Ingreso</button></div>
+  <input type="text" id="pago-servicio" class="input-field" maxlength="60" placeholder="Servicio (Ej. Luz, Netflix, Alquiler, Cuota)">
+  <div class="input-row"><input type="text" inputmode="decimal" id="pago-monto" class="input-field" placeholder="Monto (L)"><input type="text" inputmode="numeric" id="pago-dia" class="input-field" placeholder="Día(s): 5 o 15, 30"></div>
+  <input type="text" id="pf-cat" class="input-field" list="pf-cats" maxlength="40" placeholder="Categoría (Servicios)"><datalist id="pf-cats"></datalist>
+  <label id="pf-lbl-cuenta" class="ptc-label">¿Con qué se paga?</label>
+  <select id="pf-cuenta" class="input-field" onchange="_renderAutoPagoFijo()"></select>
+  <label class="tc-check"><input type="checkbox" id="pf-auto" checked onchange="_renderAutoPagoFijo()"> <span>🔁 Anotarlo solo cada mes<small id="pf-auto-nota"></small></span></label>
+  <select id="pago-alerta" class="input-field"><option value="5">Avisarme 5 días antes</option><option value="3" selected>Avisarme 3 días antes</option><option value="1">Avisarme 1 día antes</option></select>
+  <button class="btn btn-primary" onclick="savePagoRecurrente()">Guardar</button>
+  <button class="btn btn-secondary" onclick="closeModal('modal-pago-recurrente')">Cancelar</button>
+</div></div>
 
 <script src="js/01-nucleo.js"></script>
 <script src="js/02-cifrado-y-guardado.js"></script>
@@ -1665,5 +1678,6 @@
 <script src="js/30-remesas.js"></script>
 <script src="js/31-dictado.js"></script>
 <script src="js/32-tarjetas-dolares.js"></script>
+<script src="js/33-sin-esfuerzo.js"></script>
 </body>
 </html>

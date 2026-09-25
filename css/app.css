@@ -1366,3 +1366,13 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 #modal-pago-tc .rem-chips{margin-bottom:8px}
 .reg-moneda.cambiable{cursor:pointer;border:1.5px solid rgba(var(--amber-rgb),.6);border-radius:8px;padding:2px 6px;color:var(--amber)}
 .reg-moneda.cambiable::after{content:' ⇄';font-size:12px}
+/* Sin esfuerzo: pagos fijos que se anotan solos y cuadre de efectivo (js/33-sin-esfuerzo.js) */
+.auto-anotados{border-color:rgba(var(--green-rgb),.45)}
+.auto-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+.auto-head small{font-size:11px;color:var(--text2)}
+.auto-anotados .auto-ok{margin-top:8px}
+.pf-auto-badge{font-size:11px;font-weight:700;color:var(--green);background:rgba(var(--green-rgb),.12);border-radius:10px;padding:1px 7px}
+.cuadre-fila{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}
+.cuadre-fila .input-field,.cuadre-fila .btn{margin:0!important}
+.cuadre-fila .btn{width:auto;padding:0 18px}
+#modal-pago-recurrente .an-segmentos{margin-bottom:10px}

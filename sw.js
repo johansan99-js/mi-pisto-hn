@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v69-aviso-excel';
+const VERSION = 'v70-sin-esfuerzo';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -100,6 +100,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/30-remesas.js',
   BASE_PATH + 'js/31-dictado.js',
   BASE_PATH + 'js/32-tarjetas-dolares.js',
+  BASE_PATH + 'js/33-sin-esfuerzo.js',
   BASE_PATH + 'css/app.css'
 ];
 

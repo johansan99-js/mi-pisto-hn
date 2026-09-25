@@ -106,21 +106,21 @@ async function activarNotificacionesPagos(){
   }
   return false;
 }
-function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');if(!c)return;if(state.pagosRecurrentes.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🔔</div><div class="es-title">Sin pagos recurrentes</div><div class="es-sub">Registra tus servicios fijos (agua, luz, internet) y recibe alertas antes de su vencimiento.</div><button class="btn-empty-secondary" onclick="openModal('modal-pago-recurrente')">➕ Agregar servicio</button></div>`;return;}c.innerHTML=state.pagosRecurrentes.map(p=>{
+function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');if(!c)return;if(state.pagosRecurrentes.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🔔</div><div class="es-title">Sin pagos recurrentes</div><div class="es-sub">Anota una vez tus pagos fijos (salario, alquiler, luz, Netflix) y se registran solos cada mes.</div><button class="btn-empty-secondary" onclick="abrirPagoFijo()">➕ Agregar pago fijo</button></div>`;return;}c.innerHTML=state.pagosRecurrentes.map(p=>{
   const hoy=new Date().getDate();
   const diasParaPago=p.dia>=hoy?p.dia-hoy:31-hoy+p.dia;
   const urgente=diasParaPago<=3;
   return `<div class="card card-credit" style="border-left:3px solid ${urgente?'var(--red)':'var(--green)'}">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-weight:700;font-size:15px">${esc(p.servicio)}</div>
-      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${urgente?'rgba(var(--red-rgb),.15)':'rgba(var(--green-rgb),.15)'};color:${urgente?'var(--red)':'var(--green)'}">Día ${p.dia}</span>
+      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${urgente?'rgba(var(--red-rgb),.15)':'rgba(var(--green-rgb),.15)'};color:${urgente?'var(--red)':'var(--green)'}">Día ${diasPagoFijo(p).join(' y ')}</span>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
-      ${p.monto?fL(p.monto):'Sin monto'} · 
-      ${_pagadoEsteMes(p)?'<span style="color:var(--green);font-weight:700">✅ Pagado este mes</span>':diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--aviso);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
+      ${p.tipo==='ingreso'?'<span style="color:var(--green);font-weight:700">Ingreso</span> · ':''}${p.monto?fL(p.monto):'Sin monto'} · 
+      ${p.auto?'<span class="pf-auto-badge">🔁 Se anota solo</span> ':''}${_pagadoEsteMes(p)?'<span style="color:var(--green);font-weight:700">✅ '+(p.tipo==='ingreso'?'Recibido':'Pagado')+' este mes</span>':diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--aviso);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
     </div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
-      <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px${_pagadoEsteMes(p)?';opacity:.6':''}">${_pagadoEsteMes(p)?'✓ Pagado':'✓ Marcar pagado'}</button>
+      <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px${_pagadoEsteMes(p)?';opacity:.6':''}">${_pagadoEsteMes(p)?(p.tipo==='ingreso'?'✓ Recibido':'✓ Pagado'):(p.tipo==='ingreso'?'✓ Marcar recibido':'✓ Marcar pagado')}</button>
       <button onclick=\"editarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--amber-rgb),.4);background:rgba(var(--amber-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
@@ -135,11 +135,15 @@ function marcarPagoRecurrente(id){
   const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
   if(_pagadoEsteMes(p)&&!confirm(`Ya registraste el pago de "${p.servicio}" este mes. ¿Registrar otro pago?`))return;
   let monto=p.monto;
-  if(!(monto>0)){monto=parseMonto(prompt(`¿Cuánto pagaste de "${p.servicio}"?`));if(!(monto>0))return;}
-  const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
-  if(!cuenta)return;
-  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
-  p.pagado=(p.pagado||0)+monto;p.ultimoPago=new Date().toISOString();
+  if(!(monto>0)){monto=parseMonto(prompt(`¿Cuánto ${p.tipo==='ingreso'?'recibiste':'pagaste'} de "${p.servicio}"?`));if(!(monto>0))return;}
+  // Con cuenta o tarjeta elegida (33-sin-esfuerzo.js) no se pregunta
+  if(p.cuenta||p.tarjetaId){const tx=_txDePagoFijo(Object.assign({},p,{monto}),new Date());delete tx.autoRegistrado;state.transactions.push(tx);}
+  else{
+    const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
+    if(!cuenta)return;
+    state.transactions.push({id:uid(),type:'expense',amount:monto,cat:p.cat||'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
+  }
+  if(p.tipo!=='ingreso')p.pagado=(p.pagado||0)+monto;p.ultimoPago=new Date().toISOString();
   save();renderAll();
 }
 
