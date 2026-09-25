@@ -1608,7 +1608,11 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
         ⚠️ <strong>Atención:</strong> Esta acción <strong>reemplazará tus datos locales</strong> con los que están en la nube. Si tu dispositivo tiene cambios sin subir, se perderán.
       </div>
       <div id="cloud-download-info" style="font-size:11px;background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:14px;line-height:1.6"></div>
-      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Tu PIN (para descifrar los datos)</label>
+      <div id="cloud-download-pass-wrap">
+        <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Contraseña de la nube</label>
+        <input type="password" id="cloud-download-pass" class="input-field" placeholder="La que creaste al subir tus datos" autocomplete="current-password">
+      </div>
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">PIN de este dispositivo (4 a 8 dígitos)</label>
       <input type="password" id="cloud-download-pin" class="input-field" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       <div id="cloud-download-status" style="font-size:12px;margin-bottom:10px;display:none;line-height:1.4"></div>
       <div style="display:flex;gap:10px;margin-top:8px">
@@ -1941,6 +1945,22 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <button class="btn btn-primary" onclick="saveTarjeta()">Guardar Tarjeta</button>
   </div>
 </div>
+<!-- Modal de contraseña de la nube (crear o escribir la existente) -->
+<div id="modal-cloud-pass" class="modal">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">🔑 Contraseña de la nube</h3>
+    <p id="cloud-pass-intro" style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
+    <input type="password" id="cloud-pass-1" class="input-field" placeholder="Contraseña (mínimo 12 caracteres)" autocomplete="new-password">
+    <input type="password" id="cloud-pass-2" class="input-field" placeholder="Repite la contraseña" autocomplete="new-password">
+    <div id="cloud-pass-error" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Guárdala en un lugar seguro: la necesitarás para bajar tus datos en otro dispositivo y no se puede recuperar.</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" id="btn-cloud-pass-cancel" style="flex:1">Cancelar</button>
+      <button class="btn btn-primary" id="btn-cloud-pass-ok" style="flex:2">Continuar</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-simulador" class="modal" onclick="closeModalIfBg(event,'modal-simulador')">
   <div class="modal-content">
     <h3>💸 El verdadero costo</h3>
@@ -2381,7 +2401,7 @@ function _b64DecodeArr(b64) {
 // ────────────────────────────────────────────────────────────────────
 // Derivar KEK desde el PIN (PBKDF2 + AES-GCM, 250k iteraciones)
 // ────────────────────────────────────────────────────────────────────
-async function _deriveKEKFromPIN(pin, salt) {
+async function _deriveKEKFromPIN(pin, salt, iterations = 250000) {
   const encoder = new TextEncoder();
   const baseKey = await crypto.subtle.importKey(
     'raw',
@@ -2394,7 +2414,7 @@ async function _deriveKEKFromPIN(pin, salt) {
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: 250000,
+      iterations: iterations,
       hash: 'SHA-256'
     },
     baseKey,
@@ -7337,6 +7357,62 @@ const cloudSync = {
 
   /** Sube el state local cifrado a Supabase. Requiere que el usuario
       esté autenticado Y que tenga la DEK desbloqueada (sesión activa). */
+  // ── Contraseña de la nube ──────────────────────────────────────────
+  // El blob de la nube lleva la DEK cifrada con una KEK derivada de una
+  // contraseña larga (no del PIN de 4-8 dígitos, que se puede probar
+  // entero offline). El salt se guarda con prefijo "p2:" para distinguirlo
+  // de los blobs viejos protegidos con el PIN. La DEK envuelta se guarda en
+  // este dispositivo para que el auto-sync no tenga que pedirla cada vez.
+  CLOUD_KDF_ITER: 600000,
+  CLOUD_PASS_MIN: 12,
+  hasCloudKey() {
+    return !!(localStorage.getItem('mph_cloud_dek') && localStorage.getItem('mph_cloud_dek_iv') && localStorage.getItem('mph_cloud_salt'));
+  },
+  _saveCloudKey(dekB64, ivB64, saltStr) {
+    localStorage.setItem('mph_cloud_dek', dekB64);
+    localStorage.setItem('mph_cloud_dek_iv', ivB64);
+    localStorage.setItem('mph_cloud_salt', saltStr);
+  },
+  async _kekDeContrasena(pass, saltStr) {
+    return _deriveKEKFromPIN(pass, _b64DecodeArr(saltStr.slice(3)), this.CLOUD_KDF_ITER);
+  },
+  async crearClaveNube(pass) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const saltStr = 'p2:' + _b64EncodeArr(salt);
+    const kek = await this._kekDeContrasena(pass, saltStr);
+    const { encrypted, iv } = await _encryptDEK(_sessionDEK, kek);
+    this._saveCloudKey(_b64EncodeArr(encrypted), _b64EncodeArr(iv), saltStr);
+  },
+  /** Verifica la contraseña contra el blob remoto; si abre la misma DEK de
+      este dispositivo, guarda la clave. */
+  async adoptarClaveNube(pass) {
+    const { data, error } = await this.client.from('encrypted_states')
+      .select('dek_ciphertext, dek_iv, pin_salt').eq('user_id', this.user.id).maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    const kek = await this._kekDeContrasena(pass, data.pin_salt);
+    const dek = await _decryptDEK(_b64DecodeArr(data.dek_ciphertext), _b64DecodeArr(data.dek_iv), kek);
+    if (!dek) return { ok: false, error: 'Contraseña de la nube incorrecta.' };
+    if (_b64EncodeArr(dek) !== _b64EncodeArr(_sessionDEK)) {
+      return { ok: false, error: 'Los datos de la nube se cifraron en otro dispositivo con otra clave. Usa "⬇️ Bajar de la nube" en este dispositivo primero.' };
+    }
+    this._saveCloudKey(data.dek_ciphertext, data.dek_iv, data.pin_salt);
+    return { ok: true };
+  },
+  /** Deja lista la clave de nube (la crea o la pide). false si se canceló o falló. */
+  async asegurarClaveNube() {
+    if (this.hasCloudKey()) return true;
+    let info;
+    try { info = await this.getRemoteInfo({ strict: true }); }
+    catch (e) { alert('❌ No se pudo consultar la nube:\n\n' + e.message); return false; }
+    const existe = !!(info && String(info.pin_salt || '').startsWith('p2:'));
+    const pass = await pedirContrasenaNube(existe);
+    if (!pass) return false;
+    if (!existe) { await this.crearClaveNube(pass); return true; }
+    const r = await this.adoptarClaveNube(pass);
+    if (!r.ok) alert('❌ ' + r.error);
+    return r.ok;
+  },
+
   async uploadState() {
     if (!this.user) return { ok: false, error: 'No has iniciado sesión en la nube' };
     if (!await this.init()) return { ok: false, error: 'Sin conexión con el servidor' };
@@ -7344,11 +7420,9 @@ const cloudSync = {
     if (typeof _sessionDEK === 'undefined' || _sessionDEK === null) {
       return { ok: false, error: 'Necesitas tener PIN configurado y la sesión desbloqueada para subir' };
     }
-    // Validar que tengamos la DEK cifrada y el salt en localStorage
-    const dekData = (typeof _loadDEKFromStorage === 'function') ? _loadDEKFromStorage() : null;
-    if (!dekData) return { ok: false, error: 'No se encontró la DEK cifrada local. Reconfigura el PIN.' };
-    const pinSalt = localStorage.getItem('finanzas_pin_salt');
-    if (!pinSalt) return { ok: false, error: 'No se encontró el salt del PIN. Reconfigura el PIN.' };
+    if (!this.hasCloudKey()) {
+      return { ok: false, needsPassphrase: true, error: 'Falta la contraseña de la nube en este dispositivo' };
+    }
 
     try {
       // 1) Cifrar el state con la DEK actual (el resultado ya incluye IV embebido)
@@ -7356,9 +7430,10 @@ const cloudSync = {
       const ciphertextB64 = await _encryptState(stateClone, _sessionDEK);
       if (!ciphertextB64) return { ok: false, error: 'Error al cifrar el state' };
 
-      // 2) Empaquetar la DEK cifrada (ya está en localStorage en formato base64)
-      const dekCiphertextB64 = _b64EncodeArr(dekData.encrypted);
-      const dekIvB64         = _b64EncodeArr(dekData.iv);
+      // 2) DEK envuelta con la contraseña de la nube (no con el PIN)
+      const dekCiphertextB64 = localStorage.getItem('mph_cloud_dek');
+      const dekIvB64         = localStorage.getItem('mph_cloud_dek_iv');
+      const pinSalt          = localStorage.getItem('mph_cloud_salt');
 
       // 3) Construir payload
       const payload = {
@@ -7402,7 +7477,7 @@ const cloudSync = {
       
       Esta función está diseñada para funcionar incluso si el dispositivo
       perdió la DEK local (ej. tras un reset) — solo necesita el PIN. */
-  async downloadState({ pin } = {}) {
+  async downloadState({ pin, passphrase } = {}) {
     if (!this.user) return { ok: false, error: 'No has iniciado sesión en la nube' };
     if (!await this.init()) return { ok: false, error: 'Sin conexión con el servidor' };
     if (!pin || !/^\d{4,8}$/.test(pin)) return { ok: false, error: 'PIN inválido' };
@@ -7421,16 +7496,22 @@ const cloudSync = {
         return { ok: false, error: 'El blob de la nube está incompleto o corrupto.' };
       }
 
-      // 2) Derivar la KEK desde el PIN ingresado y el salt bajado
-      const saltBytes = _b64DecodeArr(data.pin_salt);
-      const kek = await _deriveKEKFromPIN(pin, saltBytes);
+      // 2) Derivar la KEK: blobs nuevos con la contraseña de la nube,
+      //    blobs viejos (salt sin "p2:") con el PIN
+      const conContrasena = String(data.pin_salt).startsWith('p2:');
+      if (conContrasena && !passphrase) return { ok: false, error: 'Escribe la contraseña de la nube.' };
+      const kek = conContrasena
+        ? await this._kekDeContrasena(passphrase, data.pin_salt)
+        : await _deriveKEKFromPIN(pin, _b64DecodeArr(data.pin_salt));
 
       // 3) Descifrar la DEK con la KEK
       const dekEncrypted = _b64DecodeArr(data.dek_ciphertext);
       const dekIv        = _b64DecodeArr(data.dek_iv);
       const dek = await _decryptDEK(dekEncrypted, dekIv, kek);
       if (!dek) {
-        return { ok: false, error: 'PIN incorrecto. No se pudo descifrar la clave de tus datos.' };
+        return { ok: false, error: conContrasena
+          ? 'Contraseña de la nube incorrecta. No se pudo descifrar la clave de tus datos.'
+          : 'PIN incorrecto. No se pudo descifrar la clave de tus datos.' };
       }
 
       // 4) Descifrar el state con la DEK
@@ -7448,8 +7529,19 @@ const cloudSync = {
       //    a) Reemplazar la DEK en sesión y en localStorage
       _sessionDEK = dek;
       _sessionPIN = pin;
-      _saveDEKToStorage(dekEncrypted, dekIv);
-      localStorage.setItem('finanzas_pin_salt', data.pin_salt);
+      let saltBytes;
+      if (conContrasena) {
+        // La DEK local se envuelve con el PIN de este dispositivo (salt propio)
+        saltBytes = crypto.getRandomValues(new Uint8Array(16));
+        const { encrypted, iv } = await _encryptDEK(dek, await _deriveKEKFromPIN(pin, saltBytes));
+        _saveDEKToStorage(encrypted, iv);
+        localStorage.setItem('finanzas_pin_salt', _b64EncodeArr(saltBytes));
+        this._saveCloudKey(data.dek_ciphertext, data.dek_iv, data.pin_salt);
+      } else {
+        saltBytes = _b64DecodeArr(data.pin_salt);
+        _saveDEKToStorage(dekEncrypted, dekIv);
+        localStorage.setItem('finanzas_pin_salt', data.pin_salt);
+      }
       // Hash del PIN local para que verificarPIN funcione
       const pinHash = await _derivarHashPIN(pin, saltBytes);
       localStorage.setItem('finanzas_pin_hash', pinHash);
@@ -7526,7 +7618,7 @@ const cloudSync = {
     try {
       const { data, error } = await this.client
         .from('encrypted_states')
-        .select('version, updated_at, size_bytes, device_id, device_name')
+        .select('version, updated_at, size_bytes, device_id, device_name, pin_salt')
         .eq('user_id', this.user.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -7574,6 +7666,8 @@ const cloudSync = {
         const msg = result.mergeStats ? '✓ +' + result.mergeStats.totalRemoteNew + ' fusionados' : 'v' + result.version;
         this._updateIndicator('synced', msg);
         setTimeout(() => { if (document.getElementById('cloud-sync-indicator')?.className==='synced') this._updateIndicator('hidden'); }, 4000);
+      } else if (result.needsPassphrase) {
+        this._updateIndicator('error', 'Falta contraseña de la nube');
       } else {
         // Exponential backoff: reintenta hasta 3 veces (1s, 2s, 4s)
         this._syncRetryCount = (this._syncRetryCount || 0) + 1;
@@ -7910,6 +8004,10 @@ async function renderCloudSyncUI() {
         '</div>' : '') +
 
       remoteStatusHtml +
+      (cloudSync.hasCloudKey() ? '' :
+        '<div style="background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
+          '🔑 <strong>Falta la contraseña de la nube</strong> en este dispositivo. Se te pedirá al tocar "⬆️ Subir ahora" o "⬇️ Bajar de la nube".' +
+        '</div>') +
 
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">' +
         '<button class="btn btn-primary" onclick="subirDatosCloud()" id="btn-cloud-upload" style="font-size:13px;padding:12px 8px">⬆️ Subir ahora</button>' +
@@ -8097,6 +8195,7 @@ async function subirDatosCloud() {
     alert('⚠️ Para subir tus datos a la nube necesitás:\n\n1. Tener un PIN configurado\n2. Haber desbloqueado la app con tu PIN en esta sesión');
     return;
   }
+  if (!await cloudSync.asegurarClaveNube()) return;
   // Verificar si hay versión más nueva en la nube
   let remoteInfo;
   try { remoteInfo = await cloudSync.getRemoteInfo({ strict: true }); }
@@ -8208,19 +8307,59 @@ function abrirModalBajarCloud() {
       '• Desde: ' + esc(info.device_name || '?') + '<br>' +
       '• Tamaño: ' + sizeKB + ' KB · Versión #' + info.version;
     document.getElementById('cloud-download-pin').value = '';
+    document.getElementById('cloud-download-pass').value = '';
+    _cloudDownloadConPass = String(info.pin_salt || '').startsWith('p2:');
+    document.getElementById('cloud-download-pass-wrap').style.display = _cloudDownloadConPass ? 'block' : 'none';
     const status = document.getElementById('cloud-download-status');
     if (status) status.style.display = 'none';
     const btn = document.getElementById('btn-confirmar-bajar');
     if (btn) { btn.disabled = false; btn.textContent = '⬇️ Sí, sobrescribir con datos de la nube'; }
     openModal('modal-cloud-download');
-    setTimeout(() => document.getElementById('cloud-download-pin')?.focus(), 100);
+    setTimeout(() => document.getElementById(_cloudDownloadConPass ? 'cloud-download-pass' : 'cloud-download-pin')?.focus(), 100);
   });
 }
+let _cloudDownloadConPass = false;
+
+/** Pide la contraseña de la nube en un modal. existe=true: escribir la que ya
+    se creó; false: crear una nueva (se pide dos veces). Resuelve con la
+    contraseña o null si se cancela. */
+function pedirContrasenaNube(existe) {
+  return new Promise(resolve => {
+    const p1 = document.getElementById('cloud-pass-1'), p2 = document.getElementById('cloud-pass-2');
+    const err = document.getElementById('cloud-pass-error');
+    document.getElementById('cloud-pass-intro').textContent = existe
+      ? 'Tus datos en la nube están protegidos con una contraseña. Escríbela para poder sincronizar este dispositivo.'
+      : 'Crea una contraseña para proteger tus datos en la nube. Es distinta de tu PIN y debe tener al menos ' + cloudSync.CLOUD_PASS_MIN + ' caracteres.';
+    p1.value = ''; p2.value = ''; err.style.display = 'none';
+    p1.placeholder = existe ? 'Contraseña de la nube' : 'Contraseña (mínimo ' + cloudSync.CLOUD_PASS_MIN + ' caracteres)';
+    p1.autocomplete = existe ? 'current-password' : 'new-password';
+    p2.style.display = existe ? 'none' : 'block';
+    const cerrar = v => { closeModal('modal-cloud-pass'); resolve(v); };
+    document.getElementById('btn-cloud-pass-cancel').onclick = () => cerrar(null);
+    document.getElementById('btn-cloud-pass-ok').onclick = () => {
+      const fallo = msg => { err.textContent = msg; err.style.display = 'block'; };
+      if (!existe) {
+        if (p1.value.length < cloudSync.CLOUD_PASS_MIN) return fallo('Debe tener al menos ' + cloudSync.CLOUD_PASS_MIN + ' caracteres.');
+        if (/^\d+$/.test(p1.value)) return fallo('No uses solo números: combina letras y números o una frase.');
+        if (p1.value !== p2.value) return fallo('Las contraseñas no coinciden.');
+      } else if (!p1.value) return fallo('Escribe la contraseña.');
+      cerrar(p1.value);
+    };
+    openModal('modal-cloud-pass');
+    setTimeout(() => p1.focus(), 100);
+  });
+}
+window.pedirContrasenaNube = pedirContrasenaNube;
 window.abrirModalBajarCloud = abrirModalBajarCloud;
 
 async function confirmarBajarCloud() {
   const pin = (document.getElementById('cloud-download-pin')?.value || '').trim();
+  const passphrase = document.getElementById('cloud-download-pass')?.value || '';
   const status = document.getElementById('cloud-download-status');
+  if (_cloudDownloadConPass && !passphrase) {
+    if (status) { status.style.display = 'block'; status.style.color = 'var(--red)'; status.textContent = '⚠️ Escribe la contraseña de la nube'; }
+    return;
+  }
   const btn = document.getElementById('btn-confirmar-bajar');
   if (!/^\d{4,8}$/.test(pin)) {
     if (status) {
@@ -8234,14 +8373,14 @@ async function confirmarBajarCloud() {
   if (status) {
     status.style.display = 'block';
     status.style.color = 'var(--text2)';
-    status.textContent = '🔓 Descifrando con tu PIN...';
+    status.textContent = '🔓 Descifrando tus datos...';
   }
 
   // Backup de seguridad y overlay antes de sobrescribir
   _createPreMergeBackup();
   _showMergeOverlay('Restaurando datos…');
 
-  const result = await cloudSync.downloadState({ pin });
+  const result = await cloudSync.downloadState({ pin, passphrase });
 
   if (result.ok) {
     _hideMergeOverlay();
