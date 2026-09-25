@@ -5,3 +5,5 @@ window.TESSERACT_CONFIG = {
   langPath: 'https://tessdata.projectnaptha.com/4.0.0',
   corePath: 'https://unpkg.com/tesseract.js-core@4.0.2/tesseract-core.wasm.js'
 };
+// Modo OLED antes de pintar (ver 20-extras.js)
+try { if (localStorage.getItem('mph_tema') === 'oled') document.documentElement.classList.add('oled'); } catch (e) {}
