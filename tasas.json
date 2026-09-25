@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-25T06:45:26.774Z",
+  "updated_at": "2026-09-25T06:46:41.423Z",
   "base": "HNL",
   "format_version": 2,
   "note": "format_version 2: cada moneda tiene { bid, ask, mid }. bid=tasa compra del banco (cuando TÚ vendes esa moneda), ask=tasa venta (cuando TÚ compras). USD usa BCH oficial cuando es accesible; resto deriva con spread 0.5%.",
