@@ -1250,3 +1250,18 @@ html[data-tema="claro"] .card,html[data-tema="claro"] .modal-content{box-shadow:
 .pc-monto{font-size:22px!important;font-weight:800}
 .pc-sugerencia{font-size:12px;line-height:1.5;background:var(--bg3);border-radius:10px;padding:9px 11px;margin:-4px 0 12px}
 .pc-sugerencia button{display:inline-block;margin-left:4px;background:none;border:none;color:var(--amber);font:inherit;font-weight:800;cursor:pointer;padding:0}
+
+/* ── BARRA DE ABAJO: Inicio · Análisis · + · Presupuestos · Cuentas ── */
+.nav-label{white-space:nowrap;letter-spacing:.1px}
+@media (max-width:350px){.nav-label{font-size:9px}}
+/* Cuentas: tarjetas y atajos a deudas */
+button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;border-bottom:none;font:inherit;color:var(--text);cursor:pointer;text-align:left}
+.cuenta-tc-uso{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:5px}
+.cuenta-tc-uso span{display:block;height:100%;border-radius:3px}
+.cuenta-atajo{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 0;font:inherit;color:var(--text);cursor:pointer}
+.cuenta-atajo:last-child{border-bottom:none}
+.cuenta-atajo strong{display:block;font-size:14px}
+.cuenta-atajo small{display:block;font-size:11px;color:var(--text2)}
+.cuenta-atajo>span:last-child{font-size:20px;color:var(--text2)}
+/* El menú ☰ termina arriba de la barra de abajo: Configuración (el último) queda a la vista */
+.hamburger-nav{padding-bottom:calc(var(--nav-h, 64px) + 16px + env(safe-area-inset-bottom))}
