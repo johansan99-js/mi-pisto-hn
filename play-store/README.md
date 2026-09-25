@@ -86,7 +86,10 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 **Imágenes (en esta carpeta):**
 - **Ícono:** `../icon-512.png` (512×512).
 - **Gráfico destacado:** `grafico-destacado.png` (1024×500). Alternativa: `grafico-destacado-quincenas.png`, con un anillo de 365 días que marca en dorado las 24 quincenas. La idea detrás del diseño está en `filosofia-diseno.md`.
-- **Capturas de teléfono:** `capturas/` (1080×1920, en orden). Los datos son de ejemplo.
+- **Capturas de teléfono:** `capturas-ficha/` (1080×1920, en orden). Cada una tiene un título arriba y la pantalla real de la app debajo, con datos de ejemplo:
+  1. Presupuesto por quincena · 2. Mis cuentas · 3. El dólar de tu banco · 4. Tarjetas (el verdadero costo) · 5. Plan para salir de deudas · 6. Gastos compartidos · 7. Resumen del mes · 8. Privado (modo discreto).
+  Para rehacerlas después de cambiar la app: `node play-store/generar-capturas.js`. Usa el navegador de las pruebas y la fuente Outfit de `fuentes/`, con licencia OFL.
+  Las capturas anteriores siguen en `capturas/`, porque las usa `manifest.json`.
 
 ## 6. Formularios de Contenido de la app
 
