@@ -378,6 +378,7 @@ function switchView(v){
   if(v==='tarjetas')renderTarjetas();
   if(v==='pagos')renderPagosRecurrentes();
   if(v==='historico')renderHistorico();
+  if(v==='presupuestos'&&typeof renderVistaPresupuestos==='function')renderVistaPresupuestos();
   // Cloud sync: refrescar estado al entrar a config
   if(v==='config' && typeof renderCloudSyncUI === 'function') renderCloudSyncUI();
 }
