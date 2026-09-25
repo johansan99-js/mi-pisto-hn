@@ -7,11 +7,11 @@ window.TESSERACT_CONFIG = {
 };
 // Tema antes de pintar para que no parpadee (ver TEMAS en 20-extras.js)
 try {
-  const _t = localStorage.getItem('mph_tema');
-  if (['negro', 'blanco', 'turquesa', 'oled'].includes(_t)) {
-    document.documentElement.dataset.tema = _t;
-    if (_t === 'oled') document.documentElement.classList.add('oled');
-    const _m = document.querySelector('meta[name="theme-color"]');
-    if (_m) _m.setAttribute('content', { negro: '#0D1117', blanco: '#FFFFFF', turquesa: '#06181C', oled: '#000000' }[_t]);
-  }
+  const _g = localStorage.getItem('mph_tema');
+  const _t = _g === 'claro' || _g === 'blanco' ? 'claro'
+    : ['oscuro', 'oled', 'negro', 'turquesa'].includes(_g) ? 'oscuro'
+    : (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro');
+  document.documentElement.dataset.tema = _t;
+  const _m = document.querySelector('meta[name="theme-color"]');
+  if (_m) _m.setAttribute('content', _t === 'claro' ? '#FFFFFF' : '#000000');
 } catch (e) {}

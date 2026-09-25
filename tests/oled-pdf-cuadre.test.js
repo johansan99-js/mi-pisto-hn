@@ -1,4 +1,4 @@
-// Modo OLED, reporte del mes en PDF y aviso semanal para cuadrar cuentas
+// Temas claro/oscuro, reporte del mes en PDF y aviso semanal para cuadrar cuentas
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { crearEntorno, sembrar, estadoBase } = require('./helpers');
@@ -12,39 +12,45 @@ describe('OLED, PDF y cuadrar cuentas', () => {
   before(async () => { env = await crearEntorno(); });
   after(async () => { await env.cerrar(); });
 
-  it('el modo OLED pone el fondo en negro puro y se mantiene al recargar', async () => {
-    const page = await env.pagina();
+  it('el switch cambia entre claro (blanco y verde) y oscuro (negro OLED) y se recuerda', async () => {
+    const page = await env.pagina({ colorScheme: 'light' });
     await sembrar(page, estadoBase());
-    await page.evaluate(() => { switchView('config'); document.querySelector('#cfg-temas [onclick="elegirTema(\'oled\')"]').click(); });
-    const fondo = () => page.evaluate(() => [document.documentElement.classList.contains('oled'), getComputedStyle(document.body).backgroundColor, document.querySelector('meta[name="theme-color"]').content]);
-    assert.deepEqual(await fondo(), [true, 'rgb(0, 0, 0)', '#000000']);
+    const ver = () => page.evaluate(() => ({
+      tema: document.documentElement.dataset.tema, body: getComputedStyle(document.body).backgroundColor,
+      texto: getComputedStyle(document.body).color, meta: document.querySelector('meta[name="theme-color"]').content,
+      switches: [...document.querySelectorAll('.sw-tema')].map(x => x.checked)
+    }));
+    // Sin elegir nada, sigue el tema del teléfono
+    await page.evaluate(() => switchView('config'));
+    assert.deepEqual(await ver(), { tema: 'claro', body: 'rgb(245, 248, 246)', texto: 'rgb(15, 61, 42)', meta: '#FFFFFF', switches: [false, false] });
+    // El switch de Configuración pasa a oscuro; el del menú se mueve igual
+    await page.click('#view-config .sw-tema');
+    assert.deepEqual(await ver(), { tema: 'oscuro', body: 'rgb(0, 0, 0)', texto: 'rgb(242, 245, 243)', meta: '#000000', switches: [true, true] });
     await page.reload(); await page.waitForTimeout(600);
-    assert.deepEqual(await fondo(), [true, 'rgb(0, 0, 0)', '#000000']);
-    await page.evaluate(() => elegirTema('normal'));
-    assert.equal((await fondo())[0], false);
+    assert.equal((await ver()).tema, 'oscuro', 'se aplica antes de pintar al volver a abrir aunque el teléfono esté en claro');
+    // El botón principal lleva el verde del tema
+    await page.evaluate(() => elegirTema('claro'));
+    assert.equal(await page.evaluate(() => { const b = document.createElement('button'); b.className = 'btn btn-primary'; document.body.appendChild(b); const v = getComputedStyle(b).backgroundColor; b.remove(); return v; }), 'rgb(10, 143, 78)');
+    assert.deepEqual(page.errores, []);
   });
 
-  it('los temas blanco, negro y turquesa cambian toda la paleta y se recuerdan', async () => {
+  it('los temas de versiones anteriores pasan a claro u oscuro', async () => {
+    const page = await env.pagina({ colorScheme: 'light' });
+    await sembrar(page, estadoBase());
+    for (const [viejo, nuevo] of [['blanco', 'claro'], ['oled', 'oscuro'], ['turquesa', 'oscuro'], ['negro', 'oscuro']]) {
+      await page.evaluate(v => localStorage.setItem('mph_tema', v), viejo);
+      await page.reload(); await page.waitForTimeout(400);
+      assert.equal(await page.evaluate(() => document.documentElement.dataset.tema), nuevo, viejo);
+    }
+  });
+
+  it('el logo es la guacamaya', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase());
-    const colores = () => page.evaluate(() => {
-      const bg = sel => getComputedStyle(document.querySelector(sel)).backgroundColor;
-      return { tema: document.documentElement.dataset.tema || 'clasico', body: getComputedStyle(document.body).backgroundColor, texto: getComputedStyle(document.body).color, meta: document.querySelector('meta[name="theme-color"]').content, activo: document.querySelector('#cfg-temas .tema-op.activo')?.textContent.trim() };
-    });
-    await page.evaluate(() => switchView('config'));
-    assert.equal((await colores()).activo, 'Clásico');
-    await page.evaluate(() => elegirTema('blanco'));
-    assert.deepEqual(await colores(), { tema: 'blanco', body: 'rgb(243, 245, 248)', texto: 'rgb(17, 24, 39)', meta: '#FFFFFF', activo: 'Blanco pro' });
-    await page.evaluate(() => elegirTema('negro'));
-    assert.equal((await colores()).body, 'rgb(13, 17, 23)');
-    await page.evaluate(() => elegirTema('turquesa'));
-    const t = await colores();
-    assert.equal(t.body, 'rgb(6, 24, 28)');
-    // El botón principal toma el acento turquesa
-    assert.match(await page.evaluate(() => { const b = document.createElement('button'); b.className = 'btn btn-primary'; document.body.appendChild(b); const v = getComputedStyle(b).backgroundColor; b.remove(); return v; }), /rgb\(46, 196, 182\)/);
-    await page.reload(); await page.waitForTimeout(600);
-    assert.equal((await colores()).tema, 'turquesa', 'se aplica antes de pintar al volver a abrir');
-    assert.deepEqual(page.errores, []);
+    const logos = await page.evaluate(() => [...document.querySelectorAll('img.logo-ave')].map(i => i.getAttribute('src')));
+    assert.ok(logos.length >= 3);
+    assert.ok(logos.every(s => s === 'guacamaya.png'));
+    assert.ok(await page.evaluate(() => { const i = document.querySelector('.hamburger-menu img.logo-ave'); return i.complete && i.naturalWidth > 0; }), 'la imagen carga');
   });
 
   it('el reporte del mes trae totales, categorías, cuentas y movimientos, y abre imprimir', async () => {
