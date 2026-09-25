@@ -39,7 +39,8 @@
     <tr><td>Movimientos, cuentas, tarjetas, préstamos, metas, nombre y demás información que registras</td><td>Solo en tu teléfono (almacenamiento del navegador). Con PIN, cifrado con AES-256.</td></tr>
     <tr><td>Fotos de facturas que adjuntas</td><td>Solo en tu teléfono, cifradas con tu PIN. El reconocimiento de texto (OCR) se hace en el teléfono; las imágenes no se envían a ningún servidor.</td></tr>
     <tr><td>PIN</td><td>No se guarda. Se guarda un derivado (PBKDF2 con 600,000 iteraciones) que sirve para verificarlo.</td></tr>
-    <tr><td>Huella o rostro (opcional)</td><td>Lo gestiona el sistema de tu teléfono; la app nunca recibe tus datos biométricos.</td></tr>
+    <tr><td>Tu voz, si usas el dictado (🎤, opcional)</td><td>Solo mientras tocas el micrófono. El reconocimiento de voz lo hace el servicio de tu teléfono (en Android, el de Google): el audio se envía a ese servicio para convertirlo en texto, según su propia política de privacidad. La app solo recibe el texto de la frase, lo usa para llenar el movimiento y no guarda ni envía el audio. Si no quieres usarlo, puedes escribir la frase o usar el teclado de siempre.</td></tr>
+    <tr><td>Imagen de "Tu mes" que compartes</td><td>Se crea en tu teléfono y solo lleva porcentajes, sin montos. Solo sale del teléfono si tú la compartes.</td></tr>
   </table>
 
   <h2>2. Sincronización en la nube (opcional)</h2>
@@ -54,6 +55,8 @@
   <h2>3. Servicios externos</h2>
   <ul>
     <li><strong>Tasas de cambio:</strong> la app descarga tasas públicas (de este mismo sitio y, como respaldo, de open.er-api.com o exchangerate-api.com). No se envía ningún dato tuyo.</li>
+    <li><strong>Dictado por voz:</strong> si tocas 🎤, el audio lo procesa el reconocimiento de voz de tu teléfono (Google en Android) para convertirlo en texto. Mi Pisto no recibe ni guarda el audio.</li>
+    <li><strong>Compras en la app (cuando existan):</strong> las procesa Google Play. Nosotros no vemos tu tarjeta ni tus datos de pago; la app solo recibe de Google Play si tu suscripción está vigente.</li>
     <li><strong>Librerías:</strong> gráficas, exportación a Excel y OCR se descargan de CDNs públicos (jsDelivr, SheetJS, unpkg y los datos de idioma de Tesseract).</li>
     <li><strong>Alojamiento:</strong> la app se sirve desde GitHub Pages.</li>
   </ul>
@@ -64,7 +67,7 @@
     <li>No mostramos anuncios ni usamos analítica o rastreadores.</li>
     <li>No vendemos, alquilamos ni compartimos tus datos con terceros.</li>
     <li>No pedimos números completos de tarjeta, fechas de vencimiento ni códigos CVV.</li>
-    <li>No accedemos a tus contactos, SMS, ubicación ni archivos. La cámara solo se usa si tú la abres para escanear una factura.</li>
+    <li>No accedemos a tus contactos, SMS, ubicación ni archivos. La cámara solo se usa si tú la abres para escanear una factura, y el micrófono solo mientras tocas 🎤 para dictar.</li>
     <li>Si pegas o compartes con la app un SMS o una notificación de tu banco, el texto se lee en el teléfono para llenar el gasto y no se guarda ni se envía a ningún lado.</li>
   </ul>
 

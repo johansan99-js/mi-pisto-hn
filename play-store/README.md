@@ -101,8 +101,14 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 | Información personal → Dirección de correo | Recopilada · Opcional · Administración de la cuenta |
 | Información financiera → Otra información financiera | Recopilada · Opcional · Funcionalidad de la app. Es la copia cifrada de extremo a extremo; se declara igual por prudencia. |
 | ID del dispositivo u otros ID | Recopilado · Opcional · Funcionalidad de la app (identificador aleatorio para la lista de dispositivos) |
+| Audio → Grabaciones de voz o sonido | Recopilado · Opcional · **Procesado de forma efímera** (no se guarda) · Funcionalidad de la app · No se comparte. Solo mientras el usuario toca 🎤 para dictar; el reconocimiento lo hace el servicio de voz de Google del teléfono y la app solo recibe el texto. |
+| Información financiera → Historial de compras | **Solo cuando actives Premium.** Recopilado · Opcional · Funcionalidad de la app (el comprobante de Google Play para saber si la suscripción sigue vigente). Mientras Premium esté apagado, no lo marques. |
 | ¿Datos cifrados en tránsito? | Sí (HTTPS) |
 | ¿El usuario puede pedir que se borren? | Sí. En la app (Config → Sincronización → Eliminar mi cuenta) y en `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html#eliminar` |
+
+Notas para el formulario:
+- **Permisos de Android:** el paquete de PWABuilder no pide el permiso de micrófono; lo pide Chrome la primera vez que alguien toca 🎤 y la persona puede negarlo (la app deja escribir la frase).
+- La política de privacidad ya explica el dictado, la imagen de "Tu mes" y las compras: `privacidad.html`.
 
 **Otras secciones:**
 - **Acceso a la app:** "Todas las funciones están disponibles sin cuenta. Al abrir, crea un PIN de 6 dígitos cualquiera. La sincronización con Google es opcional."
