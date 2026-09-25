@@ -237,17 +237,17 @@ function renderWelcome(){
         overflow:hidden;
       ">
         <!-- Fondo decorativo -->
-        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(245,200,0,.08),transparent 70%);border-radius:50%;pointer-events:none"></div>
-        <div style="position:absolute;bottom:-15px;left:-15px;width:80px;height:80px;background:radial-gradient(circle,rgba(255,68,68,.06),transparent 70%);border-radius:50%;pointer-events:none"></div>
+        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(var(--amber-rgb),.08),transparent 70%);border-radius:50%;pointer-events:none"></div>
+        <div style="position:absolute;bottom:-15px;left:-15px;width:80px;height:80px;background:radial-gradient(circle,rgba(var(--red-rgb),.06),transparent 70%);border-radius:50%;pointer-events:none"></div>
 
         <div style="display:flex;align-items:center;gap:12px;position:relative">
           <!-- Avatar -->
           <div style="
             width:46px;height:46px;border-radius:50%;flex-shrink:0;
-            background:linear-gradient(135deg,#FF4444,#F5C800);
+            background:linear-gradient(135deg,var(--red),var(--amber));
             display:flex;align-items:center;justify-content:center;
-            font-size:20px;font-weight:900;color:#130507;
-            box-shadow:0 4px 12px rgba(245,200,0,.3);
+            font-size:20px;font-weight:900;color:var(--acento-txt);
+            box-shadow:0 4px 12px rgba(var(--amber-rgb),.3);
             animation:glowPulse 3s ease-in-out infinite;
           ">${esc(inicial)}</div>
           <!-- Texto -->
@@ -255,7 +255,7 @@ function renderWelcome(){
             <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:1px">${emoji} ${saludo}</div>
             <div style="
               font-size:22px;font-weight:900;letter-spacing:-.5px;
-              background:linear-gradient(90deg,#FF4444,#F5C800);
+              background:var(--grad-texto);
               -webkit-background-clip:text;-webkit-text-fill-color:transparent;
               background-clip:text;
               line-height:1.1;

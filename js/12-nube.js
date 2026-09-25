@@ -753,19 +753,19 @@ const cloudSync = {
       }
       html += '</div>';
     };
-    renderSection('📱 ESTE DISPOSITIVO (' + esc(localDeviceName||'Local') + ')', 'rgba(76,175,80,.12)', Object.entries(diff.localNew));
-    renderSection('☁️ NUBE (' + esc(remoteDeviceName||'otro dispositivo') + (remoteDate?', '+remoteDate:'') + ')', 'rgba(66,133,244,.12)', Object.entries(diff.remoteNew));
+    renderSection('📱 ESTE DISPOSITIVO (' + esc(localDeviceName||'Local') + ')', 'rgba(var(--green-rgb),.12)', Object.entries(diff.localNew));
+    renderSection('☁️ NUBE (' + esc(remoteDeviceName||'otro dispositivo') + (remoteDate?', '+remoteDate:'') + ')', 'rgba(var(--blue-rgb),.12)', Object.entries(diff.remoteNew));
     if (diff.totalConflicts > 0) {
       html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">⚠️ CONFLICTOS RESUELTOS (' + diff.totalConflicts + ')</div>';
       Object.entries(diff.conflicts).forEach(([field, items]) => {
-        html += '<div style="padding:4px 8px;background:rgba(245,200,0,.1);border-radius:4px;margin-bottom:3px;font-size:12px">';
+        html += '<div style="padding:4px 8px;background:rgba(var(--amber-rgb),.1);border-radius:4px;margin-bottom:3px;font-size:12px">';
         html += '🔀 ' + items.length + ' ' + (LABELS[field]||field) + ': se conservó el cambio más reciente';
         html += '</div>';
       });
       html += '</div>';
     }
     const totalNew = diff.totalLocalNew + diff.totalRemoteNew;
-    html += '<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);padding:10px;border-radius:8px;font-size:12px;line-height:1.7">';
+    html += '<div style="background:rgba(var(--green-rgb),.08);border:1px solid rgba(var(--green-rgb),.25);padding:10px;border-radius:8px;font-size:12px;line-height:1.7">';
     html += '<strong style="color:var(--green)">✅ RESULTADO COMBINADO:</strong><br>';
     if (totalNew > 0) html += '• ' + totalNew + ' elemento' + (totalNew>1?'s nuevos':' nuevo') + ' de ambos dispositivos incluido' + (totalNew>1?'s':'') + '<br>';
     if (diff.totalRemovidos > 0) html += '• 🗑️ ' + diff.totalRemovidos + ' elemento' + (diff.totalRemovidos>1?'s borrados':' borrado') + ' en otro dispositivo<br>';
@@ -892,7 +892,7 @@ async function renderCloudSyncUI() {
       else                    cuando = fecha.toLocaleDateString('es-HN', { dateStyle: 'medium' });
       const sizeKB = (remoteInfo.size_bytes / 1024).toFixed(1);
       remoteStatusHtml =
-        '<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:10px;line-height:1.6">' +
+        '<div style="background:rgba(var(--green-rgb),.08);border:1px solid rgba(var(--green-rgb),.25);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:10px;line-height:1.6">' +
           '<div>📦 <strong>Última sincronización:</strong> ' + cuando + '</div>' +
           '<div>📏 Tamaño cifrado: ' + sizeKB + ' KB · Versión #' + remoteInfo.version + '</div>' +
           '<div style="color:var(--text2)">📱 Subido desde: ' + esc(remoteInfo.device_name || '?') + '</div>' +
@@ -905,7 +905,7 @@ async function renderCloudSyncUI() {
     }
 
     container.innerHTML =
-      '<div style="padding:14px;background:linear-gradient(135deg,rgba(76,175,80,.1),rgba(76,175,80,.04));border:1px solid rgba(76,175,80,.3);border-radius:10px;margin-bottom:12px">' +
+      '<div style="padding:14px;background:linear-gradient(135deg,rgba(var(--green-rgb),.1),rgba(var(--green-rgb),.04));border:1px solid rgba(var(--green-rgb),.3);border-radius:10px;margin-bottom:12px">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
           '<span style="font-size:20px">✅</span>' +
           '<div style="flex:1">' +
@@ -916,14 +916,14 @@ async function renderCloudSyncUI() {
       '</div>' +
       // Nota para iOS: el auto-sync solo funciona con la app abierta
       (/iPhone|iPad|iPod/.test(navigator.userAgent) ?
-        '<div style="background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
+        '<div style="background:rgba(var(--amber-rgb),.1);border:1px solid rgba(var(--amber-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
           '🍎 <strong>iOS detectado:</strong> el auto-sync solo funciona con la app abierta. ' +
           'Usá el botón <strong>"⬆️ Subir ahora"</strong> antes de cambiar de dispositivo.' +
         '</div>' : '') +
 
       remoteStatusHtml +
       (cloudSync.hasCloudKey() ? '' :
-        '<div style="background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
+        '<div style="background:rgba(var(--amber-rgb),.1);border:1px solid rgba(var(--amber-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
           '🔑 <strong>Falta la contraseña de la nube</strong> en este dispositivo. Se te pedirá al tocar "⬆️ Subir ahora" o "⬇️ Bajar de la nube".' +
         '</div>') +
 

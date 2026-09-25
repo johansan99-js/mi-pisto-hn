@@ -1,25 +1,48 @@
 // Mi Pisto HN · 20-extras.js
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
 
-// ═══ MODO OLED ════════════════════════════════════════════════════════════
-// Negro puro para pantallas OLED (ahorra batería). Es una preferencia del
+// ═══ TEMAS ════════════════════════════════════════════════════════════════
+// Clásico (vino y dorado), Negro profesional, Blanco profesional, Azul
+// turquesa oscuro y OLED (negro puro, ahorra batería). Es una preferencia del
 // teléfono, no de los datos: va en localStorage y 00-config.js la aplica
-// antes de pintar para que no parpadee.
-function temaActual() { try { return localStorage.getItem('mph_tema') === 'oled' ? 'oled' : 'normal'; } catch (e) { return 'normal'; } }
+// antes de pintar para que no parpadee. Los colores viven en css/app.css.
+const TEMAS = [
+  { id: 'clasico', nombre: 'Clásico', color: '#130507', fondo: '#1C080B', barra: '#F5C800', texto: '#FFF0E8' },
+  { id: 'negro', nombre: 'Negro pro', color: '#0D1117', fondo: '#161B22', barra: '#E3B341', texto: '#E6EDF3' },
+  { id: 'blanco', nombre: 'Blanco pro', color: '#FFFFFF', fondo: '#F3F5F8', barra: '#1F6FEB', texto: '#111827' },
+  { id: 'turquesa', nombre: 'Turquesa', color: '#06181C', fondo: '#0B2429', barra: '#2EC4B6', texto: '#E6F4F3' },
+  { id: 'oled', nombre: 'OLED', color: '#000000', fondo: '#0B0B0B', barra: '#F5C800', texto: '#FFF0E8' }
+];
+const _temaInfo = t => TEMAS.find(x => x.id === t) || TEMAS[0];
+function temaActual() {
+  try { const t = localStorage.getItem('mph_tema'); return TEMAS.some(x => x.id === t) ? t : 'clasico'; } catch (e) { return 'clasico'; }
+}
 function aplicarTema(t) {
-  const oled = t === 'oled';
-  document.documentElement.classList.toggle('oled', oled);
+  const info = _temaInfo(t), raiz = document.documentElement;
+  if (info.id === 'clasico') delete raiz.dataset.tema; else raiz.dataset.tema = info.id;
+  raiz.classList.toggle('oled', info.id === 'oled');
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', oled ? '#000000' : '#130507');
+  if (meta) meta.setAttribute('content', info.color);
 }
 function elegirTema(t) {
-  try { localStorage.setItem('mph_tema', t === 'oled' ? 'oled' : 'normal'); } catch (e) {}
-  aplicarTema(temaActual());
+  // 'normal' es el nombre viejo del tema clásico
+  const id = TEMAS.some(x => x.id === t) ? t : 'clasico';
+  try { localStorage.setItem('mph_tema', id); } catch (e) {}
+  aplicarTema(id);
   renderConfigTema();
+  // La gráfica de dona lee los colores al dibujarse
+  if (typeof renderDoughnutChart === 'function' && state.setup) { try { renderDoughnutChart(); } catch (e) {} }
 }
 function renderConfigTema() {
-  const chk = document.getElementById('cfg-oled');
-  if (chk) chk.checked = temaActual() === 'oled';
+  const el = document.getElementById('cfg-temas');
+  if (!el) return;
+  const actual = temaActual();
+  el.innerHTML = TEMAS.map(t => `<button type="button" class="tema-op${t.id === actual ? ' activo' : ''}" aria-pressed="${t.id === actual}" onclick="elegirTema('${t.id}')">
+      <span class="tema-muestra" style="background:${t.fondo}"><i style="background:${t.texto}"></i><i style="background:${t.texto}"></i><b style="background:${t.barra}"></b></span>${t.nombre}</button>`).join('');
+}
+// Color de un token del tema para lo que no entiende var() (gráficas en canvas)
+function colorTema(nombre, respaldo) {
+  try { return getComputedStyle(document.documentElement).getPropertyValue('--' + nombre).trim() || respaldo; } catch (e) { return respaldo; }
 }
 
 // ═══ REPORTE DEL MES EN PDF ═══════════════════════════════════════════════

@@ -357,7 +357,7 @@ function renderDoughnutChart() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#C09090';
+            ctx.fillStyle = colorTema('text2', '#C09090');
             ctx.font = '12px system-ui, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('📊 Gráfico no disponible', canvas.width/2, canvas.height/2 - 8);
@@ -383,11 +383,11 @@ function renderDoughnutChart() {
                 labels: hasData ? ['Vital/Fijo', 'Ocio/Extra'] : ['Sin datos'],
                 datasets: [{ 
                     data: hasData ? [fijos, extras] : [1], 
-                    backgroundColor: hasData ? ['#F5C800', '#FF4444', '#4285F4', '#FF7043', '#4CAF50'] : ['#3A1418'], 
+                    backgroundColor: hasData ? [colorTema('amber', '#F5C800'), colorTema('red', '#FF4444')] : [colorTema('bg4', '#3A1418')], 
                     borderWidth: 0 
                 }]
             },
-            options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: {color: '#9b9eb5'} }, tooltip: { enabled: hasData } } }
+            options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: {color: colorTema('text2', '#9b9eb5')} }, tooltip: { enabled: hasData } } }
         });
     } catch (e) {
         console.error('❌ Error creando gráfico:', e);

@@ -15,13 +15,36 @@ describe('OLED, PDF y cuadrar cuentas', () => {
   it('el modo OLED pone el fondo en negro puro y se mantiene al recargar', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase());
-    await page.evaluate(() => { switchView('config'); document.getElementById('cfg-oled').click(); });
+    await page.evaluate(() => { switchView('config'); document.querySelector('#cfg-temas [onclick="elegirTema(\'oled\')"]').click(); });
     const fondo = () => page.evaluate(() => [document.documentElement.classList.contains('oled'), getComputedStyle(document.body).backgroundColor, document.querySelector('meta[name="theme-color"]').content]);
     assert.deepEqual(await fondo(), [true, 'rgb(0, 0, 0)', '#000000']);
     await page.reload(); await page.waitForTimeout(600);
     assert.deepEqual(await fondo(), [true, 'rgb(0, 0, 0)', '#000000']);
     await page.evaluate(() => elegirTema('normal'));
     assert.equal((await fondo())[0], false);
+  });
+
+  it('los temas blanco, negro y turquesa cambian toda la paleta y se recuerdan', async () => {
+    const page = await env.pagina();
+    await sembrar(page, estadoBase());
+    const colores = () => page.evaluate(() => {
+      const bg = sel => getComputedStyle(document.querySelector(sel)).backgroundColor;
+      return { tema: document.documentElement.dataset.tema || 'clasico', body: getComputedStyle(document.body).backgroundColor, texto: getComputedStyle(document.body).color, meta: document.querySelector('meta[name="theme-color"]').content, activo: document.querySelector('#cfg-temas .tema-op.activo')?.textContent.trim() };
+    });
+    await page.evaluate(() => switchView('config'));
+    assert.equal((await colores()).activo, 'Clásico');
+    await page.evaluate(() => elegirTema('blanco'));
+    assert.deepEqual(await colores(), { tema: 'blanco', body: 'rgb(243, 245, 248)', texto: 'rgb(17, 24, 39)', meta: '#FFFFFF', activo: 'Blanco pro' });
+    await page.evaluate(() => elegirTema('negro'));
+    assert.equal((await colores()).body, 'rgb(13, 17, 23)');
+    await page.evaluate(() => elegirTema('turquesa'));
+    const t = await colores();
+    assert.equal(t.body, 'rgb(6, 24, 28)');
+    // El botón principal toma el acento turquesa
+    assert.match(await page.evaluate(() => { const b = document.createElement('button'); b.className = 'btn btn-primary'; document.body.appendChild(b); const v = getComputedStyle(b).backgroundColor; b.remove(); return v; }), /rgb\(46, 196, 182\)/);
+    await page.reload(); await page.waitForTimeout(600);
+    assert.equal((await colores()).tema, 'turquesa', 'se aplica antes de pintar al volver a abrir');
+    assert.deepEqual(page.errores, []);
   });
 
   it('el reporte del mes trae totales, categorías, cuentas y movimientos, y abre imprimir', async () => {

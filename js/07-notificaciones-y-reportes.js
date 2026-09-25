@@ -113,7 +113,7 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
   return `<div class="card card-credit" style="border-left:3px solid ${urgente?'var(--red)':'var(--green)'}">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-weight:700;font-size:15px">${esc(p.servicio)}</div>
-      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${urgente?'rgba(255,68,68,.15)':'rgba(76,175,80,.15)'};color:${urgente?'var(--red)':'var(--green)'}">Día ${p.dia}</span>
+      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${urgente?'rgba(var(--red-rgb),.15)':'rgba(var(--green-rgb),.15)'};color:${urgente?'var(--red)':'var(--green)'}">Día ${p.dia}</span>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
       ${p.monto?fL(p.monto):'Sin monto'} · 
@@ -121,11 +121,11 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
     </div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
       <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px${_pagadoEsteMes(p)?';opacity:.6':''}">${_pagadoEsteMes(p)?'✓ Pagado':'✓ Marcar pagado'}</button>
-      <button onclick=\"editarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <button onclick=\"editarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--amber-rgb),.4);background:rgba(var(--amber-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
-      <button onclick=\"eliminarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      <button onclick=\"eliminarRecurrente('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--red-rgb),.4);background:rgba(var(--red-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>
   </div>`;}).join('')}
@@ -262,7 +262,7 @@ function renderGastos(){
             </div>
             <div class="tx-actions" style="${tieneFactura?'grid-template-columns:1fr 1fr 1fr':'grid-template-columns:1fr 1fr'}">
                 <button class="btn-tx-edit" onclick=\"abrirEdicionTx('${esc(t.id)}')\"">✏️ Editar</button>
-                ${tieneFactura?`<button class="btn-tx-edit" style="background:rgba(245,200,0,.15);color:var(--amber);border:1px solid rgba(245,200,0,.3)" onclick=\"verFactura('${esc(t.id)}')\"">🧾 Factura</button>`:''}
+                ${tieneFactura?`<button class="btn-tx-edit" style="background:rgba(var(--amber-rgb),.15);color:var(--amber);border:1px solid rgba(var(--amber-rgb),.3)" onclick=\"verFactura('${esc(t.id)}')\"">🧾 Factura</button>`:''}
                 <button class="btn-tx-delete" onclick=\"softDeleteTx('${esc(t.id)}')\"">🗑️ Eliminar</button>
             </div>
         </div>`;
@@ -400,7 +400,7 @@ function renderDashboard(){
             </div>
             <div class="tx-actions" style="${tieneFactura?'grid-template-columns:1fr 1fr 1fr':'grid-template-columns:1fr 1fr'}">
                 <button class="btn-tx-edit" onclick=\"abrirEdicionTx('${esc(t.id)}')\"">✏️ Editar</button>
-                ${tieneFactura?`<button class="btn-tx-edit" style="background:rgba(245,200,0,.15);color:var(--amber);border:1px solid rgba(245,200,0,.3)" onclick=\"verFactura('${esc(t.id)}')\"">🧾 Factura</button>`:''}
+                ${tieneFactura?`<button class="btn-tx-edit" style="background:rgba(var(--amber-rgb),.15);color:var(--amber);border:1px solid rgba(var(--amber-rgb),.3)" onclick=\"verFactura('${esc(t.id)}')\"">🧾 Factura</button>`:''}
                 <button class="btn-tx-delete" onclick=\"softDeleteTx('${esc(t.id)}')\"">🗑️ Eliminar</button>
             </div>
         </div>
@@ -675,7 +675,7 @@ function renderCategoryStats() {
             <span style="font-weight:700;font-size:13px;color:var(--amber)">${fL(monto)} <span style="font-weight:400;color:var(--text2);font-size:11px">(${pct.toFixed(0)}%)</span></span>
           </div>
           <div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden">
-            <div style="width:${barPct}%;height:100%;background:linear-gradient(90deg,var(--amber),#FF7043);border-radius:6px"></div>
+            <div style="width:${barPct}%;height:100%;background:var(--grad-boton);border-radius:6px"></div>
           </div>
           <div style="margin-top:3px">${tendenciaHtml}</div>
         </div>`;

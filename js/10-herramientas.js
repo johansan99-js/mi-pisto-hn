@@ -314,7 +314,7 @@ function renderBiometriaConfig() {
         <div><div style="font-weight:700;font-size:13px;color:var(--green)">Biometría Activada</div>
         <div style="font-size:11px;color:var(--text2)">Huella / Face ID activos al abrir la app</div></div>
       </div>
-      <button class="btn btn-secondary" onclick="desactivarBiometria()" style="border:1px solid rgba(255,68,68,.3);color:var(--red);min-height:52px">🚫 Desactivar Biometría</button>`;
+      <button class="btn btn-secondary" onclick="desactivarBiometria()" style="border:1px solid rgba(var(--red-rgb),.3);color:var(--red);min-height:52px">🚫 Desactivar Biometría</button>`;
   } else {
     el.innerHTML = `
       <div class="bio-status-card bio-status-inactive">
