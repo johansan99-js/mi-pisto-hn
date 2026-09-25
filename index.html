@@ -589,6 +589,10 @@
         </div>
         <div id="cuenta-ahorro-val" style="font-size:18px;font-weight:800;color:#4285F4">L. 0.00</div>
       </div>
+      <div id="cuenta-deudas-tile" onclick="switchView('pagar')" role="button" style="display:none;flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:12px;border:1px solid rgba(255,68,68,.35);cursor:pointer">
+        <div style="font-size:10px;color:var(--text2);font-weight:600;margin-bottom:4px">🏦 LO QUE DEBES</div>
+        <div id="cuenta-deudas-val" style="font-size:18px;font-weight:800;color:var(--red)">L. 0.00</div>
+      </div>
     <button onclick="openTransferirCuentas()" style="display:flex;align-items:center;gap:6px;background:rgba(66,133,244,.12);border:1.5px solid rgba(66,133,244,.3);border-radius:10px;padding:8px 14px;color:#4285F4;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;width:100%;justify-content:center">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>
       Transferir entre cuentas
@@ -691,11 +695,11 @@
 </div>
 
 <div id="view-pagar" class="view">
-  <h2 style="margin-bottom:15px">💸 Lo que debo pagar</h2>
+  <h2 style="margin-bottom:15px">💸 Lo que debo</h2>
   <div class="card" style="background:linear-gradient(135deg,var(--bg2),var(--bg3));margin-bottom:20px">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div><div style="font-size:11px;color:var(--text2)">TOTAL POR PAGAR</div><div style="font-size:24px;font-weight:700;color:var(--red)" id="total-pagar">L. 0.00</div></div>
-      <button class="btn btn-secondary" style="width:auto;padding:10px 20px" onclick="openModal('modal-pagar')">+ Nuevo</button>
+      <button class="btn btn-secondary" style="width:auto;padding:10px 20px" onclick="abrirNuevaDeuda()">+ Nueva deuda</button>
     </div>
   </div>
   <div id="pagar-list"></div>
@@ -1229,7 +1233,48 @@
 <div id="modal-meta" class="modal" onclick="closeModalIfBg(event,'modal-meta')"><div class="modal-content"><h3>🎯 Nueva Meta de Ahorro</h3><input type="text" id="meta-nombre" class="input-field" placeholder="Nombre de la meta"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="meta-objetivo" class="input-field" placeholder="Monto objetivo (L)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="meta-actual" class="input-field" placeholder="Ahorrado actualmente" value="0"><button class="btn btn-secondary" onclick="closeModal('modal-meta')">Cancelar</button><button class="btn btn-primary" onclick="saveMeta()">Guardar Meta</button></div></div>
 <div id="modal-abono" class="modal" onclick="closeModalIfBg(event,'modal-abono')"><div class="modal-content"><h3>💸 Abonar a Meta de Ahorro</h3><p id="abono-meta-nombre" style="color:var(--amber);margin-bottom:8px;font-weight:700"></p><p id="abono-meta-progreso" style="font-size:12px;color:var(--text2);margin-bottom:14px"></p><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">¿De qué cuenta sale el dinero?</label><select id="abono-cuenta" class="input-field" style="margin-bottom:6px"><option value="efectivo">💵 Efectivo</option><option value="ahorro">🏦 Cuenta de Ahorro</option></select><div id="abono-saldo-info" style="font-size:11px;color:var(--text2);margin-bottom:14px;padding:8px 10px;background:var(--bg3);border-radius:8px"></div><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Monto a abonar</label><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="abono-monto" class="input-field" placeholder="L 0.00"><input type="hidden" id="abono-meta-id"><div style="display:flex;gap:10px;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('modal-abono')" style="flex:1">Cancelar</button><button class="btn btn-primary" onclick="saveAbono()" style="flex:2">💰 Abonar</button></div></div></div>
 <div id="modal-cobrar" class="modal" onclick="closeModalIfBg(event,'modal-cobrar')"><div class="modal-content"><h3>💰 Dinero que me deben</h3><input type="text" id="cobrar-persona" class="input-field" placeholder="¿Quién te debe?"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="cobrar-monto" class="input-field" placeholder="Monto total (L)"><p style="font-size:11px;color:var(--text2);margin:5px 0">Nota: El campo "Ya pagado" es solo informativo.</p><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="cobrar-pagado" class="input-field" placeholder="Ya pagado (L) - Informativo" value="0"><input type="date" id="cobrar-fecha" class="input-field"><button class="btn btn-primary" onclick="saveCobrar()">Guardar</button></div></div>
-<div id="modal-pagar" class="modal" onclick="closeModalIfBg(event,'modal-pagar')"><div class="modal-content"><h3>💸 Lo que debo pagar</h3><input type="text" id="pagar-creditor" class="input-field" placeholder="¿A quién le debes?"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="pagar-monto" class="input-field" placeholder="Monto total (L)"><p style="font-size:11px;color:var(--text2);margin:5px 0">Nota: El campo "Ya pagado" es solo informativo.</p><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="pagar-pagado" class="input-field" placeholder="Ya pagado (L) - Informativo" value="0"><input type="date" id="pagar-fecha" class="input-field"><button class="btn btn-secondary" onclick="savePagar()">Registrar</button></div></div>
+<div id="modal-pagar" class="modal" onclick="closeModalIfBg(event,'modal-pagar')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:10px">💸 Nueva deuda</h3>
+    <div class="plan-estrategias">
+      <button type="button" data-tipo="banco" class="activa" onclick="elegirTipoDeuda('banco')"><strong>🏦 Banco o financiera</strong><small>Préstamo, extrafinanciamiento, adelanto.</small></button>
+      <button type="button" data-tipo="persona" onclick="elegirTipoDeuda('persona')"><strong>👤 Persona</strong><small>Familia, amigos, el trabajo.</small></button>
+    </div>
+    <input type="text" id="pagar-creditor" class="input-field" list="lista-bancos" placeholder="Banco o financiera (ej. BAC, Ficohsa)" maxlength="60">
+    <datalist id="lista-bancos"></datalist>
+    <input type="text" inputmode="decimal" id="pagar-monto" class="input-field" placeholder="¿Cuánto debes? (L)">
+    <label style="font-size:12px;font-weight:600;display:block;margin:4px 0 6px">¿El dinero entró a una de tus cuentas?</label>
+    <select id="pagar-entrada" class="input-field" onchange="_renderEntradaDeuda()">
+      <option value="">No, es una deuda de antes o una compra</option>
+      <option value="ahorro">Sí, a mi 🏦 Cuenta de Ahorro</option>
+      <option value="efectivo">Sí, me lo dieron en 💵 Efectivo</option>
+    </select>
+    <p id="pagar-entrada-info" style="font-size:11px;color:var(--text2);margin:-4px 0 10px;line-height:1.5"></p>
+    <div id="pagar-pagado-wrap"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">¿Cuánto le has pagado ya?</label>
+    <input type="text" inputmode="decimal" id="pagar-pagado" class="input-field" placeholder="L 0.00" value="0"></div>
+    <div class="input-row"><div style="flex:1;min-width:0"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Fecha</label><input type="date" id="pagar-fecha" class="input-field" style="width:100%;min-width:0;padding-left:8px;padding-right:6px;font-size:13px"></div>
+    <div style="flex:1;min-width:0"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Vence (opcional)</label><input type="date" id="pagar-vence" class="input-field" style="width:100%;min-width:0;padding-left:8px;padding-right:6px;font-size:13px"></div></div>
+    <button class="btn btn-primary" onclick="savePagar()">💾 Guardar deuda</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-pagar')">Cancelar</button>
+  </div>
+</div>
+<div id="modal-abono-deuda" class="modal" onclick="closeModalIfBg(event,'modal-abono-deuda')">
+  <div class="modal-content">
+    <h3 id="abono-deuda-titulo" style="margin-bottom:4px">💸 Abonar</h3>
+    <p id="abono-deuda-pendiente" style="font-size:12px;color:var(--text2);margin-bottom:12px"></p>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">¿De qué cuenta sale el dinero?</label>
+    <select id="abono-deuda-cuenta" class="input-field" onchange="_renderAbonoDeuda()"><option value="ahorro">🏦 Cuenta de Ahorro</option><option value="efectivo">💵 Efectivo</option></select>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Abono a la deuda</label>
+    <div style="display:flex;gap:8px;align-items:center"><input type="text" inputmode="decimal" id="abono-deuda-monto" class="input-field" placeholder="L 0.00" oninput="_renderAbonoDeuda()" style="flex:1">
+    <button type="button" class="btn btn-secondary" id="abono-deuda-todo" onclick="abonoDeudaTodo()" style="width:auto;padding:10px 14px;margin:0 0 10px">Todo</button></div>
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Intereses o cargos (opcional)</label>
+    <input type="text" inputmode="decimal" id="abono-deuda-interes" class="input-field" placeholder="L 0.00" oninput="_renderAbonoDeuda()">
+    <div id="abono-deuda-resumen" style="font-size:12px;color:var(--text2);margin:-2px 0 12px;padding:8px 10px;background:var(--bg3);border-radius:8px;line-height:1.5"></div>
+    <input type="hidden" id="abono-deuda-id">
+    <button class="btn btn-primary" id="abono-deuda-btn" onclick="guardarAbonoDeuda()">💸 Abonar</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-abono-deuda')">Cancelar</button>
+  </div>
+</div>
 <div id="modal-prestamo" class="modal" onclick="closeModalIfBg(event,'modal-prestamo')"><div class="modal-content"><h3>🏦 Nuevo Préstamo Bancario</h3><input type="text" id="prest-entidad" class="input-field" placeholder="Entidad (Ej. BAC, Ficohsa, Familiar)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="prest-monto" class="input-field" placeholder="Monto total del préstamo (L)"><input type="number" id="prest-tasa" class="input-field" placeholder="Tasa de interés anual (%)"><div class="input-row"><input type="number" id="prest-cuotas" class="input-field" placeholder="Número de cuotas"><input type="number" id="prest-cuota-calc" class="input-field" placeholder="Cuota calculada" readonly></div><input type="date" id="prest-fecha-pago" class="input-field"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="prest-pagado" class="input-field" placeholder="Ya pagado (L)" value="0"><div id="prest-breakdown" class="loan-breakdown hidden"></div><button class="btn btn-primary" onclick="calculateLoan();savePrestamo()">Calcular y Guardar</button></div></div>
 <div id="modal-tarjeta" class="modal" onclick="closeModalIfBg(event,'modal-tarjeta')">
   <div class="modal-content">

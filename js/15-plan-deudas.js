@@ -26,7 +26,7 @@ function deudasParaPlan() {
   });
   (state.payables || []).forEach(p => {
     const saldo = (p.monto || 0) - (p.pagado || 0);
-    if (saldo > 0.5) d.push({ id: 'pers:' + p.id, nombre: p.creditor, tipo: 'persona', saldo, tasa: 0, minimo: 0 });
+    if (saldo > 0.5 && !p.liquidadaEn) d.push({ id: 'pers:' + p.id, nombre: p.creditor, tipo: p.tipo === 'banco' ? 'banco' : 'persona', saldo, tasa: 0, minimo: 0 });
   });
   return d.map(x => Object.assign(x, { saldo: Math.round(x.saldo * 100) / 100 }));
 }
@@ -42,7 +42,7 @@ function simularPlanDeudas(deudas, presupuesto, estrategia, soloMinimos) {
     ? (a, b) => (b.tasa - a.tasa) || (a.saldo - b.saldo)
     : (a, b) => (a.saldo - b.saldo) || (b.tasa - a.tasa));
   let mes = 0, interes = 0, primerMes = null;
-  const vivas = () => ds.some(d => d.bal > 0.005 && !(soloMinimos && d.tipo === 'persona'));
+  const vivas = () => ds.some(d => d.bal > 0.005 && !(soloMinimos && !(d.minimo > 0) && (d.tipo === 'persona' || d.tipo === 'banco')));
   while (vivas() && mes < PLAN_MAX_MESES) {
     mes++;
     const pagos = {};
@@ -77,7 +77,7 @@ function _guardarPlanDeudas(cambios) {
   return p;
 }
 const _mesDelPlan = n => { const h = new Date(), f = new Date(h.getFullYear(), h.getMonth() + n - 1, 1); return _MESES[f.getMonth()] + ' ' + f.getFullYear(); };
-const _ICONO_DEUDA = { tarjeta: '💳', cuotas: '🛍️', prestamo: '🏦', persona: '🤝' };
+const _ICONO_DEUDA = { tarjeta: '💳', cuotas: '🛍️', prestamo: '🏦', banco: '🏦', persona: '🤝' };
 
 function abrirPlanDeudas() {
   const deudas = deudasParaPlan();

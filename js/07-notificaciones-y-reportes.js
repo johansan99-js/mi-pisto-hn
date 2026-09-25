@@ -329,6 +329,7 @@ function renderDashboard(){
     const ahEl=document.getElementById('cuenta-ahorro-val');
     if(efEl)efEl.textContent=fL(getCuentaBalance('efectivo'));
     if(ahEl)ahEl.textContent=fL(getCuentaBalance('ahorro'));
+    if(typeof renderTileDeudas==='function')renderTileDeudas();
     document.getElementById('balance-status').textContent=income>0?'Basado en tus movimientos':'Esperando movimientos';
     document.getElementById('total-income').textContent=fL(income);
     document.getElementById('total-expense').textContent=fL(expense);

@@ -2,8 +2,9 @@ name: Actualizar tasas de cambio
 
 on:
   schedule:
-    # 12:00 UTC = 6:00 AM Honduras (UTC-6), todos los días
-    - cron: '0 12 * * *'
+    # 6:00 AM, 9:00 AM y 3:00 PM de Honduras (UTC-6): los bancos cambian
+    # la tasa en la mañana y a veces la ajustan durante el día
+    - cron: '0 12,15,21 * * *'
   workflow_dispatch: {}
 
 permissions:
