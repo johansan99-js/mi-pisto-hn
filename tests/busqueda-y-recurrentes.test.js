@@ -74,7 +74,8 @@ describe('Gastos que se repiten', () => {
     await page.click('#sugerencia-recurrente .btn-primary');
     assert.deepEqual(await page.evaluate(() => state.pagosRecurrentes.map(({ servicio, monto, dia, pagado }) => ({ servicio, monto, dia, pagado }))), [{ servicio: 'Netflix', monto: 399, dia: 5, pagado: 0 }]);
     assert.equal(await page.isVisible('#sugerencia-recurrente'), false, 'ya es recurrente: no se vuelve a proponer');
-    assert.match(await page.textContent('#aviso-rapido'), /Netflix: te recordamos cada día 5/);
+    assert.match(await page.textContent('#aviso-rapido'), /Netflix: se anota solo cada día 5/);
+    assert.deepEqual(await page.evaluate(() => { const p = state.pagosRecurrentes[0]; return [p.auto, p.cuenta, p.cat, p.tipo]; }), [true, 'efectivo', 'Suscripciones', 'gasto']);
   });
 
   it('"No es fijo" la descarta para siempre', async () => {

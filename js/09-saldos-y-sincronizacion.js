@@ -1226,6 +1226,7 @@ function ejecutarVerificacionesNuevas() {
     detectarDuplicados();
     renderPapelera();
     renderChipsRapidas();
+    if (typeof verificarPagosAutomaticos === 'function') verificarPagosAutomaticos();
     verificarTransferenciasProgramadas();
   }, 200);
 }

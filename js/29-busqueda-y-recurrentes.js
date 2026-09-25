@@ -127,7 +127,7 @@ function renderSugerenciaRecurrente() {
   if (!s) { el.style.display = 'none'; el.innerHTML = ''; return; }
   el.style.display = 'block';
   el.innerHTML = `<div class="sug-rec-top">${circuloCategoria(s.cat || s.nombre, 'expense')}<div><strong>¿${esc(s.nombre)} es un pago de cada mes?</strong>
-      <small>Lo pagaste en ${s.meses} de los últimos meses, unos ${fL(s.monto)} cerca del día ${s.dia}. Guárdalo y te avisamos antes de que venza.</small></div></div>
+      <small>Lo pagaste en ${s.meses} de los últimos meses, unos ${fL(s.monto)} cerca del día ${s.dia}. Guárdalo y se anota solo cada mes.</small></div></div>
     <div class="sug-rec-btns"><button type="button" class="btn btn-primary" data-k="${esc(s.clave)}" onclick="aceptarSugerenciaRecurrente(this.dataset.k)">🔁 Sí, guardarlo</button>
       <button type="button" class="btn btn-secondary" data-k="${esc(s.clave)}" onclick="descartarSugerenciaRecurrente(this.dataset.k)">No es fijo</button></div>`;
 }
@@ -135,9 +135,13 @@ function aceptarSugerenciaRecurrente(clave) {
   const s = sugerenciasRecurrentes().find(x => x.clave === clave);
   if (!s) return;
   if (!state.pagosRecurrentes) state.pagosRecurrentes = [];
-  state.pagosRecurrentes.push({ id: uid(), servicio: s.nombre.slice(0, 60), monto: s.monto, dia: s.dia, pagado: 0 });
+  // Con la categoría y la cuenta o tarjeta del último pago: se anota solo desde el mes que viene (33-sin-esfuerzo.js)
+  const ult = (state.transactions || []).filter(t => !t.deletedAt && t.type === 'expense' && _normCat(t.subcat || t.nota || t.cat) === clave).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  const p = { id: uid(), servicio: s.nombre.slice(0, 60), monto: s.monto, dia: s.dia, pagado: 0, tipo: 'gasto', cat: s.cat || null, auto: true, autoDesde: new Date().toISOString() };
+  if (ult && ult.tarjetaId) p.tarjetaId = ult.tarjetaId; else p.cuenta = cuentaValida(ult && ult.cuenta);
+  state.pagosRecurrentes.push(p);
   save(); renderAll();
-  if (typeof avisoRapido === 'function') avisoRapido(`🔁 ${s.nombre}: te recordamos cada día ${s.dia}`);
+  if (typeof avisoRapido === 'function') avisoRapido(`🔁 ${s.nombre}: se anota solo cada día ${s.dia}`);
 }
 function descartarSugerenciaRecurrente(clave) {
   const d = _descartadosRec();

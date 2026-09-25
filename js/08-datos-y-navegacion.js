@@ -461,6 +461,7 @@ function renderAll(){
     if (typeof renderRacha === 'function') renderRacha();
     if (typeof renderRegistrosMes === 'function') renderRegistrosMes();
     if (typeof renderSugerenciaRecurrente === 'function') renderSugerenciaRecurrente();
+    if (typeof renderAutoAnotados === 'function') renderAutoAnotados();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

@@ -103,7 +103,7 @@ function imprimirReporteMes() {
 const DIAS_ENTRE_CUADRES = 7;
 function _ultimoCuadre() {
   // Lo más reciente entre "Ya cuadran" y el último ajuste de saldo
-  const fechas = (state.transactions || []).filter(t => !t.deletedAt && t.esConciliacion && !t.esSaldoInicial).map(t => +new Date(t.date));
+  const fechas = (state.transactions || []).filter(t => !t.deletedAt && (t.esConciliacion || t.esCuadre) && !t.esSaldoInicial).map(t => +new Date(t.date));
   try { const v = localStorage.getItem('mph_ultimo_cuadre'); if (v) fechas.push(+new Date(v)); } catch (e) {}
   return fechas.length ? new Date(Math.max(...fechas)) : null;
 }
@@ -122,8 +122,9 @@ function renderAvisoCuadre() {
   el.style.display = 'block';
   el.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:22px">⚖️</span><div style="flex:1">
       <strong style="font-size:14px">¿Cuadran tus cuentas?</strong>
-      <p style="font-size:12px;color:var(--text2);line-height:1.5;margin:4px 0 10px">Compara lo que dice la app con tu banco y tu billetera. Si algo no cuadra, ajústalo: así la diferencia no crece.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn btn-primary" style="margin:0" onclick="switchView('cuentas')">Revisar</button><button class="btn btn-secondary" style="margin:0" onclick="marcarCuadre()">✅ Ya cuadran</button></div>
+      <p style="font-size:12px;color:var(--text2);line-height:1.5;margin:4px 0 8px">¿Cuánto efectivo tienes ahorita? La app dice <strong>${fL(getCuentaBalance('efectivo'))}</strong>. Si gastaste sin anotar, la diferencia se anota como gastos del día a día.</p>
+      <div class="cuadre-fila"><input type="text" inputmode="decimal" id="cuadre-efectivo" class="input-field" placeholder="L 0.00" autocomplete="off" onkeydown="if(event.key==='Enter')cuadrarEfectivo()"><button class="btn btn-primary" onclick="cuadrarEfectivo()">Listo</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn btn-secondary" style="margin:0" onclick="switchView('cuentas')">🏦 Revisar bancos</button><button class="btn btn-secondary" style="margin:0" onclick="marcarCuadre()">✅ Ya cuadran</button></div>
     </div></div>`;
 }
 function marcarCuadre() {

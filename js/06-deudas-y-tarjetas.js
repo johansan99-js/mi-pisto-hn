@@ -721,7 +721,7 @@ function ajustarSaldoTarjeta(id){
 function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
 
 // ========== PAGOS RECURRENTES ==========
-function savePagoRecurrente(){const servicio=document.getElementById('pago-servicio').value,monto=leerMonto(document.getElementById('pago-monto').value),dia=parseInt(document.getElementById('pago-dia').value);state.pagosRecurrentes.push({id:uid(),servicio,monto,dia,pagado:0});save();closeModal('modal-pago-recurrente');renderAll();}
+// savePagoRecurrente y editarRecurrente están en 33-sin-esfuerzo.js
 
 // ── EDITAR / ELIMINAR COBRAR (dinero que me deben) ──────────
 function editarCobrar(id){
@@ -778,18 +778,6 @@ function eliminarPrestamo(id){
 }
 
 // ── EDITAR / ELIMINAR PAGOS RECURRENTES ──────────────────────
-function editarRecurrente(id){
-  const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
-  const servicio=prompt('Nombre del servicio:',p.servicio);
-  if(servicio===null)return;
-  const dia=parseInt(prompt('Día de pago (1-31):',p.dia));
-  if(isNaN(dia)||dia<1||dia>31)return;
-  const monto=leerMonto(prompt('Monto estimado (L):',p.monto||0));
-  p.servicio=servicio.trim()||p.servicio;
-  p.dia=dia;
-  if(!isNaN(monto))p.monto=monto;
-  save();renderAll();
-}
 function eliminarRecurrente(id){
   const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
   if(!confirm(`¿Eliminar "${esc(p.servicio)}"?`))return;
