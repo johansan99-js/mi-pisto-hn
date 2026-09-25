@@ -2093,7 +2093,7 @@ const USD_HNL_VALID_RANGE = { min: 20, max: 35 };
 
 // ========== VARIABLES GLOBALES Y ESTADO ==========
 const LS_KEY='mifinanzashn_pro_v20_full';
-let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
+let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,eliminados:{},sellosV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
 
 // ────────────────────────────────────────────────────────────────────
 // CARGA INICIAL — detecta si el state está cifrado o en plano
@@ -2589,6 +2589,7 @@ function save() {
   // Devuelve una promesa que se cumple cuando localStorage e IndexedDB ya
   // están escritos: quien recarga la página justo después debe esperarla.
   const guardarIDB = () => saveStateToDB(state).catch(e => console.error('❌ Error guardando en IndexedDB:', e));
+  sellarCambios();
   if (!_sessionDEK) {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
     return guardarIDB();
@@ -3297,6 +3298,8 @@ async function finishOnboarding(){
     saldoInicial,
     cuentasIniciales:{efectivo:saldoEfectivo,ahorro:saldoAhorro},
     cuentasInicialesV:2,
+    eliminados:{},
+    sellosV:1,
     cuentas:{efectivo:saldoEfectivo,ahorro:saldoAhorro}, // legacy
     transactions:[],
     goals:[],
@@ -5415,6 +5418,59 @@ function migrarCuentasIniciales() {
   state.cuentasInicialesV = 2;
 }
 
+// ═══ SELLOS POR ÍTEM PARA EL MERGE ENTRE DISPOSITIVOS ═══════════════════
+// En vez de marcar updatedAt en cada una de las decenas de funciones que
+// editan datos, save() compara cada ítem con su huella (_h) del último
+// guardado: si cambió, lo sella con la hora. Los ids que desaparecen
+// (borrados definitivos) se anotan en state.eliminados para que otro
+// dispositivo no los reviva al combinar.
+const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas'];
+const ELIMINADOS_MAX_DIAS = 180;
+let _idsGuardados = null;
+
+function _huellaItem(it) {
+  const { _h, updatedAt, ...resto } = it;
+  const txt = JSON.stringify(resto);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36) + '.' + txt.length.toString(36);
+}
+// Huella sin sello para ítems que llegan de una versión sin sellos (otro
+// dispositivo desactualizado): no deben contar como recién editados.
+function _huellaBase(stateObj) {
+  SYNC_ARRAYS.forEach(f => (stateObj[f] || []).forEach(it => {
+    if (it && typeof it === 'object' && it._h === undefined) it._h = _huellaItem(it);
+  }));
+}
+function _tomarBaseSync() {
+  _idsGuardados = {};
+  SYNC_ARRAYS.forEach(f => { _idsGuardados[f] = new Set((state[f] || []).map(x => String(x.id))); });
+}
+function sellarCambios() {
+  if (!state.setup) return;
+  const ahora = new Date().toISOString();
+  const primeraVez = state.sellosV !== 1;
+  if (primeraVez) _huellaBase(state);
+  SYNC_ARRAYS.forEach(f => (state[f] || []).forEach(it => {
+    if (!it || typeof it !== 'object') return;
+    const h = _huellaItem(it);
+    if (it._h === h) return;
+    it._h = h;
+    it.updatedAt = ahora;
+  }));
+  if (!state.eliminados || typeof state.eliminados !== 'object') state.eliminados = {};
+  if (_idsGuardados && !primeraVez) {
+    SYNC_ARRAYS.forEach(f => {
+      const actuales = new Set((state[f] || []).map(x => String(x.id)));
+      _idsGuardados[f].forEach(id => { if (!actuales.has(id)) state.eliminados[id] = ahora; });
+    });
+  }
+  const limite = Date.now() - ELIMINADOS_MAX_DIAS * 864e5;
+  Object.keys(state.eliminados).forEach(id => { if (Date.parse(state.eliminados[id]) < limite) delete state.eliminados[id]; });
+  state.sellosV = 1;
+  _tomarBaseSync();
+}
+
 // Antes, el pago de tarjeta se registraba como un gasto más (la compra ya lo
 // era) y sin cuenta: el balance bajaba dos veces y la cuenta no bajaba.
 function migrarPagosTarjeta() {
@@ -6895,6 +6951,7 @@ async function _completarCargaApp() {
   }
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  _tomarBaseSync();
   purgarEliminadosViejos();
   // Renderizar la app con los datos ya cargados
   if (state.setup) {
@@ -6926,7 +6983,7 @@ window.onload = async function() {
     state = {
       setup: false, nombre: '', saldoInicial: 0,
       cuentas: { efectivo: 0, ahorro: 0 },
-      cuentasIniciales: null, cuentasInicialesV: 0,
+      cuentasIniciales: null, cuentasInicialesV: 0, eliminados: {}, sellosV: 0,
       transactions: [], goals: [], receivables: [], payables: [],
       prestamos: [], tarjetas: [], pagosRecurrentes: [], transferenciasProgramadas: [],
       budgetRules: { gastos: 65, ahorro: 20, extra: 15 }
@@ -6966,6 +7023,7 @@ window.onload = async function() {
 
   migrarCuentasIniciales();
   migrarPagosTarjeta();
+  _tomarBaseSync();
   purgarEliminadosViejos();
   verificarPINmejorado();
   renderBiometriaConfig();
@@ -7400,6 +7458,8 @@ const cloudSync = {
       //    b) Reemplazar state global y persistir cifrado en localStorage
       Object.keys(state).forEach(k => delete state[k]);
       Object.assign(state, decryptedState);
+      _huellaBase(state);
+      _tomarBaseSync();
       // Migraciones de campos faltantes
       if (!state.pagosRecurrentes) state.pagosRecurrentes = [];
       if (!state.prestamos) state.prestamos = [];
@@ -7600,15 +7660,23 @@ const cloudSync = {
    * diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew, totalRemoteNew, totalConflicts }
    */
   mergeStates(localState, remoteState) {
-    const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0 };
+    const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0, totalRemovidos:0 };
     const merged = {};
     // Escalares: remoto gana
     ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','setup'].forEach(f => {
       merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
     });
-    // Arrays: unión inteligente por ID
+    merged.sellosV = Math.max(localState.sellosV || 0, remoteState.sellosV || 0);
+    // Borrados definitivos de ambos lados (se queda la fecha más reciente)
+    const eliminados = Object.assign({}, localState.eliminados || {});
+    Object.entries(remoteState.eliminados || {}).forEach(([id, t]) => {
+      if (!eliminados[id] || Date.parse(t) > Date.parse(eliminados[id])) eliminados[id] = t;
+    });
+    merged.eliminados = eliminados;
+    const sello = x => (x && x.updatedAt && Date.parse(x.updatedAt)) || 0;
     const LABELS = { transactions:'transacciones', goals:'metas de ahorro', receivables:'deudas a cobrar',
       payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas' };
+    const anotar = (bucket, field, item) => { if (!diff[bucket][field]) diff[bucket][field] = []; diff[bucket][field].push(item); };
     for (const field of Object.keys(LABELS)) {
       const localArr  = Array.isArray(localState[field])  ? localState[field]  : [];
       const remoteArr = Array.isArray(remoteState[field]) ? remoteState[field] : [];
@@ -7618,30 +7686,36 @@ const cloudSync = {
       const result    = [];
       for (const id of allIds) {
         const L = localMap.get(id), R = remoteMap.get(id);
+        // Borrado definitivo en algún dispositivo: se descarta salvo que se
+        // haya editado después de borrarlo.
+        if (eliminados[id] && Math.max(sello(L), sello(R)) <= Date.parse(eliminados[id])) {
+          if (L) diff.totalRemovidos++;
+          continue;
+        }
         if (L && !R) {
           result.push(L);
-          if (!L.deletedAt) { if (!diff.localNew[field]) diff.localNew[field]=[]; diff.localNew[field].push(L); diff.totalLocalNew++; }
+          if (!L.deletedAt) { anotar('localNew', field, L); diff.totalLocalNew++; }
         } else if (!L && R) {
           result.push(R);
-          if (!R.deletedAt) { if (!diff.remoteNew[field]) diff.remoteNew[field]=[]; diff.remoteNew[field].push(R); diff.totalRemoteNew++; }
+          if (!R.deletedAt) { anotar('remoteNew', field, R); diff.totalRemoteNew++; }
         } else if (JSON.stringify(L) === JSON.stringify(R)) {
           result.push(L);
+        } else if (sello(L) !== sello(R)) {
+          // Gana el cambio más reciente (incluye borrar o restaurar de la papelera)
+          const gana = sello(L) > sello(R) ? L : R;
+          result.push(gana);
+          anotar('conflicts', field, { local:L, remote:R, resolved:gana, label:LABELS[field] });
+          diff.totalConflicts++;
         } else {
+          // Sin sellos (datos de antes de esta versión): regla anterior
           const lDel = !!L.deletedAt, rDel = !!R.deletedAt;
-          if (lDel || rDel) {
-            result.push((lDel && rDel) ? (new Date(L.deletedAt)>=new Date(R.deletedAt)?L:R) : (lDel?L:R));
-          } else if (field === 'goals') {
-            const resolved = { ...R, actual: Math.max(L.actual||0, R.actual||0) };
-            result.push(resolved);
-            if (!diff.conflicts[field]) diff.conflicts[field]=[];
-            diff.conflicts[field].push({ local:L, remote:R, resolved, label:LABELS[field] });
-            diff.totalConflicts++;
-          } else {
-            result.push(R); // Remoto gana como tiebreaker
-            if (!diff.conflicts[field]) diff.conflicts[field]=[];
-            diff.conflicts[field].push({ local:L, remote:R, resolved:R, label:LABELS[field] });
-            diff.totalConflicts++;
-          }
+          let resolved;
+          if (lDel || rDel) resolved = (lDel && rDel) ? (new Date(L.deletedAt)>=new Date(R.deletedAt)?L:R) : (lDel?L:R);
+          else if (field === 'goals') resolved = { ...R, actual: Math.max(L.actual||0, R.actual||0) };
+          else resolved = R;
+          result.push(resolved);
+          anotar('conflicts', field, { local:L, remote:R, resolved, label:LABELS[field] });
+          diff.totalConflicts++;
         }
       }
       merged[field] = result;
@@ -7673,7 +7747,7 @@ const cloudSync = {
       html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">⚠️ CONFLICTOS RESUELTOS (' + diff.totalConflicts + ')</div>';
       Object.entries(diff.conflicts).forEach(([field, items]) => {
         html += '<div style="padding:4px 8px;background:rgba(245,200,0,.1);border-radius:4px;margin-bottom:3px;font-size:12px">';
-        html += '🔀 ' + items.length + ' ' + (LABELS[field]||field) + (field==='goals' ? ': se tomó el progreso más alto' : ': se usó la versión de la nube');
+        html += '🔀 ' + items.length + ' ' + (LABELS[field]||field) + ': se conservó el cambio más reciente';
         html += '</div>';
       });
       html += '</div>';
@@ -7682,6 +7756,7 @@ const cloudSync = {
     html += '<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);padding:10px;border-radius:8px;font-size:12px;line-height:1.7">';
     html += '<strong style="color:var(--green)">✅ RESULTADO COMBINADO:</strong><br>';
     if (totalNew > 0) html += '• ' + totalNew + ' elemento' + (totalNew>1?'s nuevos':' nuevo') + ' de ambos dispositivos incluido' + (totalNew>1?'s':'') + '<br>';
+    if (diff.totalRemovidos > 0) html += '• 🗑️ ' + diff.totalRemovidos + ' elemento' + (diff.totalRemovidos>1?'s borrados':' borrado') + ' en otro dispositivo<br>';
     if (diff.totalConflicts > 0) html += '• ' + diff.totalConflicts + ' conflicto' + (diff.totalConflicts>1?'s resueltos':' resuelto') + ' automáticamente<br>';
     if (totalNew === 0 && diff.totalConflicts === 0) html += '• Cambios menores en configuración o metadatos<br>';
     html += '</div>';
@@ -7708,7 +7783,7 @@ const cloudSync = {
         const dl = await this._downloadAndDecrypt();
         if (dl.ok) {
           const { merged, diff } = this.mergeStates(state, dl.data);
-          const hasChanges = diff.totalLocalNew>0 || diff.totalRemoteNew>0 || diff.totalConflicts>0;
+          const hasChanges = diff.totalLocalNew>0 || diff.totalRemoteNew>0 || diff.totalConflicts>0 || diff.totalRemovidos>0;
           if (hasChanges) {
             // Backup de seguridad antes de aplicar el merge automático
             _createPreMergeBackup();
@@ -7718,6 +7793,7 @@ const cloudSync = {
             Object.keys(state).forEach(k => delete state[k]);
             Object.assign(state, merged);
             ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
+            _tomarBaseSync();
             // Persistir localmente sin trigger
             try {
               const enc = await _encryptState(state, _sessionDEK);
@@ -7936,6 +8012,7 @@ async function _restorePreMergeBackup() {
     const parsed = JSON.parse(snapshot);
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, parsed);
+    _tomarBaseSync();
     if (_sessionDEK) {
       const enc = await _encryptState(state, _sessionDEK);
       localStorage.setItem(LS_KEY, enc);
@@ -8031,7 +8108,7 @@ async function subirDatosCloud() {
     const dl = await cloudSync._downloadAndDecrypt();
     if (dl.ok) {
       const { merged, diff } = cloudSync.mergeStates(state, dl.data);
-      const hasChanges = diff.totalLocalNew > 0 || diff.totalRemoteNew > 0 || diff.totalConflicts > 0;
+      const hasChanges = diff.totalLocalNew > 0 || diff.totalRemoteNew > 0 || diff.totalConflicts > 0 || diff.totalRemovidos > 0;
       if (hasChanges) {
         _pendingMerge = { merged, diff, remoteDeviceName: dl.deviceName||remoteInfo.device_name, remoteDate: new Date(remoteInfo.updated_at).toLocaleString('es-HN',{dateStyle:'short',timeStyle:'short'}) };
         const diffEl = document.getElementById('cloud-merge-diff');
@@ -8082,6 +8159,7 @@ async function confirmarEstrategiaMerge(strategy) {
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, merged);
     ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
+    _tomarBaseSync();
     // Persistir localmente
     try {
       if (_sessionDEK) {
