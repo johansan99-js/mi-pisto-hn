@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v52-cuentas-dolares';
+const VERSION = 'v53-premium';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -87,6 +87,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/18-presupuestos.js',
   BASE_PATH + 'js/19-cuentas.js',
   BASE_PATH + 'js/20-extras.js',
+  BASE_PATH + 'js/21-premium.js',
   BASE_PATH + 'css/app.css'
 ];
 

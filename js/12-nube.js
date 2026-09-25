@@ -672,7 +672,7 @@ const cloudSync = {
     const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0, totalRemovidos:0 };
     const merged = {};
     // Escalares: remoto gana
-    ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','setup'].forEach(f => {
+    ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','premium','setup'].forEach(f => {
       merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
     });
     merged.sellosV = Math.max(localState.sellosV || 0, remoteState.sellosV || 0);

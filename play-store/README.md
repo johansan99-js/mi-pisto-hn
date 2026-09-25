@@ -75,58 +75,17 @@ Compruébalo con <https://developers.google.com/digital-asset-links/tools/genera
 
 ## 5. Ficha de Play Store
 
-**Nombre (30):** `Mi Pisto HN: Finanzas Honduras`
+El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
-**Descripción breve (80):** `Controla tu dinero en lempiras: cuentas, tarjetas y metas. Privado y offline.`
+**Nombre (30):** `Mi Pisto HN: Finanzas y Gastos`
 
-**Descripción completa:**
-
-```
-Mi Pisto HN es la app de finanzas personales hecha para Honduras: en lempiras, con las tarjetas y bancos que usas, y con tus datos solo en tu teléfono.
-
-💵 TUS CUENTAS AL DÍA
-• Efectivo y ahorro con saldos que salen de tus movimientos
-• Ingresos y gastos por categoría, con etiquetas y gastos divididos
-• Transferencias entre cuentas, manuales o programadas cada mes
-• Escanea tus facturas: el monto se lee con la cámara, sin enviar la foto a ningún lado
-• Pega o comparte el SMS de tu banco y el gasto se llena solo
-• Recordatorio diario para anotar tus gastos, a la hora que elijas
-
-💳 TARJETAS SIN SORPRESAS
-• Fecha de corte, fecha de pago, pago mínimo y cupo disponible
-• "El verdadero costo": cuánto tiempo e intereses te cuesta pagar solo el mínimo
-• Compras a cuotas Tasa Cero: cupo comprometido y cuota de cada mes
-• Concilia con tu estado de cuenta y registra seguros, membresías y comisiones
-
-🎯 METAS, DEUDAS Y PRÉSTAMOS
-• Metas de ahorro con avance
-• Préstamos con saldo real, intereses incluidos
-• Dinero que te deben y que debes, con abonos
-• Pagos recurrentes con recordatorios
-
-📊 PARA DECIDIR MEJOR
-• Liquidez de los próximos 7 días
-• Índice de libertad financiera: cuántos días aguantas sin ingresos
-• Regla de presupuesto 65/20/15 personalizable
-• Tipo de cambio del día y compras en dólares
-• Exporta a Excel
-
-🔒 TU PRIVACIDAD PRIMERO
-• Tus datos se guardan cifrados (AES-256) en tu teléfono, protegidos con tu PIN
-• Funciona sin internet
-• Sin anuncios y sin rastreadores
-• Sincronización en la nube opcional, cifrada antes de salir de tu teléfono con una contraseña que solo tú conoces
-• Modo discreto para ocultar montos en público
-• Kit de recuperación por si olvidas tu PIN
-
-Mi Pisto HN no pide números de tarjeta, CVV ni claves de banco.
-```
+**Descripción breve (74 de 80):** `Controla tus lempiras: presupuesto por quincena, tarjetas, deudas y dólar.`
 
 **Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
 
 **Imágenes (en esta carpeta):**
 - **Ícono:** `../icon-512.png` (512×512).
-- **Gráfico destacado:** `grafico-destacado.png` (1024×500).
+- **Gráfico destacado:** `grafico-destacado.png` (1024×500). Alternativa: `grafico-destacado-quincenas.png`, con un anillo de 365 días que marca en dorado las 24 quincenas. La idea detrás del diseño está en `filosofia-diseno.md`.
 - **Capturas de teléfono:** `capturas/` (1080×1920, en orden). Los datos son de ejemplo.
 
 ## 6. Formularios de Contenido de la app
@@ -151,9 +110,23 @@ Mi Pisto HN no pide números de tarjeta, CVV ni claves de banco.
 
 ## 7. Prueba cerrada y producción
 
-1. En **Prueba cerrada**, agrega al menos **12 testers** (lista de correos de Google). Deben aceptar la invitación e instalar la app.
+1. En **Prueba cerrada**, agrega al menos **12 testers** (lista de correos de Google). Deben aceptar la invitación e instalar la app. El mensaje para invitarlos está en [`mensaje-testers.md`](mensaje-testers.md).
 2. Mantén la prueba activa **14 días seguidos**. Pide a los testers que la usen: Google revisa que haya uso real.
 3. Luego, **Solicitar acceso a producción** y responde el cuestionario sobre la prueba.
+
+## 8. Activar Mi Pisto Premium (cuando quieras cobrar)
+
+El código ya está listo en `js/21-premium.js`, pero apagado (`PREMIUM.activo = false`). Mientras siga apagado, `tienePremium()` responde que sí a todos y nada se bloquea.
+
+1. En Play Console, entra a **Monetizar → Productos → Suscripciones** y crea `mipisto_premium`, con precio en lempiras y 30 días de prueba gratis.
+2. Regenera el `.aab` en PWABuilder con **la misma clave** y activa **Play Billing** (Digital Goods API).
+3. Cambia `PREMIUM.activo` a `true`. Ajusta `PREMIUM.precio` y `PREMIUM.tipo` para que digan lo mismo que la ficha, y agrega a la ficha una línea con el precio.
+4. Pruébalo con una cuenta de prueba de licencias de Play Console.
+
+Reglas que no se rompen (salen de las quejas en las opiniones de otras apps):
+- Los datos nunca se bloquean: si el Premium termina, la persona sigue viendo, editando y exportando todo.
+- El botón **Restaurar mi compra** está siempre visible, y explica qué hacer si la compra se hizo con otra cuenta de Google.
+- El precio y el tipo de pago se dicen antes de comprar.
 
 ## Actualizaciones
 
