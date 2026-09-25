@@ -608,6 +608,8 @@
   </div><!-- /cuentas-widget -->
   </div><!-- /balance-card -->
 
+  <div id="presupuestos-card" class="card" style="display:none"></div>
+
   <div class="survival-box">
       <span class="survival-label">Índice de Libertad Financiera</span>
       <span id="survival-val" class="survival-number">0</span>
@@ -1413,6 +1415,27 @@
   </div>
 </div>
 
+<!-- PRESUPUESTOS -->
+<div id="modal-presupuestos" class="modal" onclick="closeModalIfBg(event,'modal-presupuestos')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">📅 Mi presupuesto</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">Ponle un tope a una categoría o a todos tus gastos. Te avisamos al 80% y al pasarte.</p>
+    <input type="text" id="presu-cat" class="input-field" list="lista-cats-presu" placeholder="Categoría (o &quot;Todos mis gastos&quot;)" maxlength="40">
+    <datalist id="lista-cats-presu"></datalist>
+    <div class="input-row"><input type="text" inputmode="decimal" id="presu-monto" class="input-field" placeholder="Máximo (L)" style="flex:1;min-width:0">
+    <select id="presu-periodo" class="input-field" style="flex:1;min-width:0"><option value="quincena">por quincena</option><option value="semana">a la semana</option><option value="mes">al mes</option></select></div>
+    <button class="btn btn-primary" onclick="guardarPresupuesto()">➕ Agregar presupuesto</button>
+    <div id="presu-lista" style="margin:12px 0"></div>
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">💵 ¿Qué días te pagan?</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);white-space:nowrap">El <input type="number" id="presu-dia1" min="1" max="31" class="input-field" style="width:64px;margin:0;padding:8px"> y el <input type="number" id="presu-dia2" min="1" max="31" class="input-field" style="width:64px;margin:0;padding:8px">
+      <button class="btn btn-secondary" style="width:auto;margin:0;padding:8px 12px;font-size:12px" onclick="guardarDiasPago()">Guardar</button></div>
+      <p style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4">Cada quincena va de un día de pago al siguiente. Si pones 30, en febrero cuenta el último día.</p>
+    </div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-presupuestos')">Listo</button>
+  </div>
+</div>
+
 <!-- GASTOS COMPARTIDOS -->
 <div id="modal-grupo" class="modal" onclick="closeModalIfBg(event,'modal-grupo')">
   <div class="modal-content">
@@ -1626,5 +1649,6 @@
 <script src="js/15-plan-deudas.js"></script>
 <script src="js/16-fondo-emergencia.js"></script>
 <script src="js/17-compartidos.js"></script>
+<script src="js/18-presupuestos.js"></script>
 </body>
 </html>
