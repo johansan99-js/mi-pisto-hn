@@ -465,5 +465,6 @@ function renderAll(){
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
+    if (typeof notificarInformeMes === 'function') notificarInformeMes();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }
 }

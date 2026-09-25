@@ -522,7 +522,7 @@ function renderResumenMes() {
       '<div class="resumen-barra-fondo"><div style="width:' + (max ? c.monto / max * 100 : 0) + '%"></div></div></div>';
   }).join('');
   const ideas = ideasDelResumen(r);
-  cuerpo.innerHTML = '<div class="resumen-cifras">' + cifra('GASTASTE', r.gastos) + cifra('GANASTE', r.ingresos) +
+  cuerpo.innerHTML = '<button type="button" class="btn btn-primary inf-ver" onclick="abrirInformeMes(' + y + ',' + m + ')">▶️ Ver ' + _MESES[m] + ' como historia</button>' + '<div class="resumen-cifras">' + cifra('GASTASTE', r.gastos) + cifra('GANASTE', r.ingresos) +
       cifra(r.sobrante >= 0 ? 'TE SOBRÓ' : 'TE FALTÓ', Math.abs(r.sobrante), r.sobrante >= 0 ? 'var(--green)' : 'var(--red)') + '</div>' +
     (barras ? '<div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px">EN QUÉ SE FUE TU PISTO</div>' + barras : '') +
     (ideas.length ? '<ul class="resumen-ideas">' + ideas.map(i => '<li>' + esc(i) + '</li>').join('') + '</ul>' : '');
@@ -543,7 +543,8 @@ function renderAvisoResumen() {
       '<div><strong style="font-size:14px">🗓️ Tu resumen de ' + _MESES[mp.m] + ' está listo</strong>' +
       '<div style="font-size:12px;color:var(--text2);margin-top:4px">Gastaste ' + fL(r.gastos) + (r.ingresos > 0 ? (r.sobrante >= 0 ? ' y te sobraron ' + fL(r.sobrante) : ' y te faltaron ' + fL(-r.sobrante)) : '') + '.</div></div>' +
       '<button onclick="cerrarAvisoResumen()" aria-label="Cerrar" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer">✕</button></div>' +
-    '<button class="btn btn-secondary" onclick="verResumenMesPasado()" style="margin-top:10px">Ver en qué se fue mi pisto →</button>';
+    '<div class="inf-aviso-btns"><button class="btn btn-primary" onclick="abrirInformeMes()">▶️ Ver mi mes</button>' +
+    '<button class="btn btn-secondary" onclick="verResumenMesPasado()">📊 Detalle</button></div>';
 }
 function cerrarAvisoResumen() {
   try { localStorage.setItem('mph_resumen_visto', _mesPasado().clave); } catch (e) {}
