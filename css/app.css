@@ -9,6 +9,12 @@
 @keyframes slideUpFade{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 @keyframes coinShine{0%,100%{opacity:.6}50%{opacity:1}}
 
+/* ── BENEFICIOS DE TARJETAS ── */
+.aviso-seguridad-tc{background:rgba(76,175,80,.10);border:1px solid rgba(76,175,80,.35);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;margin:10px 0 12px;color:var(--text)}
+.sugerencia-tc{background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.35);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;margin:-4px 0 10px}
+.sugerencia-tc button{margin-top:8px;padding:8px 10px;font-size:12px;width:auto}
+.benef-regla{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.benef-regla button{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:4px 8px}
 /* ── RESUMEN MENSUAL ── */
 .resumen-cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 14px}
 .resumen-cifra{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}

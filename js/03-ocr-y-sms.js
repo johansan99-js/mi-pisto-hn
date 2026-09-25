@@ -552,6 +552,7 @@ function usarSMSBanco() {
   const cuenta = document.getElementById('gasto-cuenta');
   if (tarjeta) { cuenta.value = 'credito'; checkCreditCard(); document.getElementById('gasto-tarjeta').value = tarjeta.id; }
   else if (r.debito) { cuenta.value = 'ahorro'; checkCreditCard(); }
+  actualizarSugerenciaTarjeta();
 }
 
 function setGastoPreset(cat, sub, tipo) {
