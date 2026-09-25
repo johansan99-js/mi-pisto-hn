@@ -70,7 +70,8 @@ describe('Pagos fijos que se anotan solos', () => {
     await page.evaluate(() => closeModal('modal-edit-tx'));
     await page.click('#auto-anotados .auto-ok');
     assert.equal(await page.isVisible('#auto-anotados'), false);
-    // Al volver a abrir no se repiten ni vuelve el aviso
+    // Al volver a abrir no se repiten ni vuelve el aviso (save() termina de escribir antes de recargar)
+    await page.evaluate(() => save());
     await page.reload();
     await page.waitForTimeout(900);
     assert.equal(await page.evaluate(() => state.transactions.length), 2);
@@ -111,6 +112,7 @@ describe('Cuadre de efectivo', () => {
     assert.match(await page.textContent('#registros-mes'), /Día a día[\s\S]*Cuadre de efectivo/);
     assert.equal(await page.evaluate(() => iconoCategoria('Día a día', 'expense').i), '🪙');
     // A la semana vuelve a preguntar
+    await page.evaluate(() => save());
     await page.clock.setFixedTime(new Date(2026, 9, 2, 12));
     await page.reload(); await page.waitForTimeout(700);
     assert.equal(await page.isVisible('#aviso-cuadre'), true);
