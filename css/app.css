@@ -1,4 +1,4 @@
-:root{--bg:#130507;--bg2:#1C080B;--bg3:#280D10;--bg4:#3A1418;--amber:#F5C800;--text:#FFF0E8;--text2:#C09090;--green:#4CAF50;--red:#FF4444;--blue:#4285F4;--purple:#FF7043;--border:#3A1418;--r:12px;--amber-rgb:245,200,0;--red-rgb:255,68,68;--green-rgb:76,175,80;--blue-rgb:66,133,244;--purple-rgb:255,112,67;--tinta-rgb:255,255,255;--acento-txt:#130507;--bg-hondo:#200A0D;--grad-boton:linear-gradient(135deg,#F5C800,#FF7043);--grad-texto:linear-gradient(90deg,#FF4444,#F5C800);--grad-balance:linear-gradient(90deg,#FF4444,#F5C800,#4285F4);color-scheme:dark}
+:root{--bg:#000000;--bg2:#0D0F0E;--bg3:#161A18;--bg4:#202622;--amber:#22C55E;--text:#F2F5F3;--text2:#9AA5A0;--green:#22C55E;--red:#FF5A5F;--blue:#4DA3FF;--purple:#F5B544;--border:#232A26;--r:12px;--amber-rgb:34,197,94;--red-rgb:255,90,95;--green-rgb:34,197,94;--blue-rgb:77,163,255;--purple-rgb:245,181,68;--tinta-rgb:255,255,255;--acento-txt:#03210F;--bg-hondo:#050706;--grad-boton:linear-gradient(135deg,#22C55E,#16A34A);--grad-texto:linear-gradient(90deg,#F2F5F3,#22C55E);--grad-balance:linear-gradient(90deg,#F2F5F3,#22C55E,#F2F5F3);color-scheme:dark}
 
 /* ── ANIMACIONES GLOBALES ── */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
@@ -1000,33 +1000,25 @@ body.modo-discreto canvas{filter:blur(10px)}
 .cuenta-colores button.activa{border-color:var(--text);box-shadow:0 0 0 2px var(--bg2) inset}
 
 /* Modo OLED: negro puro */
-/* ── TEMAS ── (se eligen en Configuración → Apariencia; ver js/20-extras.js) */
-/* Negro profesional: grafito neutro con acento dorado sobrio */
-html[data-tema="negro"]{--bg:#0D1117;--bg2:#161B22;--bg3:#1C232D;--bg4:#262F3B;--border:#2A3441;--text:#E6EDF3;--text2:#8B96A3;
-  --amber:#E3B341;--amber-rgb:227,179,65;--green:#3FB950;--green-rgb:63,185,80;--red:#F85149;--red-rgb:248,81,73;--blue:#58A6FF;--blue-rgb:88,166,255;--purple:#DB8B4B;--purple-rgb:219,139,75;
-  --acento-txt:#0D1117;--bg-hondo:#10151C;--grad-boton:linear-gradient(135deg,#E3B341,#D19A2A);--grad-texto:linear-gradient(90deg,#E6EDF3,#E3B341);--grad-balance:linear-gradient(90deg,#E6EDF3,#E3B341,#E6EDF3)}
-/* Blanco profesional: claro, limpio, acento azul */
-html[data-tema="blanco"]{--bg:#F3F5F8;--bg2:#FFFFFF;--bg3:#F0F3F7;--bg4:#E3E8EF;--border:#DCE2EA;--text:#111827;--text2:#5B6573;
-  --amber:#1F6FEB;--amber-rgb:31,111,235;--green:#1A7F37;--green-rgb:26,127,55;--red:#CF222E;--red-rgb:207,34,46;--blue:#0A69C7;--blue-rgb:10,105,199;--purple:#8250DF;--purple-rgb:130,80,223;--tinta-rgb:17,24,39;
-  --acento-txt:#FFFFFF;--bg-hondo:#E9EDF3;--grad-boton:linear-gradient(135deg,#1F6FEB,#3B82F6);--grad-texto:linear-gradient(90deg,#111827,#1F6FEB);--grad-balance:linear-gradient(90deg,#111827,#1F6FEB,#111827);color-scheme:light}
-/* Azul turquesa oscuro */
-html[data-tema="turquesa"]{--bg:#06181C;--bg2:#0B2429;--bg3:#103138;--bg4:#17404A;--border:#1B4650;--text:#E6F4F3;--text2:#8FB8B6;
-  --amber:#2EC4B6;--amber-rgb:46,196,182;--green:#4ADE80;--green-rgb:74,222,128;--red:#FF6B6B;--red-rgb:255,107,107;--blue:#5AB3FF;--blue-rgb:90,179,255;--purple:#F4B740;--purple-rgb:244,183,64;
-  --acento-txt:#04151A;--bg-hondo:#08262B;--grad-boton:linear-gradient(135deg,#2EC4B6,#1FA2B8);--grad-texto:linear-gradient(90deg,#E6F4F3,#2EC4B6);--grad-balance:linear-gradient(90deg,#E6F4F3,#2EC4B6,#5AB3FF)}
-/* OLED: negro puro sobre la paleta clásica */
-html.oled,html[data-tema="oled"]{--bg:#000;--bg2:#0B0B0B;--bg3:#151515;--bg4:#202020;--border:#262626;--text2:#A8A8A8;--bg-hondo:#080808}
-/* Los temas profesionales no animan los degradados de texto */
-html[data-tema="negro"] .balance-amount,html[data-tema="blanco"] .balance-amount{animation:none;background-size:100%}
-html[data-tema="blanco"] .card,html[data-tema="blanco"] .modal-content{box-shadow:0 1px 3px rgba(17,24,39,.06),0 1px 2px rgba(17,24,39,.04)}
-.temas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:4px}
-.tema-op{border:2px solid var(--border);border-radius:12px;padding:6px;background:var(--bg3);cursor:pointer;text-align:center;color:var(--text);font:inherit;font-size:11px;font-weight:700}
-.tema-op.activo{border-color:var(--amber);box-shadow:0 0 0 2px rgba(var(--amber-rgb),.25)}
-.tema-muestra{display:block;height:46px;border-radius:8px;margin-bottom:5px;position:relative;overflow:hidden;border:1px solid rgba(127,127,127,.25)}
-.tema-muestra i{position:absolute;left:8px;right:8px;height:7px;border-radius:4px}
-.tema-muestra i:nth-child(1){top:9px;right:30%}
-.tema-muestra i:nth-child(2){top:22px;opacity:.5}
-.tema-muestra b{position:absolute;right:8px;bottom:7px;width:22px;height:10px;border-radius:5px}
-html.oled body,html[data-tema="oled"] body{background:#000}
+/* ── TEMAS ── Oscuro (OLED, negro puro) es el de :root. Claro: blanco con letras verdes.
+   Se cambia con el switch de Configuración / menú (ver js/20-extras.js) */
+html[data-tema="claro"]{--bg:#F5F8F6;--bg2:#FFFFFF;--bg3:#EFF4F1;--bg4:#E1EAE5;--border:#DDE6E1;--text:#0F3D2A;--text2:#557263;
+  --amber:#0A8F4E;--amber-rgb:10,143,78;--green:#0A8F4E;--green-rgb:10,143,78;--red:#D93025;--red-rgb:217,48,37;--blue:#1A73E8;--blue-rgb:26,115,232;--purple:#B7791F;--purple-rgb:183,121,31;--tinta-rgb:15,61,42;
+  --acento-txt:#FFFFFF;--bg-hondo:#E8F0EB;--grad-boton:linear-gradient(135deg,#0A8F4E,#12A35C);--grad-texto:linear-gradient(90deg,#0F3D2A,#0A8F4E);--grad-balance:linear-gradient(90deg,#0F3D2A,#0A8F4E,#0F3D2A);color-scheme:light}
+html[data-tema="claro"] .card,html[data-tema="claro"] .modal-content{box-shadow:0 1px 3px rgba(15,61,42,.07),0 1px 2px rgba(15,61,42,.04)}
+.balance-amount{animation:none!important;background-size:100%!important}
+/* Switch estilo Android/iOS */
+.switch-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.switch-fila .switch-txt{font-size:14px;font-weight:700;color:var(--text)}
+.switch-fila .switch-txt small{display:block;font-size:11px;font-weight:400;color:var(--text2);margin-top:2px;line-height:1.4}
+.switch{position:relative;width:52px;height:30px;flex-shrink:0}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.switch .pista{position:absolute;inset:0;border-radius:15px;background:var(--bg4);border:1px solid var(--border);transition:background .2s}
+.switch .perilla{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;display:flex;align-items:center;justify-content:center;font-size:13px}
+.switch input:checked~.pista{background:var(--amber);border-color:var(--amber)}
+.switch input:checked~.perilla{transform:translateX(22px)}
+.switch input:focus-visible~.pista{outline:2px solid var(--amber);outline-offset:2px}
+.logo-ave{object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
 
 /* Reporte del mes para imprimir o guardar en PDF */
 #reporte-imprimible{display:none}

@@ -2,31 +2,37 @@
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
 
 // ═══ TEMAS ════════════════════════════════════════════════════════════════
-// Clásico (vino y dorado), Negro profesional, Blanco profesional, Azul
-// turquesa oscuro y OLED (negro puro, ahorra batería). Es una preferencia del
-// teléfono, no de los datos: va en localStorage y 00-config.js la aplica
-// antes de pintar para que no parpadee. Los colores viven en css/app.css.
+// Dos temas con un switch: Claro (blanco con letras verdes) y Oscuro (negro
+// puro OLED). Mientras no toques el switch, sigue el tema del teléfono. Es una
+// preferencia del teléfono, no de los datos: va en localStorage y 00-config.js
+// la aplica antes de pintar para que no parpadee. Los colores: css/app.css.
 const TEMAS = [
-  { id: 'clasico', nombre: 'Clásico', color: '#130507', fondo: '#1C080B', barra: '#F5C800', texto: '#FFF0E8' },
-  { id: 'negro', nombre: 'Negro pro', color: '#0D1117', fondo: '#161B22', barra: '#E3B341', texto: '#E6EDF3' },
-  { id: 'blanco', nombre: 'Blanco pro', color: '#FFFFFF', fondo: '#F3F5F8', barra: '#1F6FEB', texto: '#111827' },
-  { id: 'turquesa', nombre: 'Turquesa', color: '#06181C', fondo: '#0B2429', barra: '#2EC4B6', texto: '#E6F4F3' },
-  { id: 'oled', nombre: 'OLED', color: '#000000', fondo: '#0B0B0B', barra: '#F5C800', texto: '#FFF0E8' }
+  { id: 'claro', nombre: 'Claro', color: '#FFFFFF' },
+  { id: 'oscuro', nombre: 'Oscuro', color: '#000000' }
 ];
-const _temaInfo = t => TEMAS.find(x => x.id === t) || TEMAS[0];
+const _temaInfo = t => TEMAS.find(x => x.id === t) || TEMAS[1];
+function _temaGuardado() {
+  try {
+    const g = localStorage.getItem('mph_tema');
+    // Nombres de versiones anteriores: blanco → claro; oled, negro, turquesa → oscuro
+    if (g === 'claro' || g === 'blanco') return 'claro';
+    if (['oscuro', 'oled', 'negro', 'turquesa'].includes(g)) return 'oscuro';
+  } catch (e) {}
+  return null;
+}
 function temaActual() {
-  try { const t = localStorage.getItem('mph_tema'); return TEMAS.some(x => x.id === t) ? t : 'clasico'; } catch (e) { return 'clasico'; }
+  const g = _temaGuardado();
+  if (g) return g;
+  try { return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro'; } catch (e) { return 'oscuro'; }
 }
 function aplicarTema(t) {
-  const info = _temaInfo(t), raiz = document.documentElement;
-  if (info.id === 'clasico') delete raiz.dataset.tema; else raiz.dataset.tema = info.id;
-  raiz.classList.toggle('oled', info.id === 'oled');
+  const info = _temaInfo(t);
+  document.documentElement.dataset.tema = info.id;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', info.color);
 }
 function elegirTema(t) {
-  // 'normal' es el nombre viejo del tema clásico
-  const id = TEMAS.some(x => x.id === t) ? t : 'clasico';
+  const id = t === 'claro' ? 'claro' : 'oscuro';
   try { localStorage.setItem('mph_tema', id); } catch (e) {}
   aplicarTema(id);
   renderConfigTema();
@@ -34,12 +40,13 @@ function elegirTema(t) {
   if (typeof renderDoughnutChart === 'function' && state.setup) { try { renderDoughnutChart(); } catch (e) {} }
 }
 function renderConfigTema() {
-  const el = document.getElementById('cfg-temas');
-  if (!el) return;
-  const actual = temaActual();
-  el.innerHTML = TEMAS.map(t => `<button type="button" class="tema-op${t.id === actual ? ' activo' : ''}" aria-pressed="${t.id === actual}" onclick="elegirTema('${t.id}')">
-      <span class="tema-muestra" style="background:${t.fondo}"><i style="background:${t.texto}"></i><i style="background:${t.texto}"></i><b style="background:${t.barra}"></b></span>${t.nombre}</button>`).join('');
+  const oscuro = temaActual() === 'oscuro';
+  document.querySelectorAll('.sw-tema').forEach(el => { el.checked = oscuro; el.setAttribute('aria-checked', String(oscuro)); });
 }
+// Si el teléfono cambia de tema y no has elegido uno, la app lo sigue
+try {
+  window.matchMedia && matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (!_temaGuardado()) { aplicarTema(temaActual()); renderConfigTema(); } });
+} catch (e) {}
 // Color de un token del tema para lo que no entiende var() (gráficas en canvas)
 function colorTema(nombre, respaldo) {
   try { return getComputedStyle(document.documentElement).getPropertyValue('--' + nombre).trim() || respaldo; } catch (e) { return respaldo; }

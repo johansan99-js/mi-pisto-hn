@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v56-temas';
+const VERSION = 'v57-claro-oscuro';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -65,6 +65,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'offline.html',
   BASE_PATH + 'manifest.json',
   BASE_PATH + 'tasas.json',
+  BASE_PATH + 'guacamaya.png',
   // Código y estilos de la app, en el orden de index.html (una prueba verifica que coincidan)
   BASE_PATH + 'js/00-config.js',
   BASE_PATH + 'js/01-nucleo.js',

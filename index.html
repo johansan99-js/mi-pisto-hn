@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#130507">
+<meta name="theme-color" content="#000000">
 <!-- P1-6: Content Security Policy. unsafe-inline temporal mientras se migra a delegación de eventos.
      Las CDNs listadas son las que carga la app: Chart.js (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://open.er-api.com https://api.exchangerate-api.com https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
@@ -43,28 +43,7 @@
 <nav id="desktop-sidebar">
   <!-- Logo -->
   <div class="sidebar-logo">
-    <svg width="32" height="32" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(140,140,140,.4))">
-      <defs><radialGradient id="sb_cg" cx="38%" cy="32%" r="68%"><stop offset="0%" stop-color="#F4F4F4"/><stop offset="35%" stop-color="#DCDCDC"/><stop offset="70%" stop-color="#BABABA"/><stop offset="100%" stop-color="#888"/></radialGradient><linearGradient id="sb_sh" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.5)"/><stop offset="50%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.1)"/></linearGradient></defs>
-      <circle cx="102" cy="104" r="93" fill="rgba(0,0,0,0.25)"/>
-      <circle cx="100" cy="100" r="93" fill="#909090"/>
-      <g fill="#606060"><circle cx="100" cy="8" r="2.2"/><circle cx="120" cy="10" r="2.2"/><circle cx="139" cy="16" r="2.2"/><circle cx="156" cy="27" r="2.2"/><circle cx="170" cy="41" r="2.2"/><circle cx="179" cy="58" r="2.2"/><circle cx="184" cy="78" r="2.2"/><circle cx="184" cy="100" r="2.2"/><circle cx="179" cy="120" r="2.2"/><circle cx="170" cy="138" r="2.2"/><circle cx="156" cy="152" r="2.2"/><circle cx="139" cy="162" r="2.2"/><circle cx="120" cy="168" r="2.2"/><circle cx="100" cy="170" r="2.2"/><circle cx="80" cy="168" r="2.2"/><circle cx="61" cy="162" r="2.2"/><circle cx="44" cy="152" r="2.2"/><circle cx="30" cy="138" r="2.2"/><circle cx="21" cy="120" r="2.2"/><circle cx="16" cy="100" r="2.2"/><circle cx="16" cy="78" r="2.2"/><circle cx="21" cy="58" r="2.2"/><circle cx="30" cy="41" r="2.2"/><circle cx="44" cy="27" r="2.2"/><circle cx="61" cy="16" r="2.2"/><circle cx="80" cy="10" r="2.2"/></g>
-      <circle cx="100" cy="100" r="84" fill="url(#sb_cg)"/>
-      <circle cx="100" cy="100" r="76" fill="none" stroke="#A0A0A0" stroke-width="1.5" opacity=".8"/>
-      <g transform="translate(100,100)">
-        <path d="M 8,-35 C 16,-38 24,-30 27,-18 C 30,-8 30,8 28,24 C 26,38 19,57 19,57 C 14,52 7,40 3,28 C -1,18 -2,4 0,-12 Z" fill="#5A5A5A"/>
-        <path d="M -9,43 C -7,47 -4,52 -3,58 L 9,58 C 9,52 10,47 9,43 Z" fill="#AAAAAA"/>
-        <path d="M 8,-38 C 13,-43 4,-46 -3,-43 C -12,-39 -18,-31 -20,-22 C -22,-14 -19,-6 -17,0 C -15,5 -17,12 -15,18 C -13,23 -10,28 -7,32 C -4,36 -1,39 1,43 C 6,47 14,47 16,40 C 16,36 14,32 12,27 C 10,21 7,9 6,3 C 8,-4 10,-13 8,-38 Z" fill="#C0C0C0"/>
-        <path d="M -3,-43 C 4,-48 12,-45 16,-38 C 20,-31 15,-13 11,5 C 9,5 3,-1 -3,-19 C -7,-32 -7,-41 -3,-43 Z" fill="#CECECE"/>
-        <path d="M -17,-6 C -22,-3 -24,2 -21,8 C -18,13 -12,13 -10,11 C -13,9 -15,1 -13,-9 Z" fill="#ABABAB"/>
-        <path d="M -11,-19 C -16,-21 -16,-17 -11,-17 Z" fill="#686868"/>
-        <rect x="-7" y="-40" width="23" height="10" rx="1.2" fill="#ABABAB" stroke="#888" stroke-width=".8"/>
-        <rect x="-5"  y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-        <rect x="0"   y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-        <rect x="5"   y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-        <rect x="10"  y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-      </g>
-      <circle cx="100" cy="100" r="84" fill="url(#sb_sh)"/>
-    </svg>
+    <img src="guacamaya.png" class="logo-ave" width="32" height="32" alt="">
     <span class="sidebar-logo-text">Mi Pisto HN</span>
   </div>
 
@@ -191,33 +170,7 @@
 <div class="hamburger-menu">
   <button class="hamburger-btn btn-modo-discreto" id="btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="justify-self:start;font-size:20px">👁️</button>
   <div class="hamburger-title" style="display:flex;align-items:center;justify-content:center;gap:7px;-webkit-text-fill-color:initial;background:none">
-    <svg width="28" height="28" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(160,160,160,.5))">
-      <defs>
-        <radialGradient id="nav_cb" cx="38%" cy="32%" r="68%"><stop offset="0%" stop-color="#F2F2F2"/><stop offset="30%" stop-color="#D8D8D8"/><stop offset="65%" stop-color="#B8B8B8"/><stop offset="100%" stop-color="#888888"/></radialGradient>
-        <linearGradient id="nav_sh" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.55)"/><stop offset="45%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.12)"/></linearGradient>
-      </defs>
-      <circle cx="102" cy="104" r="93" fill="rgba(0,0,0,0.3)"/>
-      <circle cx="100" cy="100" r="93" fill="#909090"/>
-      <circle cx="100" cy="100" r="84" fill="url(#nav_cb)"/>
-      <circle cx="100" cy="100" r="76" fill="none" stroke="#A0A0A0" stroke-width="2" opacity=".8"/>
-      <g transform="translate(100,100)">
-        <path d="M 8,-35 C 15,-38 22,-32 26,-22 C 30,-12 30,5 28,20 C 26,35 22,48 20,55 C 15,50 8,40 4,30 C 0,20 -1,5 0,-10 Z" fill="#5A5A5A" opacity=".85"/>
-        <path d="M -8,42 C -6,45 -3,50 -2,56 L 8,56 C 8,50 9,45 8,42 Z" fill="#AAAAAA"/>
-        <path d="M 8,-38 C 12,-42 4,-44 -2,-42 C -10,-39 -16,-32 -18,-24 C -20,-16 -18,-8 -16,-2 C -14,4 -16,10 -14,16 C -12,21 -10,26 -6,30 C -4,33 -2,36 0,40 C 2,43 4,44 8,44 C 12,44 14,42 14,38 C 14,34 12,30 10,26 C 8,20 6,15 6,8 C 6,2 8,-4 10,-12 C 12,-20 12,-30 8,-38 Z" fill="#BCBCBC"/>
-        <path d="M -2,-42 C 4,-46 10,-44 14,-38 C 18,-32 16,-22 14,-14 C 12,-8 10,-2 10,4 C 8,4 4,2 2,-2 C 0,-6 -2,-12 -4,-18 C -6,-24 -8,-30 -8,-36 C -8,-40 -6,-42 -2,-42 Z" fill="#C8C8C8"/>
-        <path d="M -16,-8 C -20,-6 -22,-2 -20,4 C -18,8 -14,10 -12,12 L -10,10 C -12,8 -14,4 -14,0 C -14,-4 -12,-8 -12,-10 Z" fill="#AAAAAA"/>
-        <path d="M -10,-18 C -12,-20 -14,-20 -14,-18 C -14,-16 -12,-15 -10,-16 Z" fill="#707070"/>
-        <path d="M -8,-24 C -12,-26 -16,-24 -16,-22" fill="none" stroke="#808080" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M 6,-8 C 10,-10 12,-6 12,-2 C 12,2 10,6 6,6 C 4,4 4,0 4,-4 C 4,-6 5,-8 6,-8 Z" fill="#B4B4B4" stroke="#A0A0A0" stroke-width=".7"/>
-        <rect x="-6" y="-38" width="20" height="9" rx="1" fill="#A8A8A8" stroke="#888" stroke-width=".7"/>
-        <rect x="-4"  y="-37" width="3.5" height="7" rx=".4" fill="#D0D0D0" stroke="#909090" stroke-width=".6"/>
-        <rect x="0"   y="-37" width="3.5" height="7" rx=".4" fill="#C8C8C8" stroke="#909090" stroke-width=".6"/>
-        <rect x="4"   y="-37" width="3.5" height="7" rx=".4" fill="#D4D4D4" stroke="#909090" stroke-width=".6"/>
-        <rect x="8"   y="-37" width="3.5" height="7" rx=".4" fill="#C8C8C8" stroke="#909090" stroke-width=".6"/>
-        <rect x="12"  y="-37" width="3"   height="7" rx=".4" fill="#D0D0D0" stroke="#909090" stroke-width=".6"/>
-      </g>
-      <circle cx="100" cy="100" r="84" fill="url(#nav_sh)"/>
-    </svg>
+    <img src="guacamaya.png" class="logo-ave" width="28" height="28" alt="">
     <span style="background:var(--grad-texto);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:17px;font-weight:800;letter-spacing:-.5px">Mi Pisto HN</span>
   </div>
   <button class="hamburger-btn" onclick="toggleHamburger()" title="Más secciones">
@@ -238,6 +191,11 @@
     <button class="hamburger-close" onclick="toggleHamburger()">✕</button>
   </div>
   <div class="hamburger-nav">
+
+    <label class="switch-fila hamburger-item" style="cursor:pointer">
+      <span style="display:flex;align-items:center;gap:14px"><span class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">🌙</span><span>Modo oscuro</span></span>
+      <span class="switch"><input type="checkbox" class="sw-tema" role="switch" aria-label="Modo oscuro" onchange="elegirTema(this.checked ? 'oscuro' : 'claro')"><span class="pista"></span><span class="perilla"></span></span>
+    </label>
 
     <!-- ── OPERACIONES DIARIAS ── -->
     <div class="more-section-label">Operaciones</div>
@@ -341,32 +299,7 @@
   <div class="modal-content" style="animation:slideUpFade .35s ease;text-align:center;padding:24px 20px">
     <!-- Moneda pequeña animada -->
     <div style="margin-bottom:12px">
-      <svg width="60" height="60" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="animation:floatCoin 3s ease-in-out infinite;filter:drop-shadow(0 4px 14px rgba(140,140,140,.5))">
-        <defs><radialGradient id="ios_cb" cx="38%" cy="32%" r="68%"><stop offset="0%" stop-color="#F4F4F4"/><stop offset="30%" stop-color="#DCDCDC"/><stop offset="65%" stop-color="#BABABA"/><stop offset="100%" stop-color="#888"/></radialGradient><linearGradient id="ios_sh" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.55)"/><stop offset="45%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.12)"/></linearGradient></defs>
-        <circle cx="102" cy="104" r="93" fill="rgba(0,0,0,0.28)"/>
-        <circle cx="100" cy="100" r="93" fill="#909090"/>
-        <g fill="#606060"><circle cx="100" cy="8" r="2.2"/><circle cx="113" cy="8.7" r="2.2"/><circle cx="126" cy="11" r="2.2"/><circle cx="138" cy="15.5" r="2.2"/><circle cx="149" cy="21.5" r="2.2"/><circle cx="159" cy="29" r="2.2"/><circle cx="168" cy="37.5" r="2.2"/><circle cx="175" cy="47.5" r="2.2"/><circle cx="183" cy="70" r="2.2"/><circle cx="184" cy="82" r="2.2"/><circle cx="183" cy="94" r="2.2"/><circle cx="175" cy="117" r="2.2"/><circle cx="159" cy="137" r="2.2"/><circle cx="138" cy="151" r="2.2"/><circle cx="113" cy="159" r="2.2"/><circle cx="100" cy="160" r="2.2"/><circle cx="87" cy="159" r="2.2"/><circle cx="62" cy="151" r="2.2"/><circle cx="41" cy="137" r="2.2"/><circle cx="25" cy="117" r="2.2"/><circle cx="17" cy="70" r="2.2"/><circle cx="17" cy="94" r="2.2"/><circle cx="41" cy="29" r="2.2"/><circle cx="62" cy="15.5" r="2.2"/><circle cx="87" cy="8.7" r="2.2"/></g>
-        <circle cx="100" cy="100" r="84" fill="url(#ios_cb)"/>
-        <circle cx="100" cy="100" r="76" fill="none" stroke="#A0A0A0" stroke-width="1.5" opacity=".9"/>
-        <g transform="translate(100,100)">
-          <path d="M 8,-35 C 16,-38 24,-30 27,-18 C 30,-8 30,8 28,24 C 26,38 22,50 19,57 C 14,52 7,40 3,28 C -1,18 -2,4 0,-12 Z" fill="#5A5A5A"/>
-          <path d="M -9,43 C -7,47 -4,52 -3,58 L 9,58 C 9,52 10,47 9,43 Z" fill="#AAAAAA"/>
-          <path d="M 8,-38 C 13,-43 4,-46 -3,-43 C -12,-39 -18,-31 -20,-22 C -22,-14 -19,-6 -17,0 C -15,5 -17,12 -15,18 C -13,23 -10,28 -7,32 C -4,36 -1,39 1,43 C 3,46 6,47 10,47 C 14,47 16,44 16,40 C 16,36 14,32 12,27 C 10,21 8,16 7,9 C 6,3 8,-4 10,-13 C 13,-22 12,-31 8,-38 Z" fill="#C0C0C0"/>
-          <path d="M -3,-43 C 4,-48 12,-45 16,-38 C 20,-31 18,-21 15,-13 C 13,-7 11,-1 11,5 C 9,5 5,3 3,-1 C 1,-5 -1,-12 -3,-19 C -5,-26 -7,-32 -7,-38 C -7,-41 -5,-44 -3,-43 Z" fill="#CECECE"/>
-          <path d="M -17,-6 C -22,-3 -24,2 -21,8 C -19,12 -15,13 -12,13 L -10,11 C -13,9 -15,5 -15,1 C -15,-3 -13,-7 -13,-9 Z" fill="#ABABAB"/>
-          <path d="M -11,-19 C -13,-21 -16,-21 -16,-19 C -16,-17 -13,-16 -11,-17 Z" fill="#686868"/>
-          <path d="M -9,-25 C -13,-28 -18,-25 -18,-23" fill="none" stroke="#787878" stroke-width="1.6" stroke-linecap="round"/>
-          <path d="M -15,21 C -19,19 -21,23 -19,27 C -17,30 -13,30 -11,27 L -11,25 C -13,26 -15,25 -15,23 Z" fill="#A5A5A5"/>
-          <path d="M 7,-8 C 11,-11 14,-7 14,-2 C 14,3 11,7 7,7 C 5,5 5,1 5,-3 C 5,-5 6,-8 7,-8 Z" fill="#B8B8B8" stroke="#A0A0A0" stroke-width=".8"/>
-          <rect x="-7" y="-40" width="23" height="10" rx="1.2" fill="#ABABAB" stroke="#888" stroke-width=".8"/>
-          <rect x="-5"  y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-          <rect x="0"   y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-          <rect x="5"   y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-          <rect x="10"  y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-        </g>
-        <circle cx="100" cy="100" r="84" fill="url(#ios_sh)"/>
-        <ellipse cx="62" cy="54" rx="22" ry="13" fill="white" opacity=".13" transform="rotate(-35 62 54)"/>
-      </svg>
+      <img src="guacamaya.png" class="logo-ave" width="60" height="60" alt="" style="animation:floatCoin 3s ease-in-out infinite">
     </div>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">Instala Mi Pisto HN</h3>
     <p style="color:var(--text2);font-size:12px;margin-bottom:18px">3 pasos rápidos para tener la app<br>en tu pantalla de inicio</p>
@@ -402,29 +335,7 @@
 <div class="ios-install-bar" id="ios-bar">
   <button class="ios-install-bar-close" onclick="cerrarIOSBar()">×</button>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-    <svg width="42" height="42" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(140,140,140,.4))">
-      <defs><radialGradient id="bar_cb" cx="38%" cy="32%" r="68%"><stop offset="0%" stop-color="#F4F4F4"/><stop offset="35%" stop-color="#DCDCDC"/><stop offset="70%" stop-color="#BABABA"/><stop offset="100%" stop-color="#888"/></radialGradient><linearGradient id="bar_sh" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.5)"/><stop offset="50%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.1)"/></linearGradient></defs>
-      <circle cx="102" cy="104" r="93" fill="rgba(0,0,0,0.25)"/>
-      <circle cx="100" cy="100" r="93" fill="#909090"/>
-      <g fill="#606060"><circle cx="100" cy="8" r="2.2"/><circle cx="120" cy="10" r="2.2"/><circle cx="139" cy="16" r="2.2"/><circle cx="156" cy="27" r="2.2"/><circle cx="170" cy="41" r="2.2"/><circle cx="179" cy="58" r="2.2"/><circle cx="184" cy="78" r="2.2"/><circle cx="184" cy="100" r="2.2"/><circle cx="179" cy="120" r="2.2"/><circle cx="170" cy="138" r="2.2"/><circle cx="156" cy="152" r="2.2"/><circle cx="139" cy="162" r="2.2"/><circle cx="120" cy="168" r="2.2"/><circle cx="100" cy="170" r="2.2"/><circle cx="80" cy="168" r="2.2"/><circle cx="61" cy="162" r="2.2"/><circle cx="44" cy="152" r="2.2"/><circle cx="30" cy="138" r="2.2"/><circle cx="21" cy="120" r="2.2"/><circle cx="16" cy="100" r="2.2"/><circle cx="16" cy="78" r="2.2"/><circle cx="21" cy="58" r="2.2"/><circle cx="30" cy="41" r="2.2"/><circle cx="44" cy="27" r="2.2"/><circle cx="61" cy="16" r="2.2"/><circle cx="80" cy="10" r="2.2"/></g>
-      <circle cx="100" cy="100" r="84" fill="url(#bar_cb)"/>
-      <circle cx="100" cy="100" r="76" fill="none" stroke="#A0A0A0" stroke-width="1.5" opacity=".8"/>
-      <g transform="translate(100,100)">
-        <path d="M 8,-35 C 16,-38 24,-30 27,-18 C 30,-8 30,8 28,24 C 26,38 19,57 19,57 C 14,52 7,40 3,28 C -1,18 -2,4 0,-12 Z" fill="#5A5A5A"/>
-        <path d="M -9,43 C -7,47 -4,52 -3,58 L 9,58 C 9,52 10,47 9,43 Z" fill="#AAAAAA"/>
-        <path d="M 8,-38 C 13,-43 4,-46 -3,-43 C -12,-39 -18,-31 -20,-22 C -22,-14 -19,-6 -17,0 C -15,5 -17,12 -15,18 C -13,23 -10,28 -7,32 C -4,36 -1,39 1,43 C 6,47 14,47 16,40 C 16,36 14,32 12,27 C 10,21 7,9 6,3 C 8,-4 10,-13 8,-38 Z" fill="#C0C0C0"/>
-        <path d="M -3,-43 C 4,-48 12,-45 16,-38 C 20,-31 15,-13 11,5 C 9,5 3,-1 -3,-19 C -7,-32 -7,-41 -3,-43 Z" fill="#CECECE"/>
-        <path d="M -17,-6 C -22,-3 -24,2 -21,8 C -18,13 -12,13 -10,11 C -13,9 -15,1 -13,-9 Z" fill="#ABABAB"/>
-        <path d="M -11,-19 C -16,-21 -16,-17 -11,-17 Z" fill="#686868"/>
-        <path d="M -9,-25 Q -13,-28 -18,-23" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round"/>
-        <rect x="-7" y="-40" width="23" height="10" rx="1.2" fill="#ABABAB" stroke="#888" stroke-width=".8"/>
-        <rect x="-5"  y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-        <rect x="0"   y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-        <rect x="5"   y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-        <rect x="10"  y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-      </g>
-      <circle cx="100" cy="100" r="84" fill="url(#bar_sh)"/>
-    </svg>
+    <img src="guacamaya.png" class="logo-ave" width="42" height="42" alt="">
     <div>
       <div style="font-weight:800;font-size:15px;color:var(--amber)">Instala Mi Pisto HN</div>
       <div style="font-size:11px;color:var(--text2)">Gratis · Funciona sin internet · Sin App Store</div>
@@ -484,74 +395,7 @@
   <div class="modal-content" style="animation:slideUpFade .4s ease;text-align:center">
     <!-- Moneda 50 centavos de Lempira — réplica fiel -->
     <div style="text-align:center;margin-bottom:16px">
-      <svg width="100" height="100" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="animation:floatCoin 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 22px rgba(140,140,140,.55))">
-        <defs>
-          <radialGradient id="ob_cb" cx="38%" cy="32%" r="68%"><stop offset="0%" stop-color="#F4F4F4"/><stop offset="30%" stop-color="#DCDCDC"/><stop offset="65%" stop-color="#BABABA"/><stop offset="100%" stop-color="#888"/></radialGradient>
-          <linearGradient id="ob_sh" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.6)"/><stop offset="45%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.15)"/></linearGradient>
-          <path id="ob_arc" d="M 20,100 A 80,80 0 1,1 180,100" fill="none"/>
-        </defs>
-        <!-- Sombra -->
-        <circle cx="102" cy="104" r="93" fill="rgba(0,0,0,0.3)"/>
-        <!-- Cuerpo exterior -->
-        <circle cx="100" cy="100" r="93" fill="#909090"/>
-        <!-- Dots borde exterior -->
-        <g fill="#606060">
-          <circle cx="100" cy="8" r="2.2"/><circle cx="113" cy="8.7" r="2.2"/><circle cx="126" cy="11" r="2.2"/><circle cx="138" cy="15.5" r="2.2"/><circle cx="149" cy="21.5" r="2.2"/><circle cx="159" cy="29" r="2.2"/><circle cx="168" cy="37.5" r="2.2"/><circle cx="175" cy="47.5" r="2.2"/><circle cx="180" cy="58.5" r="2.2"/><circle cx="183" cy="70" r="2.2"/><circle cx="184" cy="82" r="2.2"/><circle cx="183" cy="94" r="2.2"/><circle cx="180" cy="106" r="2.2"/><circle cx="175" cy="117" r="2.2"/><circle cx="168" cy="128" r="2.2"/><circle cx="159" cy="137" r="2.2"/><circle cx="149" cy="145" r="2.2"/><circle cx="138" cy="151" r="2.2"/><circle cx="126" cy="156" r="2.2"/><circle cx="113" cy="159" r="2.2"/><circle cx="100" cy="160" r="2.2"/><circle cx="87" cy="159" r="2.2"/><circle cx="74" cy="156" r="2.2"/><circle cx="62" cy="151" r="2.2"/><circle cx="51" cy="145" r="2.2"/><circle cx="41" cy="137" r="2.2"/><circle cx="32" cy="128" r="2.2"/><circle cx="25" cy="117" r="2.2"/><circle cx="20" cy="106" r="2.2"/><circle cx="17" cy="94" r="2.2"/><circle cx="16" cy="82" r="2.2"/><circle cx="17" cy="70" r="2.2"/><circle cx="20" cy="58.5" r="2.2"/><circle cx="25" cy="47.5" r="2.2"/><circle cx="32" cy="37.5" r="2.2"/><circle cx="41" cy="29" r="2.2"/><circle cx="51" cy="21.5" r="2.2"/><circle cx="62" cy="15.5" r="2.2"/><circle cx="74" cy="11" r="2.2"/><circle cx="87" cy="8.7" r="2.2"/>
-        </g>
-        <!-- Cara principal -->
-        <circle cx="100" cy="100" r="84" fill="url(#ob_cb)"/>
-        <!-- Círculo interior doble -->
-        <circle cx="100" cy="100" r="76" fill="none" stroke="#A0A0A0" stroke-width="1.5" opacity=".9"/>
-        <circle cx="100" cy="100" r="74" fill="none" stroke="#D8D8D8" stroke-width=".8" opacity=".5"/>
-        <!-- Texto curvo "50 CENTAVOS DE LEMPIRA" -->
-        <text font-size="11" font-weight="700" fill="#505050" font-family="'Times New Roman',Georgia,serif" letter-spacing="3">
-          <textPath href="#ob_arc" startOffset="4%">50 CENTAVOS DE LEMPIRA</textPath>
-        </text>
-        <!-- RETRATO LEMPIRA -->
-        <g transform="translate(100,100)">
-          <!-- Cabello masa principal -->
-          <path d="M 8,-35 C 16,-38 24,-30 27,-18 C 30,-8 30,8 28,24 C 26,38 22,50 19,57 C 14,52 7,40 3,28 C -1,18 -2,4 0,-12 Z" fill="#5A5A5A"/>
-          <!-- Líneas textura cabello -->
-          <path d="M 10,-30 C 21,-24 26,-8 24,18 C 22,38 18,52 15,57" fill="none" stroke="#7A7A7A" stroke-width="1" opacity=".5"/>
-          <path d="M 15,-26 C 25,-20 29,-4 27,22 C 25,42 21,54 18,58" fill="none" stroke="#7A7A7A" stroke-width=".9" opacity=".4"/>
-          <path d="M 20,-20 C 28,-13 31,2 29,26" fill="none" stroke="#7A7A7A" stroke-width=".8" opacity=".4"/>
-          <path d="M 24,-12 C 30,-4 31,8 29,28" fill="none" stroke="#7A7A7A" stroke-width=".7" opacity=".35"/>
-          <!-- Cuello -->
-          <path d="M -9,43 C -7,47 -4,52 -3,58 L 9,58 C 9,52 10,47 9,43 Z" fill="#AAAAAA"/>
-          <!-- Cara / perfil completo mirando izquierda -->
-          <path d="M 8,-38 C 13,-43 4,-46 -3,-43 C -12,-39 -18,-31 -20,-22 C -22,-14 -19,-6 -17,0 C -15,5 -17,12 -15,18 C -13,23 -10,28 -7,32 C -4,36 -1,39 1,43 C 3,46 6,47 10,47 C 14,47 16,44 16,40 C 16,36 14,32 12,27 C 10,21 8,16 7,9 C 6,3 8,-4 10,-13 C 13,-22 12,-31 8,-38 Z" fill="#C0C0C0"/>
-          <!-- Frente/cráneo más claro -->
-          <path d="M -3,-43 C 4,-48 12,-45 16,-38 C 20,-31 18,-21 15,-13 C 13,-7 11,-1 11,5 C 9,5 5,3 3,-1 C 1,-5 -1,-12 -3,-19 C -5,-26 -7,-32 -7,-38 C -7,-41 -5,-44 -3,-43 Z" fill="#CECECE"/>
-          <!-- Nariz perfil -->
-          <path d="M -17,-6 C -22,-3 -24,2 -21,8 C -19,12 -15,13 -12,13 L -10,11 C -13,9 -15,5 -15,1 C -15,-3 -13,-7 -13,-9 Z" fill="#ABABAB"/>
-          <path d="M -22,4 C -24,6 -23,10 -21,12 C -18,14 -15,13 -13,11" fill="none" stroke="#999" stroke-width="1.3"/>
-          <!-- Labios -->
-          <path d="M -15,21 C -19,19 -21,23 -19,27 C -17,30 -13,30 -11,27 L -11,25 C -13,26 -15,25 -15,23 Z" fill="#A5A5A5"/>
-          <line x1="-17" y1="21" x2="-11" y2="19" stroke="#888" stroke-width="1.1"/>
-          <!-- Mentón / mandíbula -->
-          <path d="M -13,34 C -15,38 -11,44 -6,46 C -2,48 3,46 5,43 C 7,41 9,39 9,37" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
-          <!-- Ojo perfil -->
-          <path d="M -11,-19 C -13,-21 -16,-21 -16,-19 C -16,-17 -13,-16 -11,-17 Z" fill="#686868"/>
-          <!-- Ceja -->
-          <path d="M -9,-25 C -13,-28 -18,-25 -18,-23" fill="none" stroke="#787878" stroke-width="1.6" stroke-linecap="round"/>
-          <!-- Oreja -->
-          <path d="M 7,-8 C 11,-11 14,-7 14,-2 C 14,3 11,7 7,7 C 5,5 5,1 5,-3 C 5,-5 6,-8 7,-8 Z" fill="#B8B8B8" stroke="#A0A0A0" stroke-width=".8"/>
-          <path d="M 9,-4 C 11,-2 11,1 9,3" fill="none" stroke="#A0A0A0" stroke-width=".9"/>
-          <!-- DIADEMA con rectángulos al estilo maya -->
-          <rect x="-7" y="-40" width="23" height="10" rx="1.2" fill="#ABABAB" stroke="#888" stroke-width=".8"/>
-          <rect x="-5"  y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-          <rect x="0"   y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-          <rect x="5"   y="-39" width="4" height="8" rx=".5" fill="#D5D5D5" stroke="#909090" stroke-width=".7"/>
-          <rect x="10"  y="-39" width="4" height="8" rx=".5" fill="#C8C8C8" stroke="#909090" stroke-width=".7"/>
-          <line x1="-7" y1="-30" x2="16" y2="-30" stroke="#888" stroke-width=".9"/>
-          <!-- Hombros / ropa indicativa -->
-          <path d="M -10,47 C -14,50 -16,55 -15,60 L 14,60 C 15,55 14,50 10,47 C 8,45 4,44 0,45 C -4,45 -8,46 -10,47 Z" fill="#AAAAAA" opacity=".7"/>
-        </g>
-        <!-- Brillo diagonal -->
-        <circle cx="100" cy="100" r="84" fill="url(#ob_sh)"/>
-        <!-- Brillo spot arriba izquierda -->
-        <ellipse cx="62" cy="54" rx="24" ry="14" fill="white" opacity=".14" transform="rotate(-35 62 54)"/>
-      </svg>
+      <img src="guacamaya.png" class="logo-ave" width="100" height="100" alt="" style="animation:floatCoin 3.5s ease-in-out infinite">
     </div>
     <div class="onboarding-title">Mi Pisto HN</div>
     <span class="onboarding-badge">PRO</span>
@@ -839,6 +683,10 @@
 
 <div id="view-config" class="view">
   <h2 style="margin-bottom:15px">⚙️ Configuración y Seguridad</h2>
+  <div class="card">
+    <h4 style="margin-bottom:10px">🎨 Apariencia</h4>
+    <label class="switch-fila"><span class="switch-txt">🌙 Modo oscuro<small>Negro puro: descansa la vista y ahorra batería en pantallas OLED.</small></span><span class="switch"><input type="checkbox" class="sw-tema" role="switch" aria-label="Modo oscuro" onchange="elegirTema(this.checked ? 'oscuro' : 'claro')"><span class="pista"></span><span class="perilla"></span></span></label>
+  </div>
   <div class="card card-security">
     <h4 style="margin-bottom:14px;color:var(--purple)">🔐 Configuración de Seguridad</h4>
 
@@ -976,11 +824,6 @@
     <div id="recordatorio-nota" style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5"></div>
   </div>
   <div class="card" id="premium-card"></div>
-  <div class="card">
-    <h4 style="margin-bottom:6px">🎨 Apariencia</h4>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5">Elige el tema de la app. OLED usa negro puro y ahorra batería en esas pantallas.</p>
-    <div class="temas-grid" id="cfg-temas"></div>
-  </div>
   <div class="card" id="cfg-tarjeta-al-pagar">
     <h4 style="margin-bottom:6px">💳 Compras con tarjeta</h4>
     <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">¿En qué mes cuentan en tu resumen y tus presupuestos?</p>
