@@ -87,8 +87,7 @@ Aplica el concepto de contabilidad de doble entrada: cada ingreso o gasto se imp
 ## Limitaciones conocidas (deuda técnica aceptada)
 
 - El CSP mantiene `'unsafe-inline'` en `script-src`/`style-src` — la app usa `onclick=""` inline extensivamente; quitarlo requiere migrar a `addEventListener` en todo el archivo (refactor grande, pendiente)
-- Todo vive en un solo archivo de ~9,000 líneas — no hay build system ni tests automatizados
-- Las iteraciones de PBKDF2 (100k–250k) están por debajo del estándar recomendado 2026, pero no se suben para no invalidar el acceso de usuarios con datos ya cifrados
+- Todo vive en un solo archivo de ~9,700 líneas, sin build system; las pruebas automáticas cubren los flujos críticos, no cada pantalla
 - Sin importación automática de movimientos bancarios (SMS/Open Banking) — todo el registro es manual o vía OCR de recibo
 
 ## Desarrollo local
@@ -99,6 +98,18 @@ No requiere build. Sirve los archivos con cualquier servidor estático:
 python -m http.server 8000
 # abrir http://localhost:8000/index.html
 ```
+
+## Pruebas
+
+Pruebas de extremo a extremo con Playwright sobre Chromium (`tests/`), con el runner nativo de Node. Se corren en cada pull request (`.github/workflows/tests.yml`).
+
+```bash
+npm ci
+npx playwright install chromium   # la primera vez
+npm test
+```
+
+Cubren: arranque, montos y saldos; PIN, cifrado, kit de recuperación y respaldo; tarjetas, Tasa Cero, conciliación y préstamos; sincronización y merge entre dispositivos (con un Supabase simulado); service worker y modo sin conexión. No usan red: el CDN, las APIs de tasas y Supabase se bloquean o se simulan.
 
 ## Aviso de responsabilidad
 
