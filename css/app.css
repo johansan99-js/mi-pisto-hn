@@ -966,3 +966,20 @@ body.modo-discreto canvas{filter:blur(10px)}
 .gg-parte .gg-igual{color:var(--text2);font-size:12px}
 #gg-partes.exactos .gg-monto-parte{display:block}
 #gg-partes.exactos .gg-igual,#gg-partes.exactos input[type=checkbox]{display:none}
+
+/* Presupuestos por quincena, semana o mes */
+.presu-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--bg3);border-radius:10px;padding:3px}
+.presu-chips button{background:none;border:none;border-radius:8px;padding:7px 2px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer}
+.presu-chips button.activa{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.presu-rango{font-size:11px;color:var(--text2);text-align:center;margin:6px 0 8px}
+.presu-totales{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:6px}
+.presu-totales small{display:block;font-size:10px;color:var(--text2)}
+.presu-totales strong{font-size:14px;white-space:nowrap}
+.presu-fila{padding:8px 0;border-top:1px solid var(--border)}
+.presu-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:4px}
+.presu-top small{color:var(--text2);font-weight:400}
+.presu-barra{background:var(--bg3);border-radius:6px;height:7px;overflow:hidden}
+.presu-barra div{height:100%;border-radius:6px}
+.presu-detalle{font-size:11px;margin-top:3px}
+.presu-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.presu-item small{display:block;font-size:11px;color:var(--text2)}

@@ -26,7 +26,7 @@ function _validarSchemaBackup(obj) {
   }
   
   // ── Validar arrays esperados ──
-  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos'];
+  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos'];
   for (const k of arrays) {
     if (obj[k] !== undefined && !Array.isArray(obj[k])) return `${k} debe ser array`;
   }
@@ -114,6 +114,14 @@ function _validarSchemaBackup(obj) {
     }
   }
   
+  // ── Validar presupuestos ──
+  if (Array.isArray(obj.presupuestos)) {
+    for (const p of obj.presupuestos.slice(0, 100)) {
+      if (!esIdValido(p.id) || !esStringSeguro(p.cat, 60) || typeof p.monto !== 'number' || !['semana','quincena','mes'].includes(p.periodo)) return 'presupuesto inválido';
+    }
+  }
+  if (obj.diasPago !== undefined && obj.diasPago !== null && !(Array.isArray(obj.diasPago) && obj.diasPago.length === 2 && obj.diasPago.every(n => Number.isInteger(n) && n >= 1 && n <= 31))) return 'días de pago inválidos';
+
   // ── Validar gastos compartidos ──
   if (Array.isArray(obj.grupos)) {
     for (const g of obj.grupos.slice(0, 50)) {
@@ -437,6 +445,7 @@ function renderAll(){
     renderBeneficiosMes();
     if (typeof renderAccesoPlanDeudas === 'function') renderAccesoPlanDeudas();
     if (typeof renderFondoEmergencia === 'function') renderFondoEmergencia();
+    if (typeof renderPresupuestos === 'function') renderPresupuestos();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
