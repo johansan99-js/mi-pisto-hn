@@ -45,6 +45,7 @@ describe('Reporte en Excel', () => {
       return salida;
     });
     assert.equal(r.nombre, 'MiPisto_Maria_Jose_2026-09-25.xlsx');
+    assert.match(await page.textContent('#aviso-rapido'), /Excel descargado\. Ábrelo con Google Sheets o Microsoft Excel/);
     assert.equal(await page.evaluate(() => state.transactions.map(t => t.id).join()), ordenAntes, 'exportar ya no reordena los movimientos de la app');
 
     const wb = XLSX.read(Buffer.from(r.b64, 'base64'), { cellDates: true, cellNF: true, cellStyles: true });

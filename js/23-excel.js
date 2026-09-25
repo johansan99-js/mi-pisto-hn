@@ -158,6 +158,8 @@ function exportToExcelPro() {
     hojasReporteExcel().forEach(h => XLSX.utils.book_append_sheet(wb, _hojaSheetJS(h), h.nombre.slice(0, 31)));
     const quien = String(state.nombre || 'reporte').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'reporte';
     XLSX.writeFile(wb, 'MiPisto_' + quien + '_' + todayStr() + '.xlsx', { cellDates: true });
+    // Algunos lectores gratis de documentos llenan de anuncios al abrir el archivo
+    if (typeof avisoRapido === 'function') avisoRapido('📊 Excel descargado. Ábrelo con Google Sheets o Microsoft Excel: son gratis y sin anuncios.', 6000);
   } catch (e) {
     console.error(e);
     alert('No se pudo generar el Excel: ' + e.message);
