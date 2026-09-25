@@ -148,15 +148,15 @@ function renderMisCuentas() {
 // Tarjetas de crédito, lo que debes y préstamos: desde la pestaña Cuentas de la barra de abajo
 function _htmlTarjetasYDeudas() {
   const tcs = state.tarjetas || [];
-  const deuda = _c2(tcs.reduce((a, t) => a + (Number(t.saldo) || 0), 0));
+  const deuda = _c2(tcs.reduce((a, t) => a + deudaTarjetaL(t), 0));
   const filasTc = tcs.map(t => {
-    const saldo = Number(t.saldo) || 0, limite = Number(t.limite) || 0;
+    const saldo = deudaTarjetaL(t), limite = Number(t.limite) || 0;
     const uso = limite > 0 ? Math.min(100, saldo / limite * 100) : 0;
     return `<button type="button" class="cuenta-fila cuenta-tc" onclick="switchView('tarjetas')" style="border-left-color:var(--red)">
       <div class="cuenta-icono" style="background:rgba(var(--red-rgb),.14)">💳</div>
       <div style="flex:1;min-width:0;text-align:left">
         <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.nombre)}</div>
-        <div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${limite > 0 ? 'Disponible ' + fL(Math.max(0, limite - saldo)) : 'Tarjeta de crédito'}</div>
+        <div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esBimoneda(t) ? esc(textoSaldoTarjeta(t)) + (limite > 0 ? ' · disp. ' + fL(Math.max(0, disponibleTarjeta(t))) : '') : limite > 0 ? 'Disponible ' + fL(Math.max(0, limite - saldo)) : 'Tarjeta de crédito'}</div>
         ${limite > 0 ? `<div class="cuenta-tc-uso"><span style="width:${uso.toFixed(1)}%;background:${uso >= 80 ? 'var(--red)' : uso >= 50 ? 'var(--purple)' : 'var(--green)'}"></span></div>` : ''}
       </div>
       <div style="font-weight:800;font-size:14px;color:${saldo > 0 ? 'var(--red)' : 'var(--text2)'};white-space:nowrap">${saldo > 0 ? '-' : ''}${fL(saldo)}</div></button>`;

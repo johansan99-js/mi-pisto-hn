@@ -129,23 +129,40 @@ function migrarPagosTarjeta() {
 // y cuotas Tasa Cero (planCuotasId) van por su propio plan y no cuentan.
 // t.saldo se sigue guardando como copia calculada para el resto del código.
 function _movimientosPorTarjeta() {
-  const neto = {};
+  const neto = {}, netoUSD = {};
+  // Tarjetas en lempiras y dólares: desde que se activó, lo que es en dólares va a su propio saldo
+  const bimoneda = {};
+  (state.tarjetas || []).forEach(tc => { if (tc.bimoneda) bimoneda[String(tc.id)] = tc.bimonedaDesde ? new Date(tc.bimonedaDesde).getTime() : 0; });
   (state.transactions || []).forEach(t => {
     if (!t || t.deletedAt || !t.tarjetaId || t.planCuotasId || typeof t.amount !== 'number' || t.type !== 'expense') return;
     const id = String(t.tarjetaId);
+    if (id in bimoneda && new Date(t.date).getTime() >= bimoneda[id]) {
+      const usd = t.esTransferencia ? (typeof t.pagoUSD === 'number' ? t.pagoUSD : null)
+        : (t.originalCurrency === 'USD' && t.originalAmount > 0 && !t.cobradoBanco ? t.originalAmount : null);
+      if (usd !== null) {
+        if (t.esTransferencia) { if (t.cat === 'Pago Tarjeta') netoUSD[id] = (netoUSD[id] || 0) - usd; }
+        else netoUSD[id] = (netoUSD[id] || 0) + usd;
+        return;
+      }
+    }
     if (t.esTransferencia) { if (t.cat === 'Pago Tarjeta') neto[id] = (neto[id] || 0) - t.amount; }
     else neto[id] = (neto[id] || 0) + t.amount;
   });
-  return neto;
+  return { neto, netoUSD };
 }
 function recalcularSaldosTarjetas() {
   if (!Array.isArray(state.tarjetas) || !state.tarjetas.length) return;
-  const neto = _movimientosPorTarjeta(), r2 = n => Math.round(n * 100) / 100;
+  const { neto, netoUSD } = _movimientosPorTarjeta(), r2 = n => Math.round(n * 100) / 100;
   state.tarjetas.forEach(tc => {
     const n = neto[String(tc.id)] || 0;
     // Migración: la tarjeta conserva el saldo que tenía y la diferencia queda como base
     if (typeof tc.saldoBase !== 'number' || !isFinite(tc.saldoBase)) tc.saldoBase = r2((Number(tc.saldo) || 0) - n);
     tc.saldo = r2(tc.saldoBase + n);
+    if (tc.bimoneda) {
+      const u = netoUSD[String(tc.id)] || 0;
+      if (typeof tc.saldoBaseUSD !== 'number' || !isFinite(tc.saldoBaseUSD)) tc.saldoBaseUSD = r2((Number(tc.saldoUSD) || 0) - u);
+      tc.saldoUSD = r2(tc.saldoBaseUSD + u);
+    }
   });
 }
 

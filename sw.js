@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v67-dictado';
+const VERSION = 'v68-tarjetas-dolares';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -99,6 +99,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/29-busqueda-y-recurrentes.js',
   BASE_PATH + 'js/30-remesas.js',
   BASE_PATH + 'js/31-dictado.js',
+  BASE_PATH + 'js/32-tarjetas-dolares.js',
   BASE_PATH + 'css/app.css'
 ];
 

@@ -27,7 +27,7 @@ function hojasReporteExcel(ahora) {
 
   // ── Resumen ──
   const debesDeudas = (state.payables || []).filter(deudaActiva).reduce((a, p) => a + pendienteDeuda(p), 0);
-  const debesTarjetas = (state.tarjetas || []).reduce((a, t) => a + Math.max(0, t.saldo || 0), 0);
+  const debesTarjetas = (state.tarjetas || []).reduce((a, t) => a + Math.max(0, deudaTarjetaL(t)), 0);
   const debesPrestamos = (state.prestamos || []).reduce((a, p) => a + saldoPrestamo(p), 0);
   const teDeben = (state.receivables || []).reduce((a, r) => a + Math.max(0, r.monto - (r.pagado || 0)), 0);
   const mes = calcularResumenMes(hoy.getFullYear(), hoy.getMonth());
@@ -110,7 +110,7 @@ function hojasReporteExcel(ahora) {
 
   // ── Deudas y tarjetas ──
   const filasDeudas = []
-    .concat((state.tarjetas || []).map(t => ['Tarjeta', t.nombre + (t.ultimos4 ? ' •••• ' + t.ultimos4 : ''), t.limite || null, null, _c2(Math.max(0, t.saldo || 0)), (t.tasaInteres || 0) / 100, 'Corte día ' + t.corte + ', pago día ' + t.pago]))
+    .concat((state.tarjetas || []).map(t => ['Tarjeta', t.nombre + (t.ultimos4 ? ' •••• ' + t.ultimos4 : ''), t.limite || null, null, _c2(Math.max(0, deudaTarjetaL(t))), (t.tasaInteres || 0) / 100, 'Corte día ' + t.corte + ', pago día ' + t.pago + (esBimoneda(t) ? ' · ' + textoSaldoTarjeta(t) : '')]))
     .concat((state.prestamos || []).map(p => ['Préstamo', p.entidad, p.monto, null, _c2(saldoPrestamo(p)), (p.tasaInteres || 0) / 100, (p.cuotasPagadas || 0) + ' de ' + p.cuotasTotal + ' cuotas de L ' + (p.cuota || 0).toFixed(2)]))
     .concat((state.payables || []).map(p => [p.tipo === 'banco' ? 'Debo (banco)' : 'Debo (persona)', p.creditor, p.monto, p.pagado || 0, pendienteDeuda(p), null, p.liquidadaEn ? 'Liquidada el ' + p.liquidadaEn : p.vence ? 'Vence ' + p.vence : '']))
     .concat((state.receivables || []).map(r => ['Me deben', r.persona, r.monto, r.pagado || 0, _c2(Math.max(0, r.monto - (r.pagado || 0))), null, '']));

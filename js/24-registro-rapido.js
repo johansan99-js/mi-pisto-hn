@@ -92,7 +92,7 @@ function categoriasParaElegir(tipo, soloDeMovimientos) {
 // (saveGasto, saveIngreso, ejecutarTransferencia), así respeta tarjetas,
 // cuentas en dólares, avisos de saldo, etc. "Más opciones" pasa lo escrito
 // al formulario completo (moneda extranjera, dividir, cuotas, factura…).
-const _reg = { tipo: 'gasto', expr: '', cuenta: 'efectivo', tarjeta: null, cat: null, hacia: 'ahorro' };
+const _reg = { tipo: 'gasto', expr: '', cuenta: 'efectivo', tarjeta: null, cat: null, hacia: 'ahorro', moneda: 'HNL' };
 const _REG_ULTIMA = 'mph_registro_ultima';
 
 function _regRecordar() {
@@ -108,6 +108,7 @@ function abrirRegistro(tipo) {
   _reg.tipo = ['gasto', 'ingreso', 'transferencia'].includes(tipo) ? tipo : 'gasto';
   _reg.expr = '';
   _reg.cat = null;
+  _reg.moneda = 'HNL';
   _reg.cuenta = cuentaValida(u.cuenta, 'efectivo');
   _reg.tarjeta = u.tarjeta && (state.tarjetas || []).some(t => String(t.id) === String(u.tarjeta)) ? u.tarjeta : null;
   _reg.hacia = cuentaValida(u.hacia, 'ahorro');
@@ -187,11 +188,19 @@ function renderMontoRegistro() {
   const conOp = /\d[+\-*/]\d/.test(e);
   const v = conOp ? _regValor() : null;
   if (res) res.textContent = conOp ? (v !== null ? '= ' + fL(v) : '= ?') : '';
-  // Una remesa en dólares: el símbolo y cuánto es en lempiras (30-remesas.js)
-  const usd = typeof remesaEnDolares === 'function' && remesaEnDolares();
+  // Una remesa en dólares (30-remesas.js) o un gasto en dólares con una tarjeta
+  // en lempiras y dólares (32-tarjetas-dolares.js): el símbolo y cuánto es en lempiras
+  const gUsd = typeof gastoEnDolares === 'function' && gastoEnDolares();
+  const usd = gUsd || (typeof remesaEnDolares === 'function' && remesaEnDolares());
   const sim = document.querySelector('#modal-registro .reg-moneda');
-  if (sim) sim.textContent = usd ? 'US$' : 'L';
-  if (usd && res) { const val = conOp ? v : _regValor(); if (val > 0) res.textContent = (conOp ? '= US$ ' + _regNumTxt(val) + ' · ' : '') + '≈ ' + fL(_c2(val * tasaUSD('bid'))); }
+  if (sim) {
+    sim.textContent = usd ? 'US$' : 'L';
+    const cambiable = typeof _regTarjetaBimoneda === 'function' && !!_regTarjetaBimoneda();
+    sim.classList.toggle('cambiable', cambiable);
+    sim.onclick = cambiable ? cambiarMonedaRegistro : null;
+    if (cambiable) sim.title = 'Toca para cambiar entre lempiras y dólares'; else sim.removeAttribute('title');
+  }
+  if (usd && res) { const val = conOp ? v : _regValor(); if (val > 0) res.textContent = (conOp ? '= US$ ' + _regNumTxt(val) + ' · ' : '') + '≈ ' + fL(_c2(val * tasaUSD(gUsd ? 'ask' : 'bid'))); }
   renderPresuRegistro();
 }
 
@@ -283,7 +292,7 @@ function abrirSelectorRegistro(cual) {
       return `<button type="button" class="reg-cuenta${activa ? ' activa' : ''}" data-id="${esc(c.id)}" onclick="elegirCuentaRegistro('${destino}', this.dataset.id)"><span class="reg-cuenta-ico" style="background:${esc(c.color || '#4285F4')}22">${esc(c.icono)}</span><span class="reg-cuenta-nom">${esc(nombreCompletoCuenta(c))}</span><span class="reg-cuenta-sal">${fL(getCuentaBalance(c.id))}</span></button>`;
     }).join('');
     if (t === 'gasto' && (state.tarjetas || []).length) {
-      opciones += `<div class="reg-sel-sub">Tarjetas de crédito</div>` + state.tarjetas.map(tc => `<button type="button" class="reg-cuenta${String(_reg.tarjeta) === String(tc.id) ? ' activa' : ''}" data-id="${esc(tc.id)}" onclick="elegirTarjetaRegistro(this.dataset.id)"><span class="reg-cuenta-ico" style="background:rgba(var(--red-rgb),.14)">💳</span><span class="reg-cuenta-nom">${esc(tc.nombre)}</span><span class="reg-cuenta-sal">${fL(tc.saldo || 0)}</span></button>`).join('');
+      opciones += `<div class="reg-sel-sub">Tarjetas de crédito</div>` + state.tarjetas.map(tc => `<button type="button" class="reg-cuenta${String(_reg.tarjeta) === String(tc.id) ? ' activa' : ''}" data-id="${esc(tc.id)}" onclick="elegirTarjetaRegistro(this.dataset.id)"><span class="reg-cuenta-ico" style="background:rgba(var(--red-rgb),.14)">💳</span><span class="reg-cuenta-nom">${esc(tc.nombre)}</span><span class="reg-cuenta-sal">${esc(textoSaldoTarjeta(tc))}</span></button>`).join('');
     }
     hoja.innerHTML = `<div class="reg-sel-head"><strong>${titulo}</strong><button type="button" onclick="cerrarSelectorRegistro()" aria-label="Cerrar">✕</button></div><div class="reg-cuentas">${opciones}</div>`;
   }
@@ -351,7 +360,7 @@ function _regLlenarFormulario(monto) {
   if (t === 'gasto') {
     if (typeof resetGastoSplit === 'function') resetGastoSplit();
     set('gasto-monto', monto ? _regNumTxt(monto) : '');
-    set('gasto-moneda', 'HNL');
+    set('gasto-moneda', typeof gastoEnDolares === 'function' && gastoEnDolares() ? 'USD' : 'HNL');
     set('gasto-cat', _reg.cat || '');
     set('gasto-subcat', nota);
     if (_reg.cat) set('gasto-tipo', _tipoGastoDeCat(_reg.cat));
@@ -397,7 +406,7 @@ function guardarRegistro() {
   _regRecordar();
   cerrarRegistro();
   const que = t === 'gasto' ? 'Gasto' : t === 'ingreso' ? 'Ingreso' : 'Transferencia';
-  const usd = t === 'ingreso' && typeof remesaEnDolares === 'function' && remesaEnDolares();
+  const usd = (t === 'ingreso' && typeof remesaEnDolares === 'function' && remesaEnDolares()) || (t === 'gasto' && typeof gastoEnDolares === 'function' && gastoEnDolares());
   avisoRapido(`✅ ${que} guardado: ${usd ? 'US$ ' + _regNumTxt(monto) : fL(monto)}${_reg.cat && t !== 'transferencia' ? ' · ' + _reg.cat : ''}`);
 }
 

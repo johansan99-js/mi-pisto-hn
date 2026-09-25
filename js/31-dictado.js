@@ -205,7 +205,10 @@ function aplicarDictado(r) {
   let monto = r.monto;
   let aviso = '';
   const esRemesa = r.remesa && r.tipo === 'ingreso';
-  if (monto && r.moneda === 'USD' && !esRemesa) {
+  // Con una tarjeta en lempiras y dólares, el gasto queda en dólares (32-tarjetas-dolares.js)
+  const tcDolares = r.tipo === 'gasto' && r.tarjeta && esBimoneda((state.tarjetas || []).find(x => String(x.id) === String(r.tarjeta)));
+  _reg.moneda = tcDolares && r.moneda === 'USD' ? 'USD' : 'HNL';
+  if (monto && r.moneda === 'USD' && !esRemesa && !tcDolares) {
     // Solo las remesas guardan dólares desde el teclado; lo demás se pasa a lempiras
     const tasa = tasaUSD(r.tipo === 'gasto' ? 'ask' : 'bid');
     aviso = `US$ ${_regNumTxt(monto)} ≈ ${fL(_c2(monto * tasa))}`;
