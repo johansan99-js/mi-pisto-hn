@@ -4,7 +4,7 @@ La app es una PWA. Para Play Store se empaqueta como **TWA** (Trusted Web Activi
 
 ## Lista de pendientes
 
-- [ ] **Correo de contacto:** crearlo y reemplazar `[CORREO DE CONTACTO PENDIENTE]` en `privacidad.html` (aparece dos veces).
+- [x] **Correo de contacto:** `mipistohn@gmail.com` (ya está en `privacidad.html`; úsalo también en la ficha de Play).
 - [ ] **Paquete Android:** generarlo con PWABuilder (paso 2).
 - [ ] **Cuenta de desarrollador:** crearla en Play Console (pago único de US$25).
 - [ ] **Digital Asset Links:** publicar `assetlinks.json` en `johansan99-js.github.io` (paso 4). Sin esto, la app muestra la barra de direcciones de Chrome.
@@ -120,7 +120,7 @@ Mi Pisto HN es la app de finanzas personales hecha para Honduras: en lempiras, c
 Mi Pisto HN no pide números de tarjeta, CVV ni claves de banco.
 ```
 
-**Categoría:** Finanzas · **Correo:** el de contacto · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
+**Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
 
 **Imágenes (en esta carpeta):**
 - **Ícono:** `../icon-512.png` (512×512).
