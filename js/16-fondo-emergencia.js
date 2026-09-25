@@ -15,7 +15,7 @@ function gastoMensualEsencial() {
   const h = new Date();
   const esGasto = t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.esConciliacion;
   const meses = [1, 2, 3].map(i => new Date(h.getFullYear(), h.getMonth() - i, 1)).map(f => {
-    const tx = state.transactions.filter(t => { const d = new Date(t.date); return esGasto(t) && d.getFullYear() === f.getFullYear() && d.getMonth() === f.getMonth(); });
+    const tx = state.transactions.filter(t => { const d = fechaContable(t); return esGasto(t) && d.getFullYear() === f.getFullYear() && d.getMonth() === f.getMonth(); });
     return { total: tx.reduce((a, t) => a + t.amount, 0), fijo: tx.filter(t => t.tipo === 'fijo').reduce((a, t) => a + t.amount, 0) };
   }).filter(m => m.total > 0);
   if (meses.length) {

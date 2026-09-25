@@ -456,6 +456,7 @@ function renderAll(){
     if (typeof renderFondoEmergencia === 'function') renderFondoEmergencia();
     if (typeof renderPresupuestos === 'function') renderPresupuestos();
     if (typeof renderTilesCuentas === 'function') renderTilesCuentas();
+    if (typeof renderConfigTarjetaAlPagar === 'function') renderConfigTarjetaAlPagar();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

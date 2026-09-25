@@ -48,14 +48,14 @@ function textoRango(periodo, r) {
 const _esGastoReal = t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.esConciliacion && typeof t.amount === 'number';
 const _mismaCat = (a, b) => _sinAcentos(a || '').trim() === _sinAcentos(b || '').trim();
 function gastadoEn(cat, r) {
-  return _c2((state.transactions || []).filter(t => _esGastoReal(t) && new Date(t.date) >= r.inicio && new Date(t.date) < r.fin).reduce((a, t) => {
+  return _c2((state.transactions || []).filter(t => { if (!_esGastoReal(t)) return false; const f = fechaContable(t); return f >= r.inicio && f < r.fin; }).reduce((a, t) => {
     if (cat === TODOS_LOS_GASTOS) return a + t.amount;
     if (Array.isArray(t.splits) && t.splits.length) return a + t.splits.filter(s => _mismaCat(s.cat, cat)).reduce((x, s) => x + (Number(s.monto) || 0), 0);
     return a + (_mismaCat(t.cat, cat) ? t.amount : 0);
   }, 0));
 }
 function totalesPeriodo(r) {
-  const tx = (state.transactions || []).filter(t => !t.deletedAt && !t.esTransferencia && !t.esConciliacion && typeof t.amount === 'number' && new Date(t.date) >= r.inicio && new Date(t.date) < r.fin);
+  const tx = (state.transactions || []).filter(t => !t.deletedAt && !t.esTransferencia && !t.esConciliacion && typeof t.amount === 'number' && fechaContable(t) >= r.inicio && fechaContable(t) < r.fin);
   const suma = tipo => _c2(tx.filter(t => t.type === tipo).reduce((a, t) => a + t.amount, 0));
   return { ingresos: suma('income'), gastos: suma('expense') };
 }

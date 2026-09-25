@@ -796,7 +796,7 @@ function renderPapelera() {
 function calcularProgresoPresupuestoMes() {
   var hoy = new Date();
   var esteMes = function(t) {
-    var f = new Date(t.date);
+    var f = fechaContable(t);
     return f.getFullYear() === hoy.getFullYear() && f.getMonth() === hoy.getMonth();
   };
   var realTx = state.transactions.filter(function(t) { return !t.deletedAt && !t.esTransferencia && !t.esConciliacion && esteMes(t); });

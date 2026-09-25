@@ -218,7 +218,7 @@ function renderGastos(){
     const gastos = state.transactions.filter(t => t.type === 'expense' && !t.deletedAt && !t.esTransferencia && !t.esConciliacion);
     // "Este mes": antes sumaba todos los gastos de la historia
     const hoy = new Date();
-    const total = gastos.filter(t => { const d = new Date(t.date); return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth(); }).reduce((a,b) => a + b.amount, 0);
+    const total = gastos.filter(t => { const d = fechaContable(t); return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth(); }).reduce((a,b) => a + b.amount, 0);
     document.getElementById('gastos-mes').textContent = fL(total);
     const container = document.getElementById('gastos-list');
     if (!container) return;
@@ -254,7 +254,7 @@ function renderGastos(){
                 <div style="flex:1;min-width:0">
                     <div style="font-weight:700;font-size:14px">${concBadge}${esc(t.cat)}${tieneFactura?' 🧾':''}</div>
                     <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(t.subcat||'')} ${t.banco?'· '+esc(t.banco):''}</div>
-                    <div style="font-size:11px;color:var(--text2)">${new Date(t.date).toLocaleDateString('es-HN')}</div>
+                    <div style="font-size:11px;color:var(--text2)">${new Date(t.date).toLocaleDateString('es-HN')}${state.tarjetaAlPagar && t.tarjetaId ? ' · 💳 cuenta el ' + fechaContable(t).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' }) : ''}</div>
                     ${etiqPill}
                     ${splitsHtml}
                 </div>
@@ -468,7 +468,7 @@ function getCategoryTotalsForMonth(year, month) {
     const totales = {};
     state.transactions.forEach(t => {
         if (t.deletedAt || t.type !== 'expense' || t.esTransferencia || t.esConciliacion) return;
-        const fecha = new Date(t.date);
+        const fecha = fechaContable(t);
         if (fecha.getFullYear() !== year || fecha.getMonth() !== month) return;
         if (Array.isArray(t.splits) && t.splits.length) {
             t.splits.forEach(s => {
@@ -508,7 +508,7 @@ const GASTO_HORMIGA = 150;
 function calcularResumenMes(year, month) {
   const del = (y, m) => state.transactions.filter(t => {
     if (t.deletedAt || t.esTransferencia || t.esConciliacion) return false;
-    const f = new Date(t.date);
+    const f = fechaContable(t);
     return f.getFullYear() === y && f.getMonth() === m;
   });
   const suma = (lista, tipo) => lista.filter(t => t.type === tipo).reduce((a, t) => a + t.amount, 0);

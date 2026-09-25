@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v49-mis-cuentas';
+const VERSION = 'v50-tarjeta-al-pagar';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW

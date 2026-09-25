@@ -792,3 +792,33 @@ function eliminarRecurrente(id){
   state.pagosRecurrentes=state.pagosRecurrentes.filter(x=>x.id!==id);
   save();renderAll();
 }
+
+// ── COMPRAS CON TARJETA EN EL MES DEL PAGO ─────────────────────────────
+// Con state.tarjetaAlPagar, una compra a crédito cuenta en los reportes,
+// el resumen y los presupuestos el día en que se paga el estado de cuenta
+// que la incluye (no el día de la compra): así el mes muestra lo que de
+// verdad sale de tu bolsillo. La fecha real de la compra no cambia.
+function fechaPagoDeCompra(tc, fecha) {
+  const f = new Date(fecha), dia = (y, m, d) => Math.min(d, new Date(y, m + 1, 0).getDate());
+  const corte = Math.min(31, Math.max(1, parseInt(tc.corte, 10) || 1)), pago = Math.min(31, Math.max(1, parseInt(tc.pago, 10) || 15));
+  // Mes del corte que incluye la compra, y el pago después de ese corte
+  const mc = f.getDate() > dia(f.getFullYear(), f.getMonth(), corte) ? f.getMonth() + 1 : f.getMonth();
+  const p = new Date(f.getFullYear(), mc + (pago > corte ? 0 : 1), 1);
+  return new Date(p.getFullYear(), p.getMonth(), dia(p.getFullYear(), p.getMonth(), pago), 12);
+}
+function fechaContable(t) {
+  if (state.tarjetaAlPagar && t.tarjetaId && t.type === 'expense' && !t.esTransferencia) {
+    const tc = (state.tarjetas || []).find(x => String(x.id) === String(t.tarjetaId));
+    if (tc) return fechaPagoDeCompra(tc, t.date);
+  }
+  return new Date(t.date);
+}
+function elegirTarjetaAlPagar(v) {
+  state.tarjetaAlPagar = !!v;
+  save(); renderAll(); renderConfigTarjetaAlPagar();
+}
+function renderConfigTarjetaAlPagar() {
+  const el = document.getElementById('cfg-tarjeta-al-pagar');
+  if (!el) return;
+  el.querySelectorAll('input[name="tarjeta-al-pagar"]').forEach(i => { i.checked = (i.value === '1') === !!state.tarjetaAlPagar; });
+}
