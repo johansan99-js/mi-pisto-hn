@@ -1,6 +1,5 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const { crearEntorno, sembrar, esperarCarga, desbloquear, estadoBase, LS_KEY } = require('./helpers');
 
 const leerIDB = (page, store, key) => page.evaluate(([s, k]) => new Promise(res => {
@@ -127,8 +126,14 @@ describe('PIN, cifrado y recuperación', () => {
   it('el respaldo cifrado usa 600k iteraciones y abre respaldos viejos', async () => {
     const page = await env.pagina();
     await sembrar(page, conGasto());
-    const descarga = page.waitForEvent('download');
-    await page.evaluate(() => { window.__exp = exportDataEncriptado(); });
+    // Se toma el archivo al entregarlo a descargarArchivo (en vez de esperar el
+    // evento de descarga del navegador, que en CI a veces no llegaba): así la
+    // prueba solo espera lo que hace la app, con margen para los 600k de PBKDF2.
+    await page.evaluate(() => {
+      window.__respaldo = null;
+      descargarArchivo = (blob, nombre) => { blob.text().then(t => { window.__respaldo = { nombre, t }; }); };
+      window.__exp = exportDataEncriptado();
+    });
     await page.waitForSelector('#modal-cloud-pass', { state: 'visible' });
     await page.fill('#cloud-pass-1', 'corta'); await page.fill('#cloud-pass-2', 'corta');
     await page.click('#btn-cloud-pass-ok');
@@ -136,7 +141,10 @@ describe('PIN, cifrado y recuperación', () => {
     await page.fill('#cloud-pass-1', 'respaldo seguro 2026'); await page.fill('#cloud-pass-2', 'respaldo seguro 2026');
     page.respuestas = [true];
     await page.click('#btn-cloud-pass-ok');
-    const archivo = JSON.parse(fs.readFileSync(await (await descarga).path(), 'utf8'));
+    await page.waitForFunction(() => window.__respaldo, null, { timeout: 60000 }).catch(e => { throw new Error('No se generó el respaldo. Diálogos: ' + JSON.stringify(page.dialogos) + ' · Errores: ' + JSON.stringify(page.errores)); });
+    const { nombre, t } = await page.evaluate(() => window.__respaldo);
+    assert.match(nombre, /^Backup_MiPistoHN_\d{4}-\d{2}-\d{2}\.json$/);
+    const archivo = JSON.parse(t);
     assert.equal(archivo.iteraciones, 600000);
     assert.equal(await page.evaluate(a => _descifrarBackupAES(a, 'respaldo seguro 2026').then(s => s.nombre), archivo), 'Ana');
     const viejo = await page.evaluate(async () => {
