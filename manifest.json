@@ -45,39 +45,39 @@
   ],
   "screenshots": [
     {
-      "src": "./play-store/capturas/01-inicio.png",
+      "src": "./play-store/capturas-ficha/01-inicio-por-dia.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Tu patrimonio, efectivo y ahorro de un vistazo"
+      "label": "Tu mes, día por día"
     },
     {
-      "src": "./play-store/capturas/02-tarjetas.png",
+      "src": "./play-store/capturas-ficha/02-registra-en-segundos.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Tarjetas con cupo comprometido y pago del mes"
+      "label": "Anota tus gastos en 3 toques"
     },
     {
-      "src": "./play-store/capturas/03-costo-real.png",
+      "src": "./play-store/capturas-ficha/03-analisis.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "El verdadero costo de pagar solo el mínimo"
+      "label": "En qué se fue tu pisto"
     },
     {
-      "src": "./play-store/capturas/04-metas.png",
+      "src": "./play-store/capturas-ficha/04-presupuestos.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Metas de ahorro"
+      "label": "Presupuesto por quincena"
     },
     {
-      "src": "./play-store/capturas/06-modo-discreto.png",
+      "src": "./play-store/capturas-ficha/05-cuentas-y-tarjetas.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Modo discreto para usar la app en público"
+      "label": "Cuentas y tarjetas"
     }
   ],
   "shortcuts": [
