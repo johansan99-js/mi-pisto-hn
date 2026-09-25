@@ -93,6 +93,8 @@ function _validarSchemaBackup(obj) {
       if (!esIdValido(g.id)) return `ID inválido en meta: ${g.id}`;
       if (!esStringSeguro(g.nombre, 200)) return 'nombre de meta sospechoso';
       if (typeof g.objetivo !== 'number' || g.objetivo < 0 || g.objetivo > 1e9) return 'objetivo inválido';
+      if (g.baseMensual !== undefined && (typeof g.baseMensual !== 'number' || !(g.baseMensual >= 0) || g.baseMensual > 1e9)) return 'gasto mensual del fondo inválido';
+      if (g.meses !== undefined && ![3, 6].includes(g.meses)) return 'meses del fondo inválidos';
     }
   }
   
@@ -422,6 +424,7 @@ function renderAll(){
     renderMargenExtranjero();
     renderBeneficiosMes();
     if (typeof renderAccesoPlanDeudas === 'function') renderAccesoPlanDeudas();
+    if (typeof renderFondoEmergencia === 'function') renderFondoEmergencia();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

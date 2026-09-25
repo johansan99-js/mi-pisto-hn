@@ -97,6 +97,7 @@
               <strong>${fL(g.actual)}</strong> de ${fL(g.objetivo)}
               ${isComplete?'· ✅ ¡Completada!':''}
             </div>
+            ${typeof lineaFondoEmergencia === 'function' ? lineaFondoEmergencia(g) : ''}
             <div class="goal-pro-bar-wrap">
               <div class="goal-pro-bar ${isComplete?'completed':''}" style="width:${pct}%"></div>
             </div>
@@ -156,15 +157,8 @@
       if (wasIncomplete && isNowComplete) setTimeout(() => alert(`🎯 ¡Meta "${nombre}" completada!`), 300);
     };
 
-    window.eliminarMetaPro = function (id) {
-      const g = window.state.goals.find(x => String(x.id) === String(id));
-      if (!g) return;
-      const pct = ((g.actual/g.objetivo)*100).toFixed(0);
-      if (!confirm(`¿Eliminar la meta "${g.nombre}"?\n\nProgreso actual: ${pct}%\nEsta acción no se puede deshacer.`)) return;
-      window.state.goals = window.state.goals.filter(x => String(x.id) !== String(id));
-      if (typeof window.save === 'function') window.save();
-      if (typeof window.renderAll === 'function') window.renderAll();
-    };
+    // deleteMeta devuelve a una cuenta lo abonado; esta versión solo borraba la meta
+    window.eliminarMetaPro = function (id) { deleteMeta(id); };
 
     if (window.state && window.state.goals && window.state.goals.length) window.renderMetas();
   }

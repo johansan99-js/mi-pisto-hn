@@ -567,6 +567,7 @@
   <div id="desktop-grid-left">
   <div id="primeros-pasos" class="card" style="display:none"></div>
   <div id="aviso-resumen" class="card" style="display:none;border-color:rgba(245,200,0,.45)"></div>
+  <div id="fondo-emergencia-card" class="card" style="display:none"></div>
   <div class="balance-card">
     <div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Patrimonio Neto Disponible</div>
@@ -1334,6 +1335,25 @@
     </div>
   </div>
 </div>
+<!-- FONDO DE EMERGENCIA -->
+<div id="modal-fondo" class="modal" onclick="closeModalIfBg(event,'modal-fondo')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">🛟 Fondo de emergencia</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">Dinero apartado solo para imprevistos: si pierdes el trabajo, te enfermas o se arruina el carro, lo cubres sin endeudarte.</p>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">¿Cuánto necesitas al mes para lo básico?</label>
+    <input type="text" inputmode="decimal" id="fondo-base" class="input-field" placeholder="L 0.00" oninput="_renderFondoModal()" style="margin-bottom:4px">
+    <p id="fondo-fuente" style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">¿Cuántos meses quieres cubrir?</label>
+    <div class="plan-estrategias">
+      <button type="button" data-meses="3" onclick="elegirMesesFondo(3)"><strong>3 meses</strong><small>Lo recomendado para empezar.</small></button>
+      <button type="button" data-meses="6" onclick="elegirMesesFondo(6)"><strong>6 meses</strong><small>Si tu ingreso es variable o eres independiente.</small></button>
+    </div>
+    <div id="fondo-objetivo" style="font-size:14px;text-align:center;margin:4px 0 14px"></div>
+    <button class="btn btn-primary" id="fondo-btn-guardar" onclick="guardarFondoEmergencia()">🛟 Crear mi fondo</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-fondo')">Cancelar</button>
+  </div>
+</div>
+
 <!-- PLAN PARA SALIR DE DEUDAS -->
 <div id="modal-plan-deudas" class="modal" onclick="closeModalIfBg(event,'modal-plan-deudas')">
   <div class="modal-content">
@@ -1500,5 +1520,6 @@
 
 <script src="js/14-ux.js"></script>
 <script src="js/15-plan-deudas.js"></script>
+<script src="js/16-fondo-emergencia.js"></script>
 </body>
 </html>
