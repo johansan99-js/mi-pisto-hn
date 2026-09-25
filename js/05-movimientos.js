@@ -165,7 +165,9 @@ function renderMontoTx(t, signo, color) {
 }
 
 // ========== GUARDAR GASTO CON FACTURA ADJUNTA ==========
-function saveGasto(){
+// opts (del registro rápido): { silencioso: sin alerta al guardar, fecha: Date del movimiento }
+function saveGasto(opts){
+    opts = opts || {};
     const montoInput = parseMonto(document.getElementById('gasto-monto').value),
           moneda = document.getElementById('gasto-moneda')?.value || 'HNL',
           subcat = document.getElementById('gasto-subcat').value || '',
@@ -269,7 +271,7 @@ function saveGasto(){
         tipo: tipo,
         banco: banco,
         etiqueta: etiqueta,
-        date: new Date().toISOString(),
+        date: (opts.fecha || new Date()).toISOString(),
         facturaImagenId: facturaImagenId,
         facturaImagen: null,
         numeroFactura: `FAC-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*1000).toString().padStart(3,'0')}`
@@ -336,7 +338,7 @@ function saveGasto(){
     clearEtiqueta();
     resetGastoSplit();
 
-    alert('✅ Gasto guardado. Factura adjuntada si fue escaneada.');
+    if (!opts.silencioso) alert('✅ Gasto guardado. Factura adjuntada si fue escaneada.');
 }
 
 // ── UI: dividir un gasto en varias categorías ──
@@ -408,7 +410,9 @@ function updateGastoSplitTotal() {
     }
 }
 
-function saveIngreso(){
+// opts (del registro rápido): { cat: categoría elegida, fecha: Date del movimiento }
+function saveIngreso(opts){
+  opts = opts || {};
   const montoInput=parseMonto(document.getElementById('ingreso-monto').value);
   if(montoInput===null||montoInput<=0)return alert('Monto inválido');
   const moneda = document.getElementById('ingreso-moneda')?.value || 'HNL';
@@ -440,11 +444,11 @@ function saveIngreso(){
     id:uid(),
     type:'income',
     amount:monto,
-    cat: tipoSel==='salario' ? 'Salario' : 'Extra',
+    cat: opts.cat || (tipoSel==='salario' ? 'Salario' : 'Extra'),
     subcat: tipoSel,
     cuenta: cuenta,
     nota: nota,
-    date:new Date().toISOString()
+    date:(opts.fecha || new Date()).toISOString()
   }, extraFields));
   save();closeModal('modal-ingreso');renderAll();
   document.getElementById('ingreso-monto').value='';

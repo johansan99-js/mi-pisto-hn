@@ -463,6 +463,8 @@
   </div><!-- /cuentas-widget -->
   </div><!-- /balance-card -->
 
+  <div id="registros-mes" class="card registros-card"></div>
+
   <div id="presupuestos-card" class="card" style="display:none"></div>
 
   <div class="survival-box">
@@ -544,8 +546,6 @@
   <h3 style="margin:20px 0 10px;font-size:14px">💰 Próximos Cobros (7 días)</h3>
   <div id="upcoming-receivables"></div>
   <p id="no-upcoming-receivables" style="text-align:center;color:var(--text2);font-size:12px;padding:10px;display:none">✅ Sin cobros próximos en los próximos 7 días</p>
-  <h3 style="margin:20px 0 10px;font-size:14px">📜 Movimientos Recientes</h3>
-  <div id="recent-history"></div>
 </div>
 
 <div id="view-cobrar" class="view">
@@ -887,45 +887,56 @@
   </div>
 </div>
 
-<!-- FAB MENU — paleta Guacamaya Roja -->
-<div class="fab-menu" id="fab-menu">
-  <div class="fab-menu-item" onclick="openModal('modal-gasto');closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(var(--red-rgb),.18)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5252" stroke-width="2.2" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9" style="fill:rgba(var(--red-rgb),.15)"/>
-        <path d="M12 8v8M8 12h8" stroke="#FF5252" stroke-width="2.4"/>
-      </svg>
+<!-- REGISTRO RÁPIDO con teclado (js/24-registro-rapido.js) -->
+<div id="modal-registro" class="modal" role="dialog" aria-modal="true" aria-label="Registrar movimiento" data-tipo="gasto">
+  <div class="modal-content reg-hoja">
+    <div class="reg-top">
+      <button type="button" class="reg-accion" onclick="cerrarRegistro()">✕ Cancelar</button>
+      <button type="button" class="reg-accion guardar" onclick="guardarRegistro()">✓ Guardar</button>
     </div>
-    <div>
-      <div style="font-weight:700;font-size:14px">Nuevo Gasto</div>
-      <div style="font-size:11px;color:var(--text2)">Registrar salida de dinero</div>
+    <div class="reg-tabs" role="tablist">
+      <button type="button" role="tab" class="reg-tab" data-tipo="ingreso" onclick="cambiarTipoRegistro('ingreso')">Ingreso</button>
+      <button type="button" role="tab" class="reg-tab activa" data-tipo="gasto" onclick="cambiarTipoRegistro('gasto')">Gasto</button>
+      <button type="button" role="tab" class="reg-tab" data-tipo="transferencia" onclick="cambiarTipoRegistro('transferencia')">Transferencia</button>
     </div>
-  </div>
-  <div class="fab-menu-item" onclick="openModal('modal-ingreso');closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(var(--green-rgb),.18)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--green)">
-        <circle cx="12" cy="12" r="9" style="fill:rgba(var(--green-rgb),.15)"/>
-        <path d="M12 16V8M8 12l4-4 4 4" stroke-width="2.4" style="stroke:var(--green)"/>
-      </svg>
+    <div class="reg-elegir">
+      <div><small id="reg-lbl-a">Cuenta</small><button type="button" id="reg-btn-a" class="reg-elegir-btn" onclick="abrirSelectorRegistro('a')">💵 Efectivo</button></div>
+      <div><small id="reg-lbl-b">Categoría</small><button type="button" id="reg-btn-b" class="reg-elegir-btn" onclick="abrirSelectorRegistro('b')">Elegir categoría</button></div>
     </div>
-    <div>
-      <div style="font-weight:700;font-size:14px">Nuevo Ingreso</div>
-      <div style="font-size:11px;color:var(--text2)">Registrar entrada de dinero</div>
+    <input type="text" id="reg-nota" class="input-field reg-nota" maxlength="80" autocomplete="off" placeholder="Nota o comercio (opcional)">
+    <div class="reg-monto-caja" id="reg-monto-caja">
+      <div class="reg-monto-txt"><span class="reg-moneda">L</span><span id="reg-monto" class="vacio">0</span></div>
+      <button type="button" class="reg-borrar" onclick="teclaRegistro('borrar')" aria-label="Borrar">⌫</button>
+      <div id="reg-resultado" class="reg-resultado"></div>
     </div>
-  </div>
-  <div class="fab-menu-item" onclick="openModal('modal-gasto');document.getElementById('ocr-input').click();closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(var(--blue-rgb),.18)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--blue)">
-        <rect x="3" y="6" width="18" height="13" rx="2" style="fill:rgba(var(--blue-rgb),.15)"/>
-        <circle cx="12" cy="13" r="3"/>
-        <path d="M8 6V5c0-.6.4-1 1-1h6c.6 0 1 .4 1 1v1"/>
-        <circle cx="18" cy="9" r="1" style="fill:var(--blue)"/>
-      </svg>
+    <div class="reg-teclado">
+      <button type="button" class="op" onclick="teclaRegistro('+')">+</button>
+      <button type="button" onclick="teclaRegistro('7')">7</button>
+      <button type="button" onclick="teclaRegistro('8')">8</button>
+      <button type="button" onclick="teclaRegistro('9')">9</button>
+      <button type="button" class="op" onclick="teclaRegistro('-')">−</button>
+      <button type="button" onclick="teclaRegistro('4')">4</button>
+      <button type="button" onclick="teclaRegistro('5')">5</button>
+      <button type="button" onclick="teclaRegistro('6')">6</button>
+      <button type="button" class="op" onclick="teclaRegistro('*')">×</button>
+      <button type="button" onclick="teclaRegistro('1')">1</button>
+      <button type="button" onclick="teclaRegistro('2')">2</button>
+      <button type="button" onclick="teclaRegistro('3')">3</button>
+      <button type="button" class="op" onclick="teclaRegistro('/')">÷</button>
+      <button type="button" onclick="teclaRegistro('0')">0</button>
+      <button type="button" onclick="teclaRegistro('.')">.</button>
+      <button type="button" class="op igual" onclick="teclaRegistro('=')">=</button>
     </div>
-    <div>
-      <div style="font-weight:700;font-size:14px">Escanear Recibo</div>
-      <div style="font-size:11px;color:var(--text2)">OCR automático de factura</div>
+    <div class="reg-fecha">
+      <input type="date" id="reg-fecha" aria-label="Fecha">
+      <input type="time" id="reg-hora" aria-label="Hora" oninput="this.dataset.tocada='1'">
     </div>
+    <div class="reg-extras">
+      <button type="button" class="solo-gasto" onclick="masOpcionesRegistro('recibo')">📸 Recibo</button>
+      <button type="button" class="solo-gasto" onclick="masOpcionesRegistro('sms')">💬 SMS</button>
+      <button type="button" onclick="masOpcionesRegistro()">⚙️ Más opciones</button>
+    </div>
+    <div id="reg-selector" class="reg-selector"></div>
   </div>
 </div>
 
@@ -1548,5 +1559,7 @@
 <script src="js/21-premium.js"></script>
 <script src="js/22-racha.js"></script>
 <script src="js/23-excel.js"></script>
+<script src="js/24-registro-rapido.js"></script>
+<script src="js/25-registros-del-mes.js"></script>
 </body>
 </html>

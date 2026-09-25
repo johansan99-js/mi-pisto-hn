@@ -1071,3 +1071,89 @@ html[data-tema="claro"] .card,html[data-tema="claro"] .modal-content{box-shadow:
 .racha-nota{font-size:12px;color:var(--text2);line-height:1.5;margin:6px 0 0}
 .racha-nota.riesgo{color:var(--amber)}
 .racha-hito{font-size:13px;font-weight:700;color:var(--amber);background:rgba(var(--amber-rgb),.08);border:1px solid rgba(var(--amber-rgb),.35);border-radius:10px;padding:8px 10px;margin-top:8px;line-height:1.4}
+
+/* ── REGISTRO RÁPIDO CON TECLADO (js/24-registro-rapido.js) ── */
+#modal-registro{padding:0;align-items:stretch;justify-content:center}
+#modal-registro .reg-hoja{position:relative;display:flex;flex-direction:column;gap:10px;width:100%;max-width:480px;height:100%;max-height:none;border-radius:0;padding:10px 14px calc(12px + env(safe-area-inset-bottom));overflow:hidden}
+@media (min-width:700px){#modal-registro{padding:24px;align-items:center}#modal-registro .reg-hoja{height:auto;max-height:calc(100vh - 48px);border-radius:20px}}
+.reg-top{display:flex;justify-content:space-between;align-items:center}
+.reg-accion{background:none;border:none;color:var(--text2);font:inherit;font-size:14px;font-weight:700;padding:8px 4px;cursor:pointer;letter-spacing:.3px}
+.reg-accion.guardar{color:var(--amber);font-size:15px}
+.reg-tabs{display:grid;grid-template-columns:1fr 1.1fr 1.4fr;background:var(--bg3);border-radius:12px;padding:3px}
+.reg-tab{background:none;border:none;border-radius:10px;padding:9px 4px;font:inherit;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer}
+.reg-tab.activa{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+#modal-registro[data-tipo="gasto"] .reg-tab.activa{color:var(--red)}
+#modal-registro[data-tipo="ingreso"] .reg-tab.activa{color:var(--green)}
+#modal-registro[data-tipo="transferencia"] .reg-tab.activa{color:var(--blue)}
+.reg-elegir{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.reg-elegir small{display:block;text-align:center;font-size:11px;color:var(--text2);margin-bottom:4px}
+.reg-elegir-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:6px 8px;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.reg-elegir-btn.falta{border-style:dashed;color:var(--text2)}
+.reg-nota{margin:0!important}
+.reg-monto-caja{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:8px;background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;padding:10px 12px 18px;min-height:74px}
+.reg-monto-txt{flex:1;min-width:0;text-align:right;font-size:38px;font-weight:800;letter-spacing:-.5px;line-height:1.1;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.reg-monto-txt::-webkit-scrollbar{display:none}
+#modal-registro[data-tipo="gasto"] .reg-monto-txt{color:var(--red)}
+#modal-registro[data-tipo="ingreso"] .reg-monto-txt{color:var(--green)}
+.reg-moneda{font-size:18px;font-weight:700;margin-right:6px;color:var(--text2)}
+#reg-monto.vacio{opacity:.35}
+.reg-borrar{flex-shrink:0;background:none;border:none;color:var(--text2);font-size:24px;padding:6px;cursor:pointer}
+.reg-resultado{position:absolute;right:56px;bottom:4px;font-size:12px;font-weight:700;color:var(--text2)}
+.reg-monto-caja.sacudir{animation:regSacudir .35s}
+@keyframes regSacudir{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+.reg-teclado{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(50px,1fr);gap:7px;min-height:220px;max-height:330px}
+.reg-teclado button{border:1px solid var(--border);border-radius:12px;background:var(--bg2);color:var(--text);font:inherit;font-size:24px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .06s,background .12s}
+.reg-teclado button:active{transform:scale(.95);background:var(--bg4)}
+.reg-teclado button.op{background:rgba(var(--amber-rgb),.14);color:var(--amber);border-color:transparent;font-size:26px}
+.reg-teclado button.igual{background:var(--amber);color:var(--acento-txt)}
+.reg-fecha{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
+.reg-fecha input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font:inherit;font-size:14px;font-weight:600;padding:10px;text-align:center;color-scheme:inherit}
+.reg-extras{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.reg-extras button{background:none;border:1px solid var(--border);border-radius:18px;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer}
+#modal-registro:not([data-tipo="gasto"]) .solo-gasto{display:none}
+.reg-selector{position:absolute;left:0;right:0;bottom:0;max-height:78%;overflow-y:auto;background:var(--bg2);border-top:1px solid var(--border);border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.35);padding:14px 14px calc(16px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .22s ease;z-index:2}
+.reg-selector.abierto{transform:none}
+.reg-sel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:15px}
+.reg-sel-head button{background:var(--bg3);border:none;border-radius:50%;width:32px;height:32px;color:var(--text);cursor:pointer}
+.reg-sel-sub{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin:12px 0 6px}
+.reg-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px}
+.reg-cat{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:2px solid transparent;border-radius:14px;padding:6px 2px;font:inherit;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;line-height:1.2;text-align:center}
+.reg-cat.activa{border-color:var(--amber);background:rgba(var(--amber-rgb),.08)}
+.reg-cuentas{display:flex;flex-direction:column;gap:6px}
+.reg-cuenta{display:flex;align-items:center;gap:10px;width:100%;background:var(--bg3);border:2px solid transparent;border-radius:12px;padding:10px 12px;font:inherit;color:var(--text);cursor:pointer;text-align:left}
+.reg-cuenta.activa{border-color:var(--amber)}
+.reg-cuenta-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.reg-cuenta-nom{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg-cuenta-sal{font-size:12px;color:var(--text2);white-space:nowrap}
+/* Círculo de categoría */
+.cat-circulo{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)}
+.cat-circulo.letra{color:#fff;font-weight:800;font-size:17px}
+.cat-circulo.mini{width:24px;height:24px;font-size:13px;box-shadow:none}
+.cat-circulo.mini.letra{font-size:12px}
+#aviso-rapido{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:400;max-width:calc(100% - 32px);text-align:center}
+#aviso-rapido.visible{opacity:1;transform:translate(-50%,0)}
+
+/* ── INICIO: MOVIMIENTOS DEL MES POR DÍA (js/25-registros-del-mes.js) ── */
+.registros-card{padding:12px 12px 6px}
+.rm-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.rm-nav strong{font-size:16px}
+.rm-nav button{width:40px;height:40px;border-radius:50%;background:var(--bg3);border:none;color:var(--text);font-size:24px;line-height:1;cursor:pointer}
+.rm-nav button:disabled{opacity:.3;cursor:default}
+.rm-totales{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;text-align:center;padding:8px 0 12px;border-bottom:1px solid var(--border)}
+.rm-totales small{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);margin-bottom:3px}
+.rm-totales b{display:block;font-size:clamp(11px,3.4vw,15px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.registros-card .rojo{color:var(--red)}.registros-card .verde{color:var(--green)}.registros-card .neutro{color:var(--text2)}
+.rm-dia{margin-top:12px}
+.rm-dia-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--text2);padding:0 2px 6px;border-bottom:1.5px solid var(--border)}
+.rm-fila{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 2px;font:inherit;color:var(--text);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+.rm-fila:last-child{border-bottom:none}
+.rm-fila:active{background:var(--bg3)}
+.rm-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rm-cat{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm-info small{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm-nota-fecha{color:var(--purple)}
+.rm-monto{font-size:14px;font-weight:800;white-space:nowrap}
+.rm-vacio{text-align:center;padding:18px 8px 12px;color:var(--text2);font-size:13px;line-height:1.5}
+.rm-vacio-ico{font-size:34px;margin-bottom:6px}
+.rm-vacio .btn{margin-top:12px}
+.rm-ver-todo{margin:10px 0 6px}

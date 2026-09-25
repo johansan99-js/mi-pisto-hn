@@ -343,71 +343,7 @@ function renderDashboard(){
     if(cobradoEl)cobradoEl.textContent=fL(hoyTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0));
     if(pagadoEl)pagadoEl.textContent=fL(hoyTx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0));
 
-    // ── EMPTY STATE: sin movimientos ──
-    const recent = state.transactions.filter(t => !t.deletedAt).slice().reverse().slice(0,5);
-    const recentEl = document.getElementById('recent-history');
-    if (recent.length === 0) {
-        recentEl.innerHTML = `
-        <div class="empty-state-dashboard">
-          <h3>👋 ¡Bienvenido a Mi Pisto HN!</h3>
-          <p>Aún no tienes movimientos registrados.<br>Empieza en 3 pasos simples:</p>
-          <div class="empty-steps">
-            <div class="empty-step">
-              <div class="empty-step-num">1</div>
-              <div>
-                <div class="empty-step-text">Registra tu primer ingreso</div>
-                <div class="empty-step-sub">Toca ➕ abajo → "Nuevo Ingreso"</div>
-              </div>
-            </div>
-            <div class="empty-step">
-              <div class="empty-step-num">2</div>
-              <div>
-                <div class="empty-step-text">Agrega un gasto de hoy</div>
-                <div class="empty-step-sub">Toca ➕ abajo → "Nuevo Gasto" o escanea un recibo</div>
-              </div>
-            </div>
-            <div class="empty-step">
-              <div class="empty-step-num">3</div>
-              <div>
-                <div class="empty-step-text">Mira tu saldo real</div>
-                <div class="empty-step-sub">El dashboard se actualiza automáticamente</div>
-              </div>
-            </div>
-          </div>
-          <button class="btn-empty-cta" onclick="toggleFabMenu()">
-            ➕ Registrar primer movimiento
-          </button>
-        </div>`;
-    } else {
-        recentEl.innerHTML = recent.map(t => {
-        const tieneFactura = t.facturaImagenId || t.facturaImagen; // P0-2: IDB o legacy
-        const etiqPill = t.etiqueta ? `<span class="etiqueta-pill">#${esc(t.etiqueta)}</span>` : '';
-        const splitsHtml = (Array.isArray(t.splits) && t.splits.length)
-            ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px">
-                 ${t.splits.map(s => `<div style="display:flex;justify-content:space-between"><span>${esc(s.cat)}</span><span>${fL(s.monto)}</span></div>`).join('')}
-               </div>`
-            : '';
-        return `
-        <div style="padding:12px 0;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-                <div style="flex:1;min-width:0">
-                    <div style="font-weight:600">${esc(t.cat)} ${tieneFactura?'🧾':''} ${t.esConciliacion?'<span class="badge-conciliacion">⚖️</span>':''}</div>
-                    <div style="font-size:11px;color:var(--text2)">${esc(t.subcat||'')} ${t.banco?'('+esc(t.banco)+')':''}</div>
-                    ${etiqPill}
-                    ${splitsHtml}
-                </div>
-                ${renderMontoTx(t, t.type==='income'?'+':'-', t.esConciliacion?(t.type==='income'?'var(--blue)':'var(--purple)'):(t.type==='income'?'var(--green)':'var(--red)'))}
-            </div>
-            <div class="tx-actions" style="${tieneFactura?'grid-template-columns:1fr 1fr 1fr':'grid-template-columns:1fr 1fr'}">
-                <button class="btn-tx-edit" onclick=\"abrirEdicionTx('${esc(t.id)}')\"">✏️ Editar</button>
-                ${tieneFactura?`<button class="btn-tx-edit" style="background:rgba(var(--amber-rgb),.15);color:var(--amber);border:1px solid rgba(var(--amber-rgb),.3)" onclick=\"verFactura('${esc(t.id)}')\"">🧾 Factura</button>`:''}
-                <button class="btn-tx-delete" onclick=\"softDeleteTx('${esc(t.id)}')\"">🗑️ Eliminar</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-    }
-    
+    // Los movimientos del mes (por día) y el estado vacío: renderRegistrosMes (25-registros-del-mes.js)
     renderDashboardGoals();
     updateSurvivalIndex(balance);
     renderDoughnutChart();
