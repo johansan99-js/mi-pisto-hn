@@ -26,7 +26,7 @@ function _validarSchemaBackup(obj) {
   }
   
   // ── Validar arrays esperados ──
-  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos','misCuentas'];
+  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos','misCuentas','categorias'];
   for (const k of arrays) {
     if (obj[k] !== undefined && !Array.isArray(obj[k])) return `${k} debe ser array`;
   }
@@ -131,6 +131,14 @@ function _validarSchemaBackup(obj) {
   if (Array.isArray(obj.presupuestos)) {
     for (const p of obj.presupuestos.slice(0, 100)) {
       if (!esIdValido(p.id) || !esStringSeguro(p.cat, 60) || typeof p.monto !== 'number' || !['semana','quincena','mes'].includes(p.periodo)) return 'presupuesto inválido';
+    }
+  }
+  // ── Validar categorías propias ──
+  if (Array.isArray(obj.categorias)) {
+    for (const c of obj.categorias.slice(0, 200)) {
+      if (!esIdValido(c.id) || !esStringSeguro(c.nombre, 40) || !c.nombre || /[<>]/.test(c.nombre) || !['gasto', 'ingreso'].includes(c.tipo)) return 'categoría inválida';
+      if (typeof c.icono !== 'string' || !c.icono || c.icono.length > 12 || /[<>"'&]/.test(c.icono)) return 'ícono de categoría inválido';
+      if (!/^#[0-9a-f]{6}$/i.test(c.color || '')) return 'color de categoría inválido';
     }
   }
   if (obj.diasPago !== undefined && obj.diasPago !== null && !(Array.isArray(obj.diasPago) && obj.diasPago.length === 2 && obj.diasPago.every(n => Number.isInteger(n) && n >= 1 && n <= 31))) return 'días de pago inválidos';
@@ -384,6 +392,7 @@ function switchView(v){
   if(v==='pagos')renderPagosRecurrentes();
   if(v==='historico')renderHistorico();
   if(v==='presupuestos'&&typeof renderVistaPresupuestos==='function')renderVistaPresupuestos();
+  if(v==='categorias'&&typeof renderCategorias==='function')renderCategorias();
   // Cloud sync: refrescar estado al entrar a config
   if(v==='config' && typeof renderCloudSyncUI === 'function') renderCloudSyncUI();
 }

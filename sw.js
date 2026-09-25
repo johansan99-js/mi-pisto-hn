@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v61-barra-nueva';
+const VERSION = 'v62-categorias';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -95,6 +95,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/25-registros-del-mes.js',
   BASE_PATH + 'js/26-analisis.js',
   BASE_PATH + 'js/27-presupuestos-categoria.js',
+  BASE_PATH + 'js/28-categorias.js',
   BASE_PATH + 'css/app.css'
 ];
 
