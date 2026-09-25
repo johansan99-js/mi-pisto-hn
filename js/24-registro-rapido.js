@@ -426,7 +426,7 @@ function masOpcionesRegistro(accion) {
 
 // ─── Aviso corto abajo de la pantalla ───────────────────────────────────
 let _avisoRapidoTimer = null;
-function avisoRapido(txt) {
+function avisoRapido(txt, ms) {
   let el = document.getElementById('aviso-rapido');
   if (!el) {
     el = document.createElement('div');
@@ -437,7 +437,7 @@ function avisoRapido(txt) {
   el.textContent = txt;
   el.classList.add('visible');
   clearTimeout(_avisoRapidoTimer);
-  _avisoRapidoTimer = setTimeout(() => el.classList.remove('visible'), 2600);
+  _avisoRapidoTimer = setTimeout(() => el.classList.remove('visible'), ms || 2600);
 }
 
 // Teclado físico (computadora): números, operaciones, Enter guarda, Esc cierra
