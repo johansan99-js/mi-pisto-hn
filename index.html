@@ -225,6 +225,10 @@
       <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">👨‍👩‍👧</div>
       <div><div>Compartidos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Casa, pareja, viajes</div></div>
     </div>
+    <div class="hamburger-item" onclick="switchView('remesas');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--green-rgb),.15)">🌎</div>
+      <div><div>Remesas</div><div style="font-size:11px;color:var(--text2);font-weight:400">Lo que te mandan y las comisiones</div></div>
+    </div>
     <div class="hamburger-item" onclick="switchView('prestamos');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">🏦</div>
       <div><div>Préstamos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Bancarios y personales</div></div>
@@ -679,6 +683,11 @@
   <div id="categorias-contenido" class="card registros-card analisis-card"></div>
 </div>
 
+<div id="view-remesas" class="view">
+  <h2 style="margin-bottom:15px">🌎 Remesas</h2>
+  <div id="remesas-contenido" class="card registros-card analisis-card"></div>
+</div>
+
 <div id="view-presupuestos" class="view">
   <h2 style="margin-bottom:15px">📅 Presupuestos</h2>
   <div id="presupuestos-vista" class="card registros-card analisis-card"></div>
@@ -932,6 +941,7 @@
       <div><small id="reg-lbl-b">Categoría</small><button type="button" id="reg-btn-b" class="reg-elegir-btn" onclick="abrirSelectorRegistro('b')">Elegir categoría</button></div>
     </div>
     <div id="reg-presu" class="reg-presu" role="status" style="display:none"></div>
+    <div id="reg-remesa" class="reg-remesa" style="display:none"></div>
     <input type="text" id="reg-nota" class="input-field reg-nota" maxlength="80" autocomplete="off" placeholder="Nota o comercio (opcional)">
     <div class="reg-monto-caja" id="reg-monto-caja">
       <div class="reg-monto-txt"><span class="reg-moneda">L</span><span id="reg-monto" class="vacio">0</span></div>
@@ -1627,5 +1637,6 @@
 <script src="js/27-presupuestos-categoria.js"></script>
 <script src="js/28-categorias.js"></script>
 <script src="js/29-busqueda-y-recurrentes.js"></script>
+<script src="js/30-remesas.js"></script>
 </body>
 </html>

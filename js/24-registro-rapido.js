@@ -115,6 +115,7 @@ function abrirRegistro(tipo) {
   const hoy = fechaLocal();
   const f = document.getElementById('reg-fecha'); if (f) { f.value = hoy; f.max = hoy; }
   const h = document.getElementById('reg-hora'); if (h) { const d = new Date(); h.value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); h.dataset.tocada = ''; }
+  if (typeof reiniciarRemesaRegistro === 'function') reiniciarRemesaRegistro();
   cerrarSelectorRegistro();
   renderRegistro();
   openModal('modal-registro');
@@ -186,6 +187,11 @@ function renderMontoRegistro() {
   const conOp = /\d[+\-*/]\d/.test(e);
   const v = conOp ? _regValor() : null;
   if (res) res.textContent = conOp ? (v !== null ? '= ' + fL(v) : '= ?') : '';
+  // Una remesa en dólares: el símbolo y cuánto es en lempiras (30-remesas.js)
+  const usd = typeof remesaEnDolares === 'function' && remesaEnDolares();
+  const sim = document.querySelector('#modal-registro .reg-moneda');
+  if (sim) sim.textContent = usd ? 'US$' : 'L';
+  if (usd && res) { const val = conOp ? v : _regValor(); if (val > 0) res.textContent = (conOp ? '= US$ ' + _regNumTxt(val) + ' · ' : '') + '≈ ' + fL(_c2(val * tasaUSD('bid'))); }
   renderPresuRegistro();
 }
 
@@ -252,6 +258,7 @@ function renderRegistro() {
   }
   const nota = document.getElementById('reg-nota');
   if (nota) nota.placeholder = t === 'gasto' ? 'Nota o comercio (opcional)' : t === 'ingreso' ? 'Nota (opcional: quincena de enero)' : 'Nota (opcional)';
+  if (typeof renderRemesaRegistro === 'function') renderRemesaRegistro();
   renderMontoRegistro();
 }
 
@@ -356,7 +363,7 @@ function _regLlenarFormulario(monto) {
   } else if (t === 'ingreso') {
     const cat = CATS_INGRESO.find(c => _normCat(c.n) === _normCat(_reg.cat));
     set('ingreso-monto', monto ? _regNumTxt(monto) : '');
-    set('ingreso-moneda', 'HNL');
+    set('ingreso-moneda', typeof remesaEnDolares === 'function' && remesaEnDolares() ? 'USD' : 'HNL');
     set('ingreso-tipo', cat ? cat.tipo : 'extra');
     if (typeof sincronizarSelectsCuentas === 'function') sincronizarSelectsCuentas();
     set('ingreso-cuenta', _reg.cuenta);
@@ -384,13 +391,14 @@ function guardarRegistro() {
   const fecha = fechaRegistro();
   const antes = state.transactions.length;
   if (t === 'gasto') saveGasto({ silencioso: true, fecha });
-  else if (t === 'ingreso') saveIngreso({ cat: _reg.cat, fecha });
+  else if (t === 'ingreso') saveIngreso({ cat: _reg.cat, fecha, extra: typeof datosRemesaRegistro === 'function' ? datosRemesaRegistro() : null });
   else ejecutarTransferencia({ silencioso: true, fecha });
   if (state.transactions.length === antes) return; // la función ya avisó por qué no se guardó
   _regRecordar();
   cerrarRegistro();
   const que = t === 'gasto' ? 'Gasto' : t === 'ingreso' ? 'Ingreso' : 'Transferencia';
-  avisoRapido(`✅ ${que} guardado: ${fL(monto)}${_reg.cat && t !== 'transferencia' ? ' · ' + _reg.cat : ''}`);
+  const usd = t === 'ingreso' && typeof remesaEnDolares === 'function' && remesaEnDolares();
+  avisoRapido(`✅ ${que} guardado: ${usd ? 'US$ ' + _regNumTxt(monto) : fL(monto)}${_reg.cat && t !== 'transferencia' ? ' · ' + _reg.cat : ''}`);
 }
 
 /** Lleva lo escrito al formulario completo (moneda extranjera, dividir, factura…) */

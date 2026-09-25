@@ -393,6 +393,7 @@ function switchView(v){
   if(v==='historico')renderHistorico();
   if(v==='presupuestos'&&typeof renderVistaPresupuestos==='function')renderVistaPresupuestos();
   if(v==='categorias'&&typeof renderCategorias==='function')renderCategorias();
+  if(v==='remesas'&&typeof renderRemesas==='function')renderRemesas();
   // Cloud sync: refrescar estado al entrar a config
   if(v==='config' && typeof renderCloudSyncUI === 'function') renderCloudSyncUI();
 }

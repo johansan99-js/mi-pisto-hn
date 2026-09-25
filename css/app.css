@@ -1313,3 +1313,31 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .premium-plan strong{font-size:18px;color:var(--amber)}
 .premium-plan small{font-size:11px;color:var(--text2)}
 .premium-plan em{font-style:normal;font-size:10px;font-weight:700;color:#fff;background:var(--amber);border-radius:999px;padding:2px 8px;margin-top:4px}
+/* Remesas (js/30-remesas.js) */
+.reg-remesa-btn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(var(--green-rgb),.10);border:1.5px dashed rgba(var(--green-rgb),.45);border-radius:12px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;text-align:left}
+.reg-remesa-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg-remesa-btn b{background:var(--bg3);border-radius:8px;padding:3px 7px;font-size:11px;color:var(--green)}
+.rem-form{display:flex;flex-direction:column;gap:6px}
+.rem-form label{font-size:12px;font-weight:700;color:var(--text2);margin-top:6px}
+.rem-form label span{font-weight:400}
+.rem-form .input-field{margin:0!important}
+.rem-form .btn{margin-top:10px}
+.rem-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rem-chip{background:var(--bg3);border:1.5px solid var(--border);border-radius:18px;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;color:var(--text);cursor:pointer}
+.rem-chip.activa{border-color:var(--amber);background:rgba(var(--amber-rgb),.12);color:var(--amber)}
+.rem-ayuda{font-size:11px;color:var(--text2);line-height:1.4}
+.rem-totales small{display:block}
+.rem-totales div>small:last-child:not(:first-child){font-size:10px;letter-spacing:0;text-transform:none;font-weight:600;margin:2px 0 0}
+.rem-seccion{margin-top:16px}
+.rem-seccion h4{font-size:13px;margin:0 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.rem-barras{display:flex;align-items:flex-end;gap:4px;height:110px;padding-top:6px}
+.rem-barra{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.rem-barra span{width:100%;max-width:26px;background:var(--green);border-radius:6px 6px 2px 2px;min-height:0}
+.rem-barra small{font-size:10px;color:var(--text2)}
+.rem-nota{font-size:12px;color:var(--text2);margin:8px 0 0}
+.rem-consejo{display:flex;gap:8px;margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(var(--green-rgb),.10);font-size:12px;line-height:1.5}
+.rem-fila{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border)}
+.rem-fila:first-of-type{border-top:none}
+.rem-fila strong{display:block;font-size:14px}
+.rem-fila small{font-size:11px;color:var(--text2)}
+#view-remesas .btn-primary{margin-top:16px}

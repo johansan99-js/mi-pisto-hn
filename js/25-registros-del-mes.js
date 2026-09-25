@@ -74,7 +74,8 @@ function _htmlFilaRegistro(f) {
   const clase = t.esTransferencia || t.esConciliacion ? 'neutro' : gasto ? 'rojo' : 'verde';
   const cat = t.esConciliacion ? 'Ajuste de saldo' : (t.cat || (gasto ? 'Gasto' : 'Ingreso'));
   const icono = t.esConciliacion ? '<span class="cat-circulo" style="background:#607D8B" aria-hidden="true">⚖️</span>' : circuloCategoria(t.cat || '', t.type);
-  const detalle = [_cuentaTx(t), t.subcat && !/^(salario|extra|freelance|negocio)$/.test(t.subcat) ? t.subcat : '', t.nota || ''].filter(Boolean).join(' · ');
+  const rem = t.remesa ? [t.remesa.de ? 'De ' + t.remesa.de : '', t.remesa.via, t.originalCurrency === 'USD' && t.originalAmount ? 'US$ ' + t.originalAmount.toFixed(2) : ''] : [];
+  const detalle = [_cuentaTx(t), ...rem, t.subcat && !/^(salario|extra|freelance|negocio)$/.test(t.subcat) ? t.subcat : '', t.nota || ''].filter(Boolean).join(' · ');
   // Compra con tarjeta que cuenta en el mes de pago: se dice de cuándo es
   const real = new Date(t.date), cuenta = _fechaDeTx(t);
   const otraFecha = fechaLocal(real) !== fechaLocal(cuenta) ? ` <span class="rm-nota-fecha">compra del ${real.getDate()} ${_MESES_CORTOS[real.getMonth()]}</span>` : '';

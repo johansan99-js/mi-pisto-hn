@@ -449,7 +449,7 @@ function saveIngreso(opts){
     cuenta: cuenta,
     nota: nota,
     date:(opts.fecha || new Date()).toISOString()
-  }, extraFields));
+  }, extraFields, opts.extra || {}));
   save();closeModal('modal-ingreso');renderAll();
   document.getElementById('ingreso-monto').value='';
   if(document.getElementById('ingreso-nota'))document.getElementById('ingreso-nota').value='';
