@@ -28,7 +28,7 @@ Estos son reales pero requieren reescrituras grandes o no tienen arreglo posible
 - **`unsafe-inline` en el CSP** (`script-src`/`style-src`): la app usa `onclick=""` inline en cientos de lugares. Quitarlo requiere migrar todo a `addEventListener`.
 - **Bloqueo de PIN evadible con acceso a DevTools**: cualquier rate-limit puramente client-side se puede desactivar si el atacante ya tiene ese nivel de acceso al dispositivo. Sin servidor propio no hay forma de cerrarlo del todo.
 - **PBKDF2 en 100k/250k iteraciones**: por debajo del estándar 2026, pero subirlo rompería el acceso a datos ya cifrados de usuarios existentes. El PIN más largo (ya corregido arriba) es la mitigación real; las iteraciones son secundarias frente a un keyspace tan chico.
-- **Monolito de un solo archivo** (~9,100 líneas): dificulta auditar por módulos. Partirlo requiere meter un build system.
+- **Sin módulos ni build system:** el código está repartido por tema en `js/`, pero comparte el ámbito global; aislar módulos de verdad requiere un build system.
 
 ## Qué hacer si sospechas un incidente futuro
 
@@ -39,7 +39,7 @@ Estos son reales pero requieren reescrituras grandes o no tienen arreglo posible
 
 **Si sospechas que el anon key de Supabase fue usado para abuso (spam de filas, etc.):**
 1. Dashboard → Settings → API → regenerar el `anon key`.
-2. Actualizar `CLOUD_SYNC_CONFIG.anonKey` en `index.html` con el nuevo valor y hacer commit/push.
+2. Actualizar `CLOUD_SYNC_CONFIG.anonKey` en `js/12-nube.js` con el nuevo valor y hacer commit/push.
 3. Esto NO afecta el cifrado de los datos (la anon key nunca protegió los datos en sí, solo el acceso a la tabla — la protección real es RLS + cifrado E2E).
 
 **Si encuentras un campo de texto libre nuevo que se renderiza en pantalla:**
