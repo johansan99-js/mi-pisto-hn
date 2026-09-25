@@ -1657,6 +1657,15 @@ body.modo-discreto canvas{filter:blur(10px)}
     </ul>
   </div>
   <div id="persistence-info"></div>
+  <div class="card">
+    <h4 style="margin-bottom:6px">🔔 Recordatorio diario</h4>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Si a esa hora todavía no has anotado nada hoy, te llega un aviso para registrar tus gastos.</p>
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;font-size:13px">
+      <input type="checkbox" id="recordatorio-activo" onchange="guardarRecordatorio()"> Activar recordatorio
+    </label>
+    <input type="time" id="recordatorio-hora" class="input-field" value="20:00" onchange="guardarRecordatorio()" style="margin:0">
+    <div id="recordatorio-nota" style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5"></div>
+  </div>
   <a href="privacidad.html" target="_blank" rel="noopener" class="card" style="display:block;text-decoration:none;color:inherit;font-size:13px">🔒 Política de privacidad y cómo eliminar tus datos →</a>
   <div class="card" style="border-color:var(--red)">
     <h4 style="margin-bottom:10px;color:var(--red)">🗑️ Zona de Peligro</h4>
@@ -1815,6 +1824,7 @@ body.modo-discreto canvas{filter:blur(10px)}
         </label>
         <input type="file" id="ocr-input" accept="image/*" capture="environment" style="display: none;" onchange="procesarReciboOCR(event)">
         <div id="ocr-status" style="font-size: 11px; color: var(--amber); margin-top: 8px; display: none;">Analizando imagen...</div>
+        <button type="button" class="btn btn-secondary" onclick="abrirModalSMS()" style="width:100%;margin:8px 0 0">💬 Pegar SMS del banco</button>
     </div>
 
     <!-- MULTIMONEDA: monto + moneda con conversión en vivo -->
@@ -1936,6 +1946,7 @@ body.modo-discreto canvas{filter:blur(10px)}
   <div class="modal-content">
     <h3>💳 Nueva Tarjeta de Crédito</h3>
     <input type="text" id="tc-nombre" class="input-field" placeholder="Nombre (Ej. BAC Oro, Visa)">
+    <input type="text" id="tc-ultimos4" class="input-field" inputmode="numeric" maxlength="4" placeholder="Últimos 4 dígitos (opcional, para leer los SMS)">
     
     <div class="input-row">
       <input type="number" id="tc-corte" class="input-field" placeholder="Día de corte" min="1" max="31">
@@ -1984,6 +1995,19 @@ body.modo-discreto canvas{filter:blur(10px)}
     <p style="font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.5">⚠️ Funciona solo en este teléfono. Quien tenga esta clave y tu teléfono puede abrir tus datos: no la compartas.</p>
     <button class="btn btn-primary" id="btn-kit-descargar" style="margin-bottom:8px">⬇️ Descargar como archivo</button>
     <button class="btn btn-secondary" onclick="closeModal('modal-kit-rec')">Ya la guardé</button>
+  </div>
+</div>
+<div id="modal-sms" class="modal" onclick="closeModalIfBg(event,'modal-sms')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">💬 Pegar SMS del banco</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Copia el mensaje o la notificación que te mandó el banco y pégalo aquí. La app llena el gasto por ti. El texto no sale de tu teléfono.</p>
+    <textarea id="sms-texto" class="input-field" rows="5" maxlength="1000" placeholder="Ej: BAC: Compra por L. 350.00 en SUPERMERCADO LA COLONIA con tarjeta ***1234" oninput="leerSMSBanco()" style="resize:vertical;font-size:13px"></textarea>
+    <button type="button" class="btn btn-secondary" onclick="pegarSMSDelPortapapeles()" style="margin:0 0 10px">📋 Pegar del portapapeles</button>
+    <div id="sms-resultado" style="background:var(--bg3);padding:10px;border-radius:8px;font-size:13px;line-height:1.6;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" onclick="closeModal('modal-sms')" style="flex:1">Cancelar</button>
+      <button class="btn btn-primary" id="btn-sms-usar" onclick="usarSMSBanco()" style="flex:2" disabled>Usar estos datos</button>
+    </div>
   </div>
 </div>
 <div id="modal-cuotas" class="modal" onclick="closeModalIfBg(event,'modal-cuotas')">
@@ -2689,6 +2713,7 @@ function save() {
   // están escritos: quien recarga la página justo después debe esperarla.
   const guardarIDB = () => saveStateToDB(state).catch(e => console.error('❌ Error guardando en IndexedDB:', e));
   sellarCambios();
+  if (leerRecordatorio().activo) _actualizarFichaRecordatorio();
   if (!_sessionDEK) {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
     return guardarIDB();
@@ -3103,6 +3128,128 @@ function renderDoughnutChart() {
     } catch (e) {
         console.error('❌ Error creando gráfico:', e);
     }
+}
+
+// ═══ LEER SMS O NOTIFICACIONES DEL BANCO ══════════════════════════════════
+// Los formatos cambian por banco, así que se buscan piezas sueltas (monto con
+// moneda, "en COMERCIO", últimos 4 dígitos) en vez de una plantilla fija. El
+// texto se corta a 1000 caracteres y los patrones son acotados (sin ReDoS).
+const BANCOS_SMS = [['BAC', /\bBAC\b|credomatic/i], ['Ficohsa', /ficohsa/i], ['Atlántida', /atl[aá]ntida/i],
+  ['Banpaís', /banpa[ií]s/i], ['Occidente', /occidente/i], ['Banrural', /banrural/i], ['Davivienda', /davivienda/i],
+  ['Lafise', /lafise/i], ['Promerica', /promerica/i], ['Cuscatlán', /cuscatl[aá]n/i]];
+const COMERCIOS_SMS = [
+  [/pricesmart/i, 'Alimentación', 'PriceSmart', 'fijo'], [/los andes/i, 'Alimentación', 'Los Andes', 'fijo'],
+  [/la colonia/i, 'Alimentación', 'La Colonia', 'fijo'], [/colonial/i, 'Alimentación', 'Colonial', 'fijo'],
+  [/maxi ?despensa/i, 'Alimentación', 'Maxi Despensa', 'fijo'], [/walmart/i, 'Alimentación', 'Walmart', 'fijo'],
+  [/paiz/i, 'Alimentación', 'Paiz', 'fijo'], [/despensa familiar/i, 'Alimentación', 'Despensa Familiar', 'fijo'],
+  [/super(mercado)?\b/i, 'Alimentación', null, 'fijo'],
+  [/uber ?eats|pedidos ?ya|\bhugo\b/i, 'Alimentación', 'Delivery', 'extra'],
+  [/pizza|little caesars|domino|mcdonald|burger king|wendy|kfc|popeyes|church|starbucks|espresso americano|dunkin|restaurante/i, 'Alimentación', null, 'extra'],
+  [/\buber\b|indrive|\btaxi\b/i, 'Transporte', 'Taxi', 'extra'],
+  [/shell|texaco|\bpuma\b|\buno\b|gasolin/i, 'Transporte', 'Combustible', 'fijo'],
+  [/farmacia|farmavalue|kielsa/i, 'Salud', 'Farmacia', 'fijo'],
+  [/netflix|spotify|disney|hbo|prime video|youtube/i, 'Ocio', 'Streaming', 'extra'],
+  [/\bclaro\b|\btigo\b/i, 'Vivienda', 'Teléfono', 'fijo'], [/\benee\b|energ[ií]a/i, 'Vivienda', 'Electricidad', 'fijo'],
+  [/amazon|temu|shein|aliexpress/i, 'Compras', null, 'extra'],
+];
+const _sinAcentos = x => String(x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function interpretarMensajeBanco(texto) {
+  const t = String(texto || '').slice(0, 1000).replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  const r = { monto: null, moneda: 'HNL', comercio: '', ultimos4: '', banco: '', tipo: 'gasto', debito: false,
+              categoria: '', subcategoria: '', tipoGasto: 'extra' };
+  const NUM = '(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d{1,9}(?:[.,]\\d{1,2})?)';
+  let m = t.match(new RegExp('(\\bL\\.?|\\bLPS\\.?|\\bHNL|\\bUSD|US\\$|\\$)\\s?' + NUM, 'i')), moneda = '', num = '';
+  if (m) { moneda = m[1]; num = m[2]; }
+  else if ((m = t.match(new RegExp(NUM + '\\s?(HNL|LPS|lempiras|USD|d[oó]lares)\\b', 'i')))) { num = m[1]; moneda = m[2]; }
+  if (num) { r.monto = parseMonto(num); r.moneda = /us|\$|d[oó]lar/i.test(moneda) ? 'USD' : 'HNL'; }
+
+  const NO_COMERCIO = /^(su|tu|sus|tus|la|el|los|las|un|una|cuenta|tarjeta|l[ií]nea|fecha|linea|dolares|lempiras)\b/i;
+  for (const c of t.matchAll(/\ben\s+([A-Za-z0-9][A-Za-z0-9&'.*\- ]{1,40}?)(?=\s+(?:el|con|fecha|por|a\s+las|autoriz\w*|ref\w*|tarjeta|hora|saldo|monto)\b|[,;:]|\.\s|\.$|$)/gi)) {
+    if (!NO_COMERCIO.test(c[1].trim())) { r.comercio = c[1].trim().replace(/[.*\-]+$/, ''); break; }
+  }
+  if (!r.comercio && (m = t.match(/\bcomercio\s*:?\s*([A-Za-z0-9&'.*\- ]{2,40}?)(?=[,;]|\.\s|\s+(?:el|con|fecha|monto|por)\b|$)/i))) r.comercio = m[1].trim();
+
+  if ((m = t.match(/(?:terminad[ao]\s+en|final(?:izad[ao])?\s+en|\*{2,}\s?|x{2,}\s?|#\s?)(\d{4})\b/i)) ||
+      (m = t.match(/\btarjeta\b[^0-9]{0,25}(\d{4})\b/i))) r.ultimos4 = m[1];
+  r.debito = /d[eé]bito/i.test(t) && !/cr[eé]dito/i.test(t);
+  const banco = BANCOS_SMS.find(([, re]) => re.test(t));
+  if (banco) r.banco = banco[0];
+
+  if (/\bretiro\b/i.test(t)) r.tipo = 'retiro';
+  else if (/dep[oó]sito|abono|acreditad|recibiste|transferencia recibida|ha recibido/i.test(t) && !/\bcompra\b|\bpago de\b|\bcargo\b/i.test(t)) r.tipo = 'ingreso';
+
+  const fuente = r.comercio || t;
+  const com = COMERCIOS_SMS.find(([re]) => re.test(fuente));
+  if (com) { r.categoria = com[1]; r.subcategoria = com[2] || r.comercio; r.tipoGasto = com[3]; }
+  else r.subcategoria = r.comercio;
+  return r.monto ? r : null;
+}
+
+// La tarjeta del mensaje: por los últimos 4 dígitos, o por el banco si solo hay una
+function tarjetaDelMensaje(r) {
+  const tarjetas = state.tarjetas || [];
+  if (r.ultimos4) { const t = tarjetas.find(x => x.ultimos4 === r.ultimos4); if (t) return t; }
+  if (r.banco && !r.debito) {
+    const delBanco = tarjetas.filter(x => _sinAcentos(x.nombre).includes(_sinAcentos(r.banco)));
+    if (delBanco.length === 1) return delBanco[0];
+  }
+  return null;
+}
+
+let _smsLeido = null;
+function abrirModalSMS(textoInicial) {
+  document.getElementById('sms-texto').value = textoInicial || '';
+  leerSMSBanco();
+  openModal('modal-sms');
+}
+async function pegarSMSDelPortapapeles() {
+  try {
+    const txt = await navigator.clipboard.readText();
+    document.getElementById('sms-texto').value = txt.slice(0, 1000);
+    leerSMSBanco();
+  } catch (e) {
+    alert('No se pudo leer el portapapeles. Mantén presionado el cuadro de texto y toca "Pegar".');
+  }
+}
+function leerSMSBanco() {
+  const out = document.getElementById('sms-resultado'), btn = document.getElementById('btn-sms-usar');
+  const r = interpretarMensajeBanco(document.getElementById('sms-texto').value);
+  _smsLeido = r;
+  btn.disabled = !r || r.tipo !== 'gasto';
+  if (!document.getElementById('sms-texto').value.trim()) { out.style.display = 'none'; return; }
+  out.style.display = 'block';
+  if (!r) { out.innerHTML = '🤔 No encontré un monto en el mensaje. Revisa que incluya la moneda (L., HNL o $).'; return; }
+  const tarjeta = tarjetaDelMensaje(r);
+  const monto = r.moneda === 'USD' ? '$ ' + r.monto.toFixed(2) + ' (USD)' : fL(r.monto);
+  if (r.tipo === 'retiro') { out.innerHTML = '🏧 Es un <strong>retiro de cajero</strong> por ' + esc(monto) + '. No es un gasto: regístralo como una transferencia de <em>Ahorro</em> a <em>Efectivo</em>.'; return; }
+  if (r.tipo === 'ingreso') { out.innerHTML = '💰 Parece un <strong>depósito o ingreso</strong> de ' + esc(monto) + '. Regístralo en <em>Ingresos</em>.'; return; }
+  out.innerHTML = '💸 <strong>' + esc(monto) + '</strong>' +
+    (r.comercio ? '<br>🏪 ' + esc(r.comercio) : '') +
+    (r.categoria ? '<br>🏷️ ' + esc(r.categoria) : '') +
+    (tarjeta ? '<br>💳 ' + esc(tarjeta.nombre) + (tarjeta.ultimos4 ? ' •••• ' + esc(tarjeta.ultimos4) : '')
+      : r.debito ? '<br>🏦 Débito (cuenta de ahorro)'
+      : r.ultimos4 ? '<br>💳 Tarjeta •••• ' + esc(r.ultimos4) + ' <span style="color:var(--amber)">(no la tienes registrada: agrega sus últimos 4 dígitos en TC)</span>' : '');
+}
+function usarSMSBanco() {
+  const r = _smsLeido;
+  if (!r || r.tipo !== 'gasto') return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null && v !== '') el.value = v; };
+  closeModal('modal-sms');
+  if (getComputedStyle(document.getElementById('modal-gasto')).display === 'none') openModal('modal-gasto');
+  set('gasto-monto', r.monto.toFixed(2));
+  set('gasto-moneda', r.moneda);
+  if (typeof actualizarConversionGasto === 'function') actualizarConversionGasto();
+  set('gasto-cat', r.categoria);
+  set('gasto-subcat', r.subcategoria);
+  set('gasto-tipo', r.tipoGasto);
+  const bancoSel = document.getElementById('gasto-banco');
+  if (bancoSel && [...bancoSel.options].some(o => o.value === r.banco)) bancoSel.value = r.banco;
+  const tarjeta = tarjetaDelMensaje(r);
+  const cuenta = document.getElementById('gasto-cuenta');
+  if (tarjeta) { cuenta.value = 'credito'; checkCreditCard(); document.getElementById('gasto-tarjeta').value = tarjeta.id; }
+  else if (r.debito) { cuenta.value = 'ahorro'; checkCreditCard(); }
 }
 
 function setGastoPreset(cat, sub, tipo) {
@@ -4256,10 +4403,12 @@ function pagarCuotaPrestamo(id){
 function saveTarjeta(){
     const nombre=document.getElementById('tc-nombre').value.trim(),corte=parseInt(document.getElementById('tc-corte').value)||1,pago=parseInt(document.getElementById('tc-pago').value)||15,limite=leerMonto(document.getElementById('tc-limite').value)||0,saldo=leerMonto(document.getElementById('tc-saldo').value)||0,tasa=leerMonto(document.getElementById('tc-tasa').value)||48,calcMinimo=document.getElementById('tc-calcular-minimo').checked;
     if(!nombre)return alert('Nombre requerido');
-    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[]});
+    const ultimos4=(document.getElementById('tc-ultimos4')?.value||'').trim();
+    if(ultimos4&&!/^\d{4}$/.test(ultimos4))return alert('Los últimos dígitos deben ser 4 números.');
+    state.tarjetas.push({id:uid(),nombre,corte,pago,limite,saldo,tasaInteres:tasa,calcularMinimo:calcMinimo,historialPagos:[],...(ultimos4?{ultimos4}:{})});
     save();closeModal('modal-tarjeta');renderAll();limpiarFormTarjeta();
 }
-function limpiarFormTarjeta(){['tc-nombre','tc-corte','tc-pago','tc-limite','tc-saldo','tc-tasa'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('tc-calcular-minimo').checked=true;}
+function limpiarFormTarjeta(){['tc-nombre','tc-ultimos4','tc-corte','tc-pago','tc-limite','tc-saldo','tc-tasa'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('tc-calcular-minimo').checked=true;}
 function renderTarjetas(){
     const container=document.getElementById('tarjetas-list'),resumenContainer=document.getElementById('resumen-pagos-minimos');if(!container)return;
     if(state.tarjetas.length===0){container.innerHTML=`<div class="empty-state-simple"><div class="es-icon">💳</div><div class="es-title">Sin tarjetas registradas</div><div class="es-sub">Agrega tus tarjetas de crédito para monitorear saldos, fechas de corte y pagos mínimos.</div><button class="btn-empty-secondary" onclick="openModal('modal-tarjeta')">➕ Agregar tarjeta</button></div>`;return;}
@@ -4269,7 +4418,7 @@ function renderTarjetas(){
         totalDeuda+=t.saldo+comprometido;
         const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
         const hoy=new Date().getDate(),estadoCorte=estadoCicloTarjeta(t,hoy);
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}${t.ultimos4?` <span style="font-size:12px;color:var(--text2);font-weight:400">•••• ${esc(t.ultimos4)}</span>`:''}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -4578,8 +4727,9 @@ async function solicitarPermisosNotificacion(){
   return perm==='granted';
 }
 
-function enviarNotificacion(titulo, cuerpo, icono){
+function enviarNotificacion(titulo, cuerpo, icono, extra){
   if(Notification.permission!=='granted')return;
+  extra=extra||{};
   try{
     // Si hay service worker activo, usar SW notification (funciona en background)
     if('serviceWorker' in navigator && navigator.serviceWorker.controller){
@@ -4589,9 +4739,10 @@ function enviarNotificacion(titulo, cuerpo, icono){
           icon: './icon-192.png',
           badge: './icon-192.png',
           vibrate: [200,100,200],
-          tag: 'mipistohn-alerta',
+          tag: extra.tag || 'mipistohn-alerta',
           renotify: true,
-          data:{ url: window.location.href }
+          actions: extra.actions || [],
+          data:{ url: extra.url || window.location.href }
         });
       }).catch(()=>{
         new Notification(titulo,{body:cuerpo,icon:'./icon-192.png'});
@@ -5403,6 +5554,7 @@ function _validarSchemaBackup(obj) {
     for (const tc of obj.tarjetas.slice(0, 20)) {
       if (!esIdValido(tc.id)) return `ID inválido en tarjeta: ${tc.id}`;
       if (!esStringSeguro(tc.nombre, 100)) return 'nombre de tarjeta sospechoso';
+      if (tc.ultimos4 !== undefined && !/^\d{4}$/.test(String(tc.ultimos4))) return 'últimos dígitos de tarjeta inválidos';
       if (tc.cuotas !== undefined) {
         if (!Array.isArray(tc.cuotas)) return 'cuotas de tarjeta inválidas';
         for (const c of tc.cuotas) {
@@ -5683,6 +5835,8 @@ function renderAll(){
     // biometría) deja el saludo mostrando "Cargando..." indefinidamente.
     if (typeof renderWelcome === 'function') renderWelcome();
     setTimeout(function(){ renderLiquidez7Dias(); renderChipsRapidas(); }, 50);
+    renderRecordatorioConfig();
+    if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }
 }
 // ========== INICIALIZACIÓN ==========
 // P1-7: ELIMINADA esta versión obsoleta de window.onload (era código muerto:
@@ -6516,23 +6670,103 @@ function verificarAlertasPresupuesto() {
   localStorage.setItem('alertas_enviadas', JSON.stringify(alertasEnviadas));
 }
 
-/** Recordatorio de hábito diario: si ya es de noche y todavía no se ha
-    registrado ningún movimiento hoy, un empujoncito para no dejarlo pasar. */
-function verificarRegistroDiario() {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  var ahora = new Date();
-  if (ahora.getHours() < 20) return; // solo desde las 8pm
-  var hoyStr = ahora.toISOString().slice(0, 10);
-  var alertasEnviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}');
-  var clave = 'diario_' + hoyStr;
-  if (alertasEnviadas[clave]) return;
-  var registroHoy = (state.transactions || []).some(function(t) {
-    return !t.deletedAt && !t.esTransferencia && new Date(t.date).toISOString().slice(0, 10) === hoyStr;
+// ═══ RECORDATORIO DIARIO ══════════════════════════════════════════════════
+// Con la app abierta se revisa cada minuto. Con la app cerrada lo intenta el
+// service worker con Periodic Background Sync, que Android dispara cuando
+// quiere (no a una hora exacta); por eso el SW solo necesita una ficha sin
+// datos sensibles: si está activo, la hora y el último día con movimientos.
+const fechaLocal = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function leerRecordatorio() {
+  try { return Object.assign({ activo: false, hora: '20:00' }, JSON.parse(localStorage.getItem('mph_recordatorio') || '{}')); }
+  catch (e) { return { activo: false, hora: '20:00' }; }
+}
+function ultimoDiaConMovimientos() {
+  let max = '';
+  (state.transactions || []).forEach(t => {
+    if (t.deletedAt || t.esTransferencia || t.esConciliacion) return;
+    const f = fechaLocal(new Date(t.date)); if (f > max) max = f;
   });
-  if (registroHoy) return;
-  enviarNotificacion('📝 ¿Todo tranquilo hoy?', 'No has registrado ningún movimiento. Si gastaste algo, anótalo antes de que se te olvide.', null);
-  alertasEnviadas[clave] = true;
-  localStorage.setItem('alertas_enviadas', JSON.stringify(alertasEnviadas));
+  return max;
+}
+// Ficha para el service worker (Cache Storage: el SW no puede leer los datos cifrados)
+async function _actualizarFichaRecordatorio(extra) {
+  if (!('caches' in window)) return;
+  try {
+    const c = await caches.open('mph-recordatorio');
+    const previa = await c.match('ficha.json').then(r => r ? r.json() : {}).catch(() => ({}));
+    const ficha = Object.assign(previa, leerRecordatorio(), { ultimoRegistro: ultimoDiaConMovimientos() }, extra || {});
+    await c.put('ficha.json', new Response(JSON.stringify(ficha), { headers: { 'Content-Type': 'application/json' } }));
+  } catch (e) {}
+}
+function renderRecordatorioConfig() {
+  const cfg = leerRecordatorio(), chk = document.getElementById('recordatorio-activo');
+  if (!chk) return;
+  chk.checked = cfg.activo;
+  document.getElementById('recordatorio-hora').value = cfg.hora;
+  const nota = document.getElementById('recordatorio-nota');
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') nota.textContent = '⚠️ Las notificaciones están bloqueadas. Actívalas en los ajustes del teléfono para esta app.';
+  else nota.textContent = cfg.activo ? 'Con la app cerrada, Android decide cuándo revisar: el aviso puede llegar un rato después de la hora elegida.' : '';
+}
+async function guardarRecordatorio() {
+  const activo = document.getElementById('recordatorio-activo').checked;
+  const hora = document.getElementById('recordatorio-hora').value || '20:00';
+  if (activo && !(await solicitarPermisosNotificacion())) { document.getElementById('recordatorio-activo').checked = false; return renderRecordatorioConfig(); }
+  localStorage.setItem('mph_recordatorio', JSON.stringify({ activo, hora }));
+  await _actualizarFichaRecordatorio();
+  if (activo && 'serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg.periodicSync) await reg.periodicSync.register('mph-recordatorio', { minInterval: 3 * 60 * 60 * 1000 });
+    } catch (e) { /* sin permiso de sincronización periódica: queda el aviso con la app abierta */ }
+  }
+  renderRecordatorioConfig();
+}
+/** Si ya pasó la hora elegida y hoy no hay movimientos, avisa una vez al día. */
+function verificarRegistroDiario(ahora = new Date()) {
+  const cfg = leerRecordatorio();
+  if (!cfg.activo || !state.setup || typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  const [h, min] = cfg.hora.split(':').map(Number);
+  if (ahora.getHours() * 60 + ahora.getMinutes() < h * 60 + (min || 0)) return false;
+  const hoy = fechaLocal(ahora);
+  let enviadas = {};
+  try { enviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}'); } catch (e) {}
+  const clave = 'diario_' + hoy;
+  if (enviadas[clave] || ultimoDiaConMovimientos() === hoy) return false;
+  enviarNotificacion('📝 ¿Todo tranquilo hoy?', 'Todavía no has anotado nada. Si gastaste algo, regístralo antes de que se te olvide.', null,
+    { tag: 'mph-recordatorio', url: './?action=new-expense', actions: [{ action: 'new-expense', title: '➕ Registrar gasto' }] });
+  enviadas[clave] = true;
+  localStorage.setItem('alertas_enviadas', JSON.stringify(enviadas));
+  _actualizarFichaRecordatorio({ avisado: hoy });
+  return true;
+}
+// Revisiones mientras la app está abierta: al cargar, cada minuto y al volver a ella
+function iniciarRevisionesPeriodicas() {
+  if (window.__revisionesIniciadas) return;
+  window.__revisionesIniciadas = true;
+  const revisar = () => {
+    if (!state.setup) return;
+    try { if (localStorage.getItem('notif_activas') === 'true') checkNotificacionesPagos(); else verificarRegistroDiario(); } catch (e) {}
+  };
+  setTimeout(revisar, 3000);
+  setInterval(revisar, 60000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisar(); });
+}
+// Enlaces de acción: atajos del ícono, notificaciones y "Compartir" desde otra app
+function procesarAccionDeURL() {
+  const q = new URLSearchParams(location.search);
+  const accion = q.get('action'), compartido = [q.get('title'), q.get('text')].filter(Boolean).join(' ');
+  if (!accion && !compartido) return;
+  history.replaceState({}, document.title, location.pathname);
+  setTimeout(() => {
+    if (compartido) { openModal('modal-gasto'); abrirModalSMS(compartido.slice(0, 1000)); }
+    else if (accion === 'new-expense') openModal('modal-gasto');
+    else if (accion === 'balance' && typeof switchView === 'function') switchView('dashboard');
+  }, 400);
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.tipo === 'accion' && e.data.accion === 'new-expense' && state.setup) openModal('modal-gasto');
+  });
 }
 
 // PROYECCION DE FLUJO DE CAJA
