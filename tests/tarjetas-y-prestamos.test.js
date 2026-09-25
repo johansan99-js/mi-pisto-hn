@@ -74,6 +74,16 @@ describe('Tarjetas y préstamos', () => {
     assert.equal(r[3].nunca, true, 'un pago menor al interés nunca termina');
   });
 
+  it('el estado del ciclo entiende pagos que caen el mes siguiente', async () => {
+    const page = await env.pagina();
+    const r = await page.evaluate(() => {
+      const cruza = { corte: 25, pago: 10, saldo: 500 }, normal = { corte: 5, pago: 20, saldo: 500 };
+      return [estadoCicloTarjeta(cruza, 25), estadoCicloTarjeta(cruza, 3), estadoCicloTarjeta(cruza, 15),
+              estadoCicloTarjeta(normal, 10), estadoCicloTarjeta(normal, 25), estadoCicloTarjeta({ ...normal, saldo: 0 }, 25)];
+    });
+    assert.deepEqual(r, ['🟡 En periodo de pago', '🟡 En periodo de pago', '🔴 Pago vencido', '🟡 En periodo de pago', '🔴 Pago vencido', '']);
+  });
+
   it('conciliar con el estado de cuenta registra cargos o pagos no anotados', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase({ saldoInicial: 20000, cuentasIniciales: { efectivo: 5000, ahorro: 0 }, tarjetas: [tarjeta()] }));

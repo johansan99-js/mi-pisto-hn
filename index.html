@@ -1657,6 +1657,7 @@ body.modo-discreto canvas{filter:blur(10px)}
     </ul>
   </div>
   <div id="persistence-info"></div>
+  <a href="privacidad.html" target="_blank" rel="noopener" class="card" style="display:block;text-decoration:none;color:inherit;font-size:13px">🔒 Política de privacidad y cómo eliminar tus datos →</a>
   <div class="card" style="border-color:var(--red)">
     <h4 style="margin-bottom:10px;color:var(--red)">🗑️ Zona de Peligro</h4>
     <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Borra todos tus datos y regresa al inicio. Esta acción NO se puede deshacer.</p>
@@ -4259,8 +4260,8 @@ function renderTarjetas(){
         const comprometido=cupoComprometido(t),cuotasMes=cuotasDelMes(t);
         totalDeuda+=t.saldo+comprometido;
         const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
-        const hoy=new Date().getDate();let estadoCorte='';if(hoy>=t.corte&&hoy<=t.pago)estadoCorte='🟡 En periodo de pago';else if(hoy>t.pago)estadoCorte='🔴 Pago vencido';
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        const hoy=new Date().getDate(),estadoCorte=estadoCicloTarjeta(t,hoy);
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${estadoCorte.startsWith('🔴')?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -4355,6 +4356,15 @@ function cupoComprometido(t) {
 // Cuotas que faltan por pagar este mes (una por plan, si no se pagó ya)
 function cuotasDelMes(t) {
   return (t.cuotas || []).filter(c => planActivo(c) && !_mismoMes(c.ultimoPago)).reduce((a, c) => a + montoCuota(c), 0);
+}
+// Si el día de pago es menor que el de corte, el pago cae el mes siguiente
+// (corte 25, pago 10): el periodo de pago va del 25 al 10, cruzando el mes.
+function estadoCicloTarjeta(t, hoy) {
+  const cruza = t.pago < t.corte;
+  const enPeriodo = cruza ? (hoy >= t.corte || hoy <= t.pago) : (hoy >= t.corte && hoy <= t.pago);
+  if (enPeriodo) return '🟡 En periodo de pago';
+  const trasPago = cruza ? (hoy > t.pago && hoy < t.corte) : hoy > t.pago;
+  return trasPago && t.saldo > 0 ? '🔴 Pago vencido' : '';
 }
 function pagoMinimoTarjeta(t) {
   return t.calcularMinimo && t.saldo > 0 ? Math.min(t.saldo, Math.max(t.saldo * 0.05, 100)) : 0;
@@ -7662,6 +7672,23 @@ const cloudSync = {
     renderCloudSyncUI();
   },
 
+  /** Borra la cuenta en la nube y todos sus datos (función eliminar_mi_cuenta
+      en Supabase, que solo actúa sobre el usuario autenticado). Los datos de
+      este teléfono no se tocan. */
+  async eliminarCuenta() {
+    if (!this.user || !await this.init()) return { ok: false, error: 'No has iniciado sesión en la nube' };
+    try {
+      const { error } = await this.client.rpc('eliminar_mi_cuenta');
+      if (error) return { ok: false, error: error.message };
+    } catch (e) { return { ok: false, error: e.message || String(e) }; }
+    this._cancelAutoSync && this._cancelAutoSync();
+    ['mph_cloud_dek', 'mph_cloud_dek_iv', 'mph_cloud_salt', 'mph_cloud_version'].forEach(k => localStorage.removeItem(k));
+    try { await this.client.auth.signOut(); } catch (e) {}
+    this.user = null;
+    localStorage.setItem(CLOUD_SYNC_CONFIG.enabledKey, 'false');
+    return { ok: true };
+  },
+
   /** Registra/actualiza el dispositivo en device_log */
   async _logDevice() {
     if (!this.user || !this.client) return;
@@ -8378,7 +8405,8 @@ async function renderCloudSyncUI() {
       '<h5 style="font-size:11px;text-transform:uppercase;color:var(--text2);margin:14px 0 8px;letter-spacing:.5px">📱 Tus dispositivos</h5>' +
       deviceItems +
 
-      '<button class="btn btn-secondary" onclick="cerrarSesionCloud()" style="margin-top:14px;width:100%;font-size:12px">🚪 Cerrar sesión en este dispositivo</button>';
+      '<button class="btn btn-secondary" onclick="cerrarSesionCloud()" style="margin-top:14px;width:100%;font-size:12px">🚪 Cerrar sesión en este dispositivo</button>' +
+      '<button class="btn btn-danger" onclick="eliminarCuentaCloud()" style="margin-top:8px;width:100%;font-size:12px">🗑️ Eliminar mi cuenta y mis datos de la nube</button>';
     return;
   }
 
@@ -8394,6 +8422,16 @@ async function renderCloudSyncUI() {
 }
 
 window.renderCloudSyncUI = renderCloudSyncUI;
+
+async function eliminarCuentaCloud() {
+  if (!confirm('🗑️ ELIMINAR TU CUENTA EN LA NUBE\n\nSe borrarán para siempre:\n• Tu cuenta (' + (cloudSync.user && cloudSync.user.email || '') + ')\n• Tus datos cifrados guardados en la nube\n• La lista de tus dispositivos\n\nLos datos de ESTE teléfono no se borran. Los otros teléfonos dejarán de sincronizar.\n\n¿Continuar?')) return;
+  if (!confirm('⚠️ Esta acción no se puede deshacer. ¿Eliminar la cuenta?')) return;
+  const r = await cloudSync.eliminarCuenta();
+  if (r.ok) alert('✅ Tu cuenta y tus datos de la nube fueron eliminados. Tus datos siguen en este teléfono.');
+  else alert('❌ No se pudo eliminar la cuenta:\n\n' + r.error);
+  renderCloudSyncUI();
+}
+window.eliminarCuentaCloud = eliminarCuentaCloud;
 
 function abrirModalCloudLogin() {
   const status = document.getElementById('cloud-login-status');
