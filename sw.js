@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v58-teclado-inicio';
+const VERSION = 'v59-analisis';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -93,6 +93,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/23-excel.js',
   BASE_PATH + 'js/24-registro-rapido.js',
   BASE_PATH + 'js/25-registros-del-mes.js',
+  BASE_PATH + 'js/26-analisis.js',
   BASE_PATH + 'css/app.css'
 ];
 

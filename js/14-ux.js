@@ -219,8 +219,8 @@
         Metas de ahorro
       </div>
       <div class="hb-menu-item" data-view="historico">
-        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="14" width="4" height="7" rx="1.5" opacity=".5"/><rect x="10" y="9" width="4" height="12" rx="1.5" opacity=".75"/><rect x="17" y="4" width="4" height="17" rx="1.5"/></svg>
-        Historial
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 3.05A9 9 0 1 0 20.95 13H11z" opacity=".55"/><path d="M13 2.05V11h8.95A9 9 0 0 0 13 2.05z"/></svg>
+        Análisis
       </div>
       <div class="hb-menu-item" data-view="tarjetas">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
