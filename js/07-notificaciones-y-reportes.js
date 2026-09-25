@@ -54,7 +54,7 @@ function checkNotificacionesPagos(){
   
   // Revisar pagos recurrentes
   (state.pagosRecurrentes||[]).forEach(p=>{
-    const diasRestantes=p.dia>=diaHoy?p.dia-diaHoy:31-diaHoy+p.dia;
+    const diasRestantes=typeof diasHastaPagoFijo==='function'?diasHastaPagoFijo(p,hoy):(p.dia>=diaHoy?p.dia-diaHoy:31-diaHoy+p.dia);
     const clave=`rec_${p.id}_${claveHoy}`;
     if(!alertasEnviadas[clave]){
       if(diasRestantes===0){
@@ -108,7 +108,7 @@ async function activarNotificacionesPagos(){
 }
 function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');if(!c)return;if(state.pagosRecurrentes.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🔔</div><div class="es-title">Sin pagos recurrentes</div><div class="es-sub">Anota una vez tus pagos fijos (salario, alquiler, luz, Netflix) y se registran solos cada mes.</div><button class="btn-empty-secondary" onclick="abrirPagoFijo()">➕ Agregar pago fijo</button></div>`;return;}c.innerHTML=state.pagosRecurrentes.map(p=>{
   const hoy=new Date().getDate();
-  const diasParaPago=p.dia>=hoy?p.dia-hoy:31-hoy+p.dia;
+  const diasParaPago=typeof diasHastaPagoFijo==='function'?diasHastaPagoFijo(p):(p.dia>=hoy?p.dia-hoy:31-hoy+p.dia);
   const urgente=diasParaPago<=3;
   return `<div class="card card-credit" style="border-left:3px solid ${urgente?'var(--red)':'var(--green)'}">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -139,10 +139,14 @@ function marcarPagoRecurrente(id){
   // Con cuenta o tarjeta elegida (33-sin-esfuerzo.js) no se pregunta
   if(p.cuenta||p.tarjetaId){const tx=_txDePagoFijo(Object.assign({},p,{monto}),new Date());delete tx.autoRegistrado;state.transactions.push(tx);}
   else{
-    const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
+    const ing=p.tipo==='ingreso';
+    const cuenta=pedirCuenta(ing?`¿A qué cuenta entran los ${fL(monto)} de "${p.servicio}"?`:`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
     if(!cuenta)return;
-    state.transactions.push({id:uid(),type:'expense',amount:monto,cat:p.cat||'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
+    if(ing){const tx=_txDePagoFijo(Object.assign({},p,{monto,cuenta}),new Date());delete tx.autoRegistrado;state.transactions.push(tx);}
+    else state.transactions.push({id:uid(),type:'expense',amount:monto,cat:p.cat||'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
   }
+  // Con varios días (la quincena), lo marcado a mano cuenta por el próximo día que falta (33-sin-esfuerzo.js)
+  if(typeof marcarDiaPagadoAMano==='function')marcarDiaPagadoAMano(p);
   if(p.tipo!=='ingreso')p.pagado=(p.pagado||0)+monto;p.ultimoPago=new Date().toISOString();
   save();renderAll();
 }
