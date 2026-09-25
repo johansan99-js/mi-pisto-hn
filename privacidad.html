@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacidad · Mi Pisto HN</title>
+<meta name="description" content="Política de privacidad de Mi Pisto HN y cómo eliminar tu cuenta y tus datos.">
+<meta name="theme-color" content="#130507">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root { --bg:#130507; --card:#1f0b0d; --text:#f3e9e4; --text2:#c9b3ab; --accent:#F5C800; --red:#FF4444; --line:rgba(255,255,255,.08); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:28px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:18px; margin:32px 0 8px; color:var(--accent); }
+  p, li { color:var(--text); }
+  .sub { color:var(--text2); font-size:13px; margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:8px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--text2); font-weight:600; }
+  a { color:var(--accent); }
+  code { background:rgba(255,255,255,.07); padding:1px 5px; border-radius:4px; }
+  .pendiente { color:var(--red); font-weight:700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Política de privacidad</h1>
+  <p class="sub">Mi Pisto HN · Última actualización: 25 de septiembre de 2026</p>
+
+  <div class="card">
+    <strong>En resumen:</strong> tus datos financieros se guardan en tu teléfono, cifrados con tu PIN. No hay anuncios, no hay analítica y no vendemos ni compartimos datos. La sincronización en la nube es opcional y lo que sube va cifrado antes de salir del teléfono: nosotros no podemos leerlo.
+  </div>
+
+  <h2>1. Qué datos maneja la app y dónde quedan</h2>
+  <table>
+    <tr><th>Dato</th><th>Dónde se guarda</th></tr>
+    <tr><td>Movimientos, cuentas, tarjetas, préstamos, metas, nombre y demás información que registras</td><td>Solo en tu teléfono (almacenamiento del navegador). Con PIN, cifrado con AES-256.</td></tr>
+    <tr><td>Fotos de facturas que adjuntas</td><td>Solo en tu teléfono, cifradas con tu PIN. El reconocimiento de texto (OCR) se hace en el teléfono; las imágenes no se envían a ningún servidor.</td></tr>
+    <tr><td>PIN</td><td>No se guarda. Se guarda un derivado (PBKDF2 con 600,000 iteraciones) que sirve para verificarlo.</td></tr>
+    <tr><td>Huella o rostro (opcional)</td><td>Lo gestiona el sistema de tu teléfono; la app nunca recibe tus datos biométricos.</td></tr>
+  </table>
+
+  <h2>2. Sincronización en la nube (opcional)</h2>
+  <p>Si la activas iniciando sesión con Google, la app usa <a href="https://supabase.com/privacy" rel="noopener">Supabase</a> para guardar:</p>
+  <ul>
+    <li><strong>Tu correo y un identificador de cuenta</strong>, que da Google al iniciar sesión.</li>
+    <li><strong>Una copia cifrada de tus datos.</strong> Se cifra en el teléfono con una contraseña que solo tú conoces; sin ella nadie puede leerla, ni nosotros.</li>
+    <li><strong>Datos técnicos de cada dispositivo:</strong> un identificador aleatorio, el nombre del dispositivo, el navegador y la fecha del último uso, para mostrarte tu lista de dispositivos.</li>
+  </ul>
+  <p>Si no activas la sincronización, ningún dato tuyo sale del teléfono.</p>
+
+  <h2>3. Servicios externos</h2>
+  <ul>
+    <li><strong>Tasas de cambio:</strong> la app descarga tasas públicas (de este mismo sitio y, como respaldo, de open.er-api.com o exchangerate-api.com). No se envía ningún dato tuyo.</li>
+    <li><strong>Librerías:</strong> gráficas, exportación a Excel y OCR se descargan de CDNs públicos (jsDelivr, SheetJS, unpkg y los datos de idioma de Tesseract).</li>
+    <li><strong>Alojamiento:</strong> la app se sirve desde GitHub Pages.</li>
+  </ul>
+  <p>Como cualquier sitio web, estos servicios pueden registrar datos técnicos de la conexión, como la dirección IP, según sus propias políticas.</p>
+
+  <h2>4. Lo que no hacemos</h2>
+  <ul>
+    <li>No mostramos anuncios ni usamos analítica o rastreadores.</li>
+    <li>No vendemos, alquilamos ni compartimos tus datos con terceros.</li>
+    <li>No pedimos números completos de tarjeta, fechas de vencimiento ni códigos CVV.</li>
+    <li>No accedemos a tus contactos, SMS, ubicación ni archivos. La cámara solo se usa si tú la abres para escanear una factura.</li>
+  </ul>
+
+  <h2 id="eliminar">5. Cómo eliminar tu cuenta y tus datos</h2>
+  <div class="card">
+    <p><strong>Datos de la nube y cuenta:</strong> en la app, ve a <em>Config → Sincronización en la nube → 🗑️ Eliminar mi cuenta y mis datos de la nube</em>. Se borran tu cuenta, tu copia cifrada y tu lista de dispositivos, de inmediato y para siempre.</p>
+    <p><strong>Datos del teléfono:</strong> en <em>Config → Borrar Todo y Volver al Tutorial</em>, o desinstalando la app.</p>
+    <p><strong>Sin la app:</strong> escríbenos a <span class="pendiente">[CORREO DE CONTACTO PENDIENTE]</span> desde el correo con el que iniciaste sesión, con el asunto "Eliminar mi cuenta". La borramos en un máximo de 30 días y te confirmamos por correo.</p>
+  </div>
+
+  <h2>6. Menores de edad</h2>
+  <p>La app no está dirigida a menores de 13 años.</p>
+
+  <h2>7. Cambios</h2>
+  <p>Si esta política cambia, actualizaremos la fecha de arriba. Los cambios importantes se avisarán dentro de la app.</p>
+
+  <h2>8. Contacto</h2>
+  <p>Preguntas sobre privacidad: <span class="pendiente">[CORREO DE CONTACTO PENDIENTE]</span></p>
+
+  <p style="margin-top:40px"><a href="./">← Volver a Mi Pisto HN</a></p>
+</main>
+</body>
+</html>

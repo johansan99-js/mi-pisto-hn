@@ -1,26 +1,83 @@
 {
+  "id": "./",
   "name": "Mi Pisto HN — Tu dinero, tu control",
   "short_name": "Mi Pisto HN",
+  "description": "Gestión financiera personal para Honduras. 100% privado, 100% offline. Controla efectivo, ahorro, tarjetas, préstamos y metas.",
+  "lang": "es-HN",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#130507",
   "theme_color": "#130507",
-  "orientation": "portrait",
-  "description": "Gestión financiera personal para Honduras. 100% privado, 100% offline. Controla efectivo, ahorro, tarjetas, préstamos y metas.",
-  "categories": ["finance", "productivity", "utilities"],
+  "categories": [
+    "finance",
+    "productivity",
+    "utilities"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./play-store/capturas/01-inicio.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tu patrimonio, efectivo y ahorro de un vistazo"
+    },
+    {
+      "src": "./play-store/capturas/02-tarjetas.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tarjetas con cupo comprometido y pago del mes"
+    },
+    {
+      "src": "./play-store/capturas/03-costo-real.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "El verdadero costo de pagar solo el mínimo"
+    },
+    {
+      "src": "./play-store/capturas/04-metas.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Metas de ahorro"
+    },
+    {
+      "src": "./play-store/capturas/06-modo-discreto.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Modo discreto para usar la app en público"
     }
   ],
   "shortcuts": [
@@ -29,14 +86,26 @@
       "short_name": "Nuevo gasto",
       "description": "Rápidamente registra un gasto o ingreso",
       "url": "./?action=new-expense",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Ver balance",
       "short_name": "Balance",
       "description": "Ve tu balance total",
       "url": "./?action=balance",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

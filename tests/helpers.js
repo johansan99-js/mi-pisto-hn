@@ -112,7 +112,12 @@ window.__mockSupabase = (store) => ({
     };
     return q;
   },
-  auth: {},
+  async rpc(nombre) {
+    store.rpc = nombre;
+    if (nombre === 'eliminar_mi_cuenta') { store.row = null; store.cuentaEliminada = true; }
+    return { error: null };
+  },
+  auth: { async signOut() { store.sesionCerrada = true; return { error: null }; } },
 });
 window.__conectarNube = (store) => {
   cloudSync.client = __mockSupabase(store);

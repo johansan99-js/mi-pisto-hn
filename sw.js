@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v31-kit-recuperacion';
+const VERSION = 'v32-play-store';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -69,7 +69,9 @@ const ASSETS_REQUIRED = [
 // Assets opcionales (no fallan si no existen)
 const ASSETS_OPTIONAL = [
   BASE_PATH + 'icon-192.png',
-  BASE_PATH + 'icon-512.png'
+  BASE_PATH + 'icon-512.png',
+  BASE_PATH + 'icon-maskable-192.png',
+  BASE_PATH + 'icon-maskable-512.png'
 ];
 
 // Librerías CDN con versión fija (inmutables): se cachean para que gráficas,

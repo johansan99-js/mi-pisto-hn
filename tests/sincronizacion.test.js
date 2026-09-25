@@ -103,6 +103,21 @@ describe('Sincronización entre dispositivos', () => {
     assert.equal((await B.evaluate(() => cloudSync.uploadState())).ok, true, 'el auto-sync no vuelve a pedir la contraseña');
   });
 
+  it('eliminar la cuenta borra la nube y conserva los datos del teléfono', async () => {
+    const page = await env.pagina();
+    await sembrar(page, conDatos());
+    await crearPIN(page, '123456');
+    await conectarNube(page, { ciphertext: 'x', version: 4, updated_at: new Date().toISOString() });
+    await page.evaluate(() => { localStorage.setItem('mph_cloud_dek', 'a'); localStorage.setItem('mph_cloud_dek_iv', 'b'); localStorage.setItem('mph_cloud_salt', 'p2:c'); });
+    page.respuestas = [true, true, true];
+    await page.evaluate(() => eliminarCuentaCloud());
+    const r = await page.evaluate(() => ({ store: __store, claveNube: cloudSync.hasCloudKey(), usuario: cloudSync.user, tx: state.transactions.length }));
+    assert.equal(r.store.rpc, 'eliminar_mi_cuenta');
+    assert.equal(r.store.row, null);
+    assert.equal(r.store.sesionCerrada, true);
+    assert.deepEqual([r.claveNube, r.usuario, r.tx], [false, null, 2]);
+  });
+
   it('un blob viejo protegido con el PIN se sigue bajando', async () => {
     const page = await env.pagina();
     const row = await page.evaluate(async () => {
