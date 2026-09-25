@@ -143,6 +143,7 @@ function _renderDetalleGrupo(c, g) {
 let _grupoEditando = null;
 function abrirModalGrupo(id) {
   const g = id && grupoPorId(id);
+  if (!g && typeof puedeUsarPremium === 'function' && !puedeUsarPremium('grupos')) return;
   _grupoEditando = g ? g.id : null;
   document.getElementById('grupo-titulo').textContent = g ? '✏️ Editar grupo' : '👨‍👩‍👧 Nuevo grupo';
   document.getElementById('grupo-nombre').value = g ? g.nombre : '';
@@ -169,6 +170,7 @@ function guardarGrupo() {
     g.nombre = nombre;
     g.miembros = unicos.map(n => g.miembros.find(m => m.nombre.toLowerCase() === n.toLowerCase()) || { id: uid(), nombre: n });
   } else {
+    if (typeof puedeUsarPremium === 'function' && !puedeUsarPremium('grupos')) return;
     g = { id: uid(), nombre, miembros: unicos.map(n => ({ id: uid(), nombre: n })), gastos: [], pagos: [], creado: new Date().toISOString() };
     state.grupos.push(g);
   }

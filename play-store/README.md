@@ -121,10 +121,30 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
 El código ya está listo en `js/21-premium.js`, pero apagado (`PREMIUM.activo = false`). Mientras siga apagado, `tienePremium()` responde que sí a todos y nada se bloquea.
 
-1. En Play Console, entra a **Monetizar → Productos → Suscripciones** y crea `mipisto_premium`, con precio en lempiras y 30 días de prueba gratis.
+**Qué es gratis y qué es Premium**
+
+| Gratis | Premium |
+|---|---|
+| Todo lo demás: registrar, análisis, metas, deudas, tarjetas, nube, Excel, categorías propias… | Reporte del mes en PDF |
+| Hasta 3 cuentas además de Efectivo y Ahorro | Cuentas sin límite |
+| 1 grupo de gastos compartidos | Grupos sin límite |
+| Hasta 3 presupuestos | Presupuestos sin límite |
+
+Los límites solo frenan **crear uno más**. Lo que la persona ya tenía se sigue viendo, editando y borrando. Al llegar al límite, la app explica por qué y ofrece ver Premium.
+
+**Pasos**
+
+1. En Play Console, entra a **Monetizar → Productos → Suscripciones** y crea dos suscripciones, cada una con un plan base que se renueva solo:
+   - `mipisto_premium_mensual`: cada mes, **L 25**.
+   - `mipisto_premium_anual`: cada año, **L 199**.
+
+   No agregues prueba gratis en Play: la app ya da 30 días sin pedir tarjeta.
 2. Regenera el `.aab` en PWABuilder con **la misma clave** y activa **Play Billing** (Digital Goods API).
-3. Cambia `PREMIUM.activo` a `true`. Ajusta `PREMIUM.precio` y `PREMIUM.tipo` para que digan lo mismo que la ficha, y agrega a la ficha una línea con el precio.
-4. Pruébalo con una cuenta de prueba de licencias de Play Console.
+3. Cambia `PREMIUM.activo` a `true` en `js/21-premium.js`. Si cambiaste los precios en Play, cámbialos también en `PREMIUM.planes` (dentro de la app se muestra el precio que devuelve Play, pero así la ficha y el código dicen lo mismo).
+4. Agrega a la ficha una línea con los precios (ver `ficha.md`).
+5. Pruébalo con una cuenta de prueba de licencias de Play Console: compra un plan, cancélalo y vuelve a abrir la app para ver que se apaga.
+
+Cada vez que se abre la app instalada desde Play, se le pregunta a Google Play si la suscripción sigue vigente. Si se canceló o venció, Premium se apaga solo (sin tocar los datos); si se pagó en otro teléfono con la misma cuenta de Google, se activa solo.
 
 Reglas que no se rompen (salen de las quejas en las opiniones de otras apps):
 - Los datos nunca se bloquean: si el Premium termina, la persona sigue viendo, editando y exportando todo.

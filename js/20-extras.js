@@ -80,6 +80,7 @@ function htmlReporteMes(y, m) {
     <p class="rep-pie">Transferencias entre tus cuentas y ajustes de saldo no se cuentan como ingresos ni gastos.</p>`;
 }
 function imprimirReporteMes() {
+  if (typeof puedeUsarPremium === 'function' && !puedeUsarPremium('pdf')) return;
   const sel = document.getElementById('resumen-mes');
   const [y, m] = sel && sel.value ? sel.value.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth()];
   let cont = document.getElementById('reporte-imprimible');
