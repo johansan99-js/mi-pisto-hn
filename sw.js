@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v54-racha';
+const VERSION = 'v55-excel';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -89,6 +89,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/20-extras.js',
   BASE_PATH + 'js/21-premium.js',
   BASE_PATH + 'js/22-racha.js',
+  BASE_PATH + 'js/23-excel.js',
   BASE_PATH + 'css/app.css'
 ];
 

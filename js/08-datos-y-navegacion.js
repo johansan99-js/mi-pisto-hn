@@ -342,33 +342,7 @@ async function reemplazarFactura(id) {
 }
 
 // ========== EXPORTACIÓN A EXCEL PROFESIONAL ==========
-function exportToExcelPro() {
-    if (typeof XLSX === 'undefined') { alert("❌ Error: Librería de Excel no cargada."); return; }
-    try {
-        const wb = XLSX.utils.book_new();
-        const balanceActual = state.saldoInicial + state.transactions.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0) - state.transactions.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0);
-        const gastosFijos = state.transactions.filter(t => t.type === 'expense' && t.tipo === 'fijo').reduce((a,b)=>a+b.amount,0);
-        const gastosExtra = state.transactions.filter(t => t.type === 'expense' && t.tipo === 'extra').reduce((a,b)=>a+b.amount,0);
-        
-        // Portada
-        const resumenData = [["REPORTE FINANCIERO PROFESIONAL"],["Cliente", state.nombre],["Fecha", new Date().toLocaleDateString()],[],["INDICADORES"],["Patrimonio Neto", balanceActual],["Días Supervivencia", document.getElementById('survival-val')?.textContent||0],["Gastos Fijos", gastosFijos],["Gastos Extra", gastosExtra]];
-        const wsPortada = XLSX.utils.aoa_to_sheet(resumenData);
-        XLSX.utils.book_append_sheet(wb, wsPortada, "📊 Portada");
-
-        // Libro Mayor
-        const mayorData = state.transactions.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>({"Fecha":new Date(t.date).toLocaleDateString(),"Tipo":t.type==='income'?'INGRESO':'GASTO',"Categoría":t.cat,"Monto":t.type==='income'?t.amount:-t.amount,"Banco/Tarjeta":t.banco||t.tarjetaNombre||'N/A'}));
-        const wsMayor = XLSX.utils.json_to_sheet(mayorData);
-        XLSX.utils.book_append_sheet(wb, wsMayor, "📋 Libro Mayor");
-
-        // Deudas
-        const deudas = [...state.receivables.map(c=>({"Tipo":"COBRAR","Persona":c.persona,"Saldo":c.monto-(c.pagado||0)})),...state.payables.map(p=>({"Tipo":"PAGAR","Persona":p.creditor,"Saldo":p.monto-(p.pagado||0)}))];
-        if(deudas.length>0){const wsDeudas = XLSX.utils.json_to_sheet(deudas); XLSX.utils.book_append_sheet(wb, wsDeudas, "💰 Deudas");}
-
-        const nombreArchivo = `Finanzas_${state.nombre||'Usuario'}_${todayStr()}.xlsx`;
-        XLSX.writeFile(wb, nombreArchivo);
-        alert("✅ Reporte Profesional generado.");
-    } catch(e) { console.error(e); alert("Error al generar Excel."); }
-}
+// exportToExcelPro() está en 23-excel.js
 
 // ========== NAVEGACIÓN Y MODALES (v2 — Bottom Nav) ==========
 
