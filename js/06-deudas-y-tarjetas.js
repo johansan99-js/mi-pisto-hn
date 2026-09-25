@@ -14,11 +14,11 @@ function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)ret
     </div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
       <button class="btn btn-primary" onclick=\"abonarCobrar('${esc(r.id)}')\"" style="min-height:40px;font-size:13px">Abonar</button>
-      <button onclick=\"editarCobrar('${esc(r.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <button onclick=\"editarCobrar('${esc(r.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--amber-rgb),.4);background:rgba(var(--amber-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
-      <button onclick=\"eliminarCobrar('${esc(r.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      <button onclick=\"eliminarCobrar('${esc(r.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--red-rgb),.4);background:rgba(var(--red-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>
   </div>`;}).join('')}
@@ -160,8 +160,8 @@ function guardarAbonoDeuda() {
 }
 
 // Vista: dos grupos (bancos y personas) y las liquidadas al final
-const _ICONO_EDITAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const _ICONO_BORRAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+const _ICONO_EDITAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const _ICONO_BORRAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 function _textoVence(p) {
   if (!p.vence) return '';
   const dias = Math.round((new Date(p.vence + 'T12:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T12:00:00')) / 864e5);
@@ -188,8 +188,8 @@ function _htmlDeuda(p) {
     <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;margin-top:10px">
       <button class="btn btn-secondary" onclick="abonarPagar('${id}')" style="min-height:40px;font-size:13px;margin:0">💸 Abonar</button>
       <button class="btn btn-primary" onclick="liquidarDeuda('${id}')" style="min-height:40px;font-size:13px;margin:0">✅ Liquidar</button>
-      <button onclick="editarPagar('${id}')" aria-label="Editar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_EDITAR}</button>
-      <button onclick="eliminarPagar('${id}')" aria-label="Eliminar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_BORRAR}</button>
+      <button onclick="editarPagar('${id}')" aria-label="Editar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--amber-rgb),.4);background:rgba(var(--amber-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_EDITAR}</button>
+      <button onclick="eliminarPagar('${id}')" aria-label="Eliminar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--red-rgb),.4);background:rgba(var(--red-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_BORRAR}</button>
     </div>
     ${movs.length ? `<details class="deuda-movs"><summary>Movimientos (${movs.length})</summary>${movs.map(t => `<div class="deuda-mov"><span>${new Date(t.date).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · ${esc(t.cat === 'Préstamo recibido' ? 'Te prestaron' : t.cat === 'Intereses' ? 'Intereses y cargos' : 'Abono')} · ${iconoCuenta(t.cuenta)}</span><strong style="color:${t.type === 'income' ? 'var(--green)' : 'var(--text)'}">${t.type === 'income' ? '+' : '-'}${fL(t.amount)}</strong></div>`).join('')}</details>` : ''}
   </div>`;
@@ -258,11 +258,11 @@ function renderPrestamos(){
         const cuotasPagadas=p.cuotasPagadas||0,progreso=p.cuotasTotal?(cuotasPagadas/p.cuotasTotal)*100:0,restante=saldoPrestamo(p);
         return `<div class="card card-debt"><div class="debt-header"><div><div class="debt-title">${esc(p.entidad)}</div><div class="debt-meta">Cuota mensual: ${fL(p.cuota)}</div></div><div class="interest-badge">${p.cuotasPagadas||0}/${p.cuotasTotal} pagadas</div></div><div class="debt-progress"><div class="debt-progress-bar" style="width: ${progreso}%; background: var(--blue);"></div></div><div class="debt-stats"><div class="debt-stat"><span>Total Préstamo</span><strong>${fL(p.monto)}</strong></div><div class="debt-stat"><span>Saldo Aprox.</span><strong>${fL(restante)}</strong></div></div><div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px">
   <button class="btn btn-secondary" onclick=\"pagarCuotaPrestamo('${esc(p.id)}')\"" style="font-size:13px">Registrar Pago (${fL(p.cuota)})</button>
-  <button onclick=\"editarPrestamo('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  <button onclick=\"editarPrestamo('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--amber-rgb),.4);background:rgba(var(--amber-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
   </button>
-  <button onclick=\"eliminarPrestamo('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+  <button onclick=\"eliminarPrestamo('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(var(--red-rgb),.4);background:rgba(var(--red-rgb),.1);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
   </button>
 </div></div>`;
     }).join('');
@@ -341,7 +341,7 @@ function avisoCostoReal(t) {
   const texto = min.nunca
     ? 'Pagando solo el mínimo <strong>nunca terminas</strong> de pagar esta tarjeta'
     : `Pagando solo el mínimo: <strong>${fmtDuracion(min.meses)}</strong> y <strong>${fL(min.interes)}</strong> en intereses`;
-  return `<div style="margin:-5px 0 12px;padding:9px 10px;border-radius:8px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between"><span>⚠️ ${texto}</span><button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;width:auto;flex-shrink:0;margin:0" onclick="abrirSimuladorTarjeta('${esc(t.id)}')">🔍 Costo real</button></div>`;
+  return `<div style="margin:-5px 0 12px;padding:9px 10px;border-radius:8px;background:rgba(var(--red-rgb),.08);border:1px solid rgba(var(--red-rgb),.3);font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between"><span>⚠️ ${texto}</span><button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;width:auto;flex-shrink:0;margin:0" onclick="abrirSimuladorTarjeta('${esc(t.id)}')">🔍 Costo real</button></div>`;
 }
 let _simTarjetaId = null;
 function abrirSimuladorTarjeta(id) {
@@ -611,9 +611,9 @@ function htmlCuotasTarjeta(t) {
     const act = planActivo(c);
     const pct = Math.min(100, c.cuotasPagadas / c.meses * 100);
     const estado = !act ? '✅ Pagada' : _mismoMes(c.ultimoPago) ? '✅ Cuota del mes pagada' : `Próxima cuota: ${fL(montoCuota(c))}`;
-    return `<div style="padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">
+    return `<div style="padding:8px 0;border-top:1px solid rgba(var(--tinta-rgb),.06)">
       <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><strong>${esc(c.descripcion || 'Compra a cuotas')}</strong><span style="color:var(--text2)">${c.cuotasPagadas}/${c.meses} · ${fL(c.cuota)}/mes</span></div>
-      <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin:6px 0"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px"></div></div>
+      <div style="height:5px;background:rgba(var(--tinta-rgb),.08);border-radius:3px;margin:6px 0"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--text2)">
         <span>${act ? 'Quedan ' + fL(pendientePlan(c)) + ' · ' : ''}${estado}</span>
         <span style="display:flex;gap:6px;flex-shrink:0">${act ? `<button class="btn btn-primary" style="padding:5px 9px;font-size:11px;width:auto;margin:0" onclick="pagarCuotaTasaCero('${esc(t.id)}','${esc(c.id)}')">Pagar cuota</button>` : ''}<button class="btn btn-danger" style="padding:5px 9px;font-size:11px;width:auto;margin:0" onclick="eliminarPlanCuotas('${esc(t.id)}','${esc(c.id)}')">🗑️</button></span>

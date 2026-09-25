@@ -197,15 +197,15 @@
     menu.innerHTML = `
       <div class="hb-menu-section">Acciones rápidas</div>
       <div class="hb-menu-item" data-fab="ingreso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--green)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
         Nuevo ingreso
       </div>
       <div class="hb-menu-item" data-fab="gasto">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--red)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         Nuevo gasto
       </div>
       <div class="hb-menu-item" data-fab="transferir">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         Transferir
       </div>
       <div class="hb-menu-divider"></div>
@@ -215,7 +215,7 @@
         Inicio
       </div>
       <div class="hb-menu-item" data-view="metas">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="#4285F4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--blue)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" style="fill:var(--blue)"/></svg>
         Metas de ahorro
       </div>
       <div class="hb-menu-item" data-view="historico">

@@ -658,7 +658,7 @@ function renderMetas(){
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:12px">
           <button class="btn btn-primary" style="margin:0;padding:10px 6px;font-size:12px" onclick="openAbono('${safeId}')">💰 Abonar</button>
           <button class="btn btn-secondary" style="margin:0;padding:10px 6px;font-size:12px" onclick="editarMeta('${safeId}')">✏️ Editar</button>
-          <button class="btn" style="margin:0;padding:10px 6px;font-size:12px;background:var(--bg3);color:var(--red);border:1px solid rgba(255,68,68,.3)" onclick="deleteMeta('${safeId}')">🗑️ Eliminar</button>
+          <button class="btn" style="margin:0;padding:10px 6px;font-size:12px;background:var(--bg3);color:var(--red);border:1px solid rgba(var(--red-rgb),.3)" onclick="deleteMeta('${safeId}')">🗑️ Eliminar</button>
         </div>
       </div>`;
   }).join('');

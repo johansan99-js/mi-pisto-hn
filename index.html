@@ -98,40 +98,40 @@
   <!-- Nav finanzas -->
   <div class="sidebar-section-label">Finanzas</div>
   <div class="sidebar-item" id="sb-cobrar" onclick="switchView('cobrar');setSidebarActive('sb-cobrar')">
-    <div class="si-icon" style="background:rgba(76,175,80,.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <div class="si-icon" style="background:rgba(var(--green-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
     </div>
     Dinero que me deben
   </div>
   <div class="sidebar-item" id="sb-pagar" onclick="switchView('pagar');setSidebarActive('sb-pagar')">
-    <div class="si-icon" style="background:rgba(255,68,68,.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <div class="si-icon" style="background:rgba(var(--red-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--red)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
     </div>
     Dinero que debo
   </div>
   <div class="sidebar-item" id="sb-cuentas" onclick="switchView('cuentas');setSidebarActive('sb-cuentas')">
-    <div class="si-icon" style="background:rgba(66,133,244,.15)">🏦</div>
+    <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">🏦</div>
     Mis cuentas
   </div>
   <div class="sidebar-item" id="sb-grupos" onclick="switchView('grupos');setSidebarActive('sb-grupos')">
-    <div class="si-icon" style="background:rgba(66,133,244,.15)">👨‍👩‍👧</div>
+    <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">👨‍👩‍👧</div>
     Gastos compartidos
   </div>
   <div class="sidebar-item" id="sb-prestamos" onclick="switchView('prestamos');setSidebarActive('sb-prestamos')">
-    <div class="si-icon" style="background:rgba(245,200,0,.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+    <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--amber)"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
     </div>
     Préstamos
   </div>
   <div class="sidebar-item" id="sb-metas" onclick="switchView('metas');setSidebarActive('sb-metas')">
-    <div class="si-icon" style="background:rgba(66,133,244,.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="#4285F4"/></svg>
+    <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--blue)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" style="fill:var(--blue)"/></svg>
     </div>
     Metas de ahorro
   </div>
   <div class="sidebar-item" id="sb-pagos" onclick="switchView('pagos');setSidebarActive('sb-pagos')">
-    <div class="si-icon" style="background:rgba(255,112,67,.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF7043" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <div class="si-icon" style="background:rgba(var(--purple-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--purple)"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
     </div>
     Pagos recurrentes
   </div>
@@ -139,14 +139,14 @@
   <!-- Config -->
   <div class="sidebar-section-label">Cuenta</div>
   <div class="sidebar-item" id="sb-gastos" onclick="switchView('gastos');setSidebarActive('sb-gastos')">
-    <div class="si-icon" style="background:rgba(255,68,68,.12)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2" stroke-linecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    <div class="si-icon" style="background:rgba(var(--red-rgb),.12)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
     </div>
     Gastos
   </div>
   <div class="sidebar-item" id="sb-ingresos" onclick="switchView('ingresos');setSidebarActive('sb-ingresos')">
-    <div class="si-icon" style="background:rgba(76,175,80,.12)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+    <div class="si-icon" style="background:rgba(var(--green-rgb),.12)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
     </div>
     Ingresos
   </div>
@@ -181,7 +181,7 @@
   <div id="desktop-topbar">
     <div class="topbar-greeting">
       <div class="topbar-greeting-sub" id="dt-greeting-sub">Bienvenido a Mi Pisto HN</div>
-      <div class="topbar-greeting-name" id="dt-greeting-name" style="background:linear-gradient(90deg,#FF4444,#F5C800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Cargando...</div>
+      <div class="topbar-greeting-name" id="dt-greeting-name" style="background:var(--grad-texto);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Cargando...</div>
     </div>
     <div class="topbar-actions" style="display:flex;align-items:center;gap:12px">
       <button class="hamburger-btn btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="font-size:20px">👁️</button>
@@ -218,7 +218,7 @@
       </g>
       <circle cx="100" cy="100" r="84" fill="url(#nav_sh)"/>
     </svg>
-    <span style="background:linear-gradient(90deg,#FF4444,#F5C800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:17px;font-weight:800;letter-spacing:-.5px">Mi Pisto HN</span>
+    <span style="background:var(--grad-texto);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:17px;font-weight:800;letter-spacing:-.5px">Mi Pisto HN</span>
   </div>
   <button class="hamburger-btn" onclick="toggleHamburger()" title="Más secciones">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -243,31 +243,31 @@
     <div class="more-section-label">Operaciones</div>
 
     <div class="hamburger-item" onclick="switchView('cobrar');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(76,175,80,.15)">💰</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--green-rgb),.15)">💰</div>
       <div><div>Cobrar</div><div style="font-size:11px;color:var(--text2);font-weight:400">Dinero que me deben</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('pagar');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(255,68,68,.15)">💸</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--red-rgb),.15)">💸</div>
       <div><div>Pagar</div><div style="font-size:11px;color:var(--text2);font-weight:400">Lo que debo pagar</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('cuentas');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(66,133,244,.15)">🏦</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🏦</div>
       <div><div>Mis cuentas</div><div style="font-size:11px;color:var(--text2);font-weight:400">Bancos, billeteras, plazos fijos</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('grupos');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(66,133,244,.15)">👨‍👩‍👧</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">👨‍👩‍👧</div>
       <div><div>Compartidos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Casa, pareja, viajes</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('prestamos');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(245,200,0,.15)">🏦</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">🏦</div>
       <div><div>Préstamos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Bancarios y personales</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('metas');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(66,133,244,.15)">🎯</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🎯</div>
       <div><div>Metas de Ahorro</div><div style="font-size:11px;color:var(--text2);font-weight:400">Progreso y abonos</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('pagos');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(255,112,67,.15)">🔔</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">🔔</div>
       <div><div>Pagos Recurrentes</div><div style="font-size:11px;color:var(--text2);font-weight:400">Servicios y suscripciones</div></div>
     </div>
 
@@ -275,11 +275,11 @@
     <div class="more-section-label" style="margin-top:6px">Detalle</div>
 
     <div class="hamburger-item" onclick="switchView('gastos');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(255,68,68,.12)">📉</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--red-rgb),.12)">📉</div>
       <div><div>Todos los Gastos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Lista completa con filtros</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('ingresos');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(76,175,80,.12)">📈</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--green-rgb),.12)">📈</div>
       <div><div>Todos los Ingresos</div><div style="font-size:11px;color:var(--text2);font-weight:400">Salarios y entradas</div></div>
     </div>
 
@@ -287,11 +287,11 @@
     <div class="more-section-label" style="margin-top:6px">Configuración del Sistema</div>
 
     <div class="hamburger-item" onclick="openModal('modal-budget-rules');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(255,112,67,.15)">📊</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">📊</div>
       <div><div>Reglas de Presupuesto</div><div style="font-size:11px;color:var(--text2);font-weight:400">Distribución 65/20/15</div></div>
     </div>
     <div class="hamburger-item" onclick="switchView('config');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(255,112,67,.12)">⚙️</div>
+      <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.12)">⚙️</div>
       <div><div>Configuración</div><div style="font-size:11px;color:var(--text2);font-weight:400">PIN, respaldo y seguridad</div></div>
     </div>
 
@@ -429,7 +429,7 @@
       <div style="font-weight:800;font-size:15px;color:var(--amber)">Instala Mi Pisto HN</div>
       <div style="font-size:11px;color:var(--text2)">Gratis · Funciona sin internet · Sin App Store</div>
     </div>
-    <button onclick="openModal('ios-instructions')" style="margin-left:auto;background:linear-gradient(135deg,#F5C800,#FF7043);color:#130507;border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver cómo</button>
+    <button onclick="openModal('ios-instructions')" style="margin-left:auto;background:var(--grad-boton);color:var(--acento-txt);border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver cómo</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
     <div style="background:rgba(0,0,0,.25);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid var(--border)">
@@ -572,7 +572,7 @@
     <div class="card" style="margin:0 0 16px;text-align:left;border-color:var(--border)"><strong style="font-size:12px">Tu distribución personalizada</strong><div id="ob-preview" style="margin-top:10px;font-size:12px;color:var(--text2)"></div></div>
     <button class="btn btn-primary" onclick="finishOnboarding()" style="font-size:15px;padding:16px;min-height:54px">Comenzar →</button>
     <p style="font-size:11px;color:var(--text2);margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--green)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Tus datos se guardan SOLO en este dispositivo
     </p>
   </div>
@@ -582,9 +582,9 @@
   <div id="desktop-grid">
   <div id="desktop-grid-left">
   <div id="primeros-pasos" class="card" style="display:none"></div>
-  <div id="aviso-resumen" class="card" style="display:none;border-color:rgba(245,200,0,.45)"></div>
+  <div id="aviso-resumen" class="card" style="display:none;border-color:rgba(var(--amber-rgb),.45)"></div>
   <div id="fondo-emergencia-card" class="card" style="display:none"></div>
-  <div id="aviso-cuadre" class="card" style="display:none;border-color:rgba(66,133,244,.45)"></div>
+  <div id="aviso-cuadre" class="card" style="display:none;border-color:rgba(var(--blue-rgb),.45)"></div>
   <div id="racha-card" class="card" style="display:none"></div>
   <div class="balance-card">
     <div>
@@ -595,24 +595,24 @@
     <div id="cuentas-widget" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
         <div style="font-size:10px;color:var(--text2);font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:5px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--amber)"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           EFECTIVO
         </div>
-        <div id="cuenta-efectivo-val" style="font-size:18px;font-weight:800;color:#F5C800">L. 0.00</div>
+        <div id="cuenta-efectivo-val" style="font-size:18px;font-weight:800;color:var(--amber)">L. 0.00</div>
       </div>
       <div style="flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
         <div style="font-size:10px;color:var(--text2);font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:5px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="11" y2="13"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--blue)"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="11" y2="13"/></svg>
           CUENTA / AHORRO
         </div>
-        <div id="cuenta-ahorro-val" style="font-size:18px;font-weight:800;color:#4285F4">L. 0.00</div>
+        <div id="cuenta-ahorro-val" style="font-size:18px;font-weight:800;color:var(--blue)">L. 0.00</div>
       </div>
       <div id="cuentas-extra-tiles" style="display:contents"></div>
-      <div id="cuenta-deudas-tile" onclick="switchView('pagar')" role="button" style="display:none;flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:12px;border:1px solid rgba(255,68,68,.35);cursor:pointer">
+      <div id="cuenta-deudas-tile" onclick="switchView('pagar')" role="button" style="display:none;flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:12px;border:1px solid rgba(var(--red-rgb),.35);cursor:pointer">
         <div style="font-size:10px;color:var(--text2);font-weight:600;margin-bottom:4px">🏦 LO QUE DEBES</div>
         <div id="cuenta-deudas-val" style="font-size:18px;font-weight:800;color:var(--red)">L. 0.00</div>
       </div>
-    <button onclick="openTransferirCuentas()" style="display:flex;align-items:center;gap:6px;background:rgba(66,133,244,.12);border:1.5px solid rgba(66,133,244,.3);border-radius:10px;padding:8px 14px;color:#4285F4;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;width:100%;justify-content:center">
+    <button onclick="openTransferirCuentas()" style="display:flex;align-items:center;gap:6px;background:rgba(var(--blue-rgb),.12);border:1.5px solid rgba(var(--blue-rgb),.3);border-radius:10px;padding:8px 14px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;width:100%;justify-content:center">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>
       Transferir entre cuentas
     </button>
@@ -773,7 +773,7 @@
 <div id="view-pagos" class="view">
   <h2 style="margin-bottom:15px">🔔 Pagos Recurrentes</h2>
   <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Registra tus pagos de servicios y recibe notificaciones antes del vencimiento.</p>
-  <button id="btn-activar-notif" onclick="activarNotificacionesPagos().then(ok=>{if(ok)document.getElementById('btn-activar-notif').innerHTML='<span style=\'color:var(--green)\'>✓ Alertas activas</span>'})" style="display:flex;align-items:center;gap:8px;background:rgba(245,200,0,.12);border:1.5px solid rgba(245,200,0,.4);border-radius:10px;padding:10px 14px;color:var(--amber);font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-bottom:14px;justify-content:center">
+  <button id="btn-activar-notif" onclick="activarNotificacionesPagos().then(ok=>{if(ok)document.getElementById('btn-activar-notif').innerHTML='<span style=\'color:var(--green)\'>✓ Alertas activas</span>'})" style="display:flex;align-items:center;gap:8px;background:rgba(var(--amber-rgb),.12);border:1.5px solid rgba(var(--amber-rgb),.4);border-radius:10px;padding:10px 14px;color:var(--amber);font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-bottom:14px;justify-content:center">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     Activar notificaciones de vencimiento
   </button>
@@ -917,7 +917,7 @@
   <div id="modal-cloud-download" class="modal" onclick="closeModalIfBg(event,'modal-cloud-download')">
     <div class="modal-content">
       <h3 style="margin-bottom:6px">⬇️ Bajar datos de la nube</h3>
-      <div style="background:rgba(255,68,68,.1);border:1px solid var(--red);padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text)">
+      <div style="background:rgba(var(--red-rgb),.1);border:1px solid var(--red);padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text)">
         ⚠️ <strong>Atención:</strong> Esta acción <strong>reemplazará tus datos locales</strong> con los que están en la nube. Si tu dispositivo tiene cambios sin subir, se perderán.
       </div>
       <div id="cloud-download-info" style="font-size:11px;background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:14px;line-height:1.6"></div>
@@ -977,8 +977,9 @@
   </div>
   <div class="card" id="premium-card"></div>
   <div class="card">
-    <h4 style="margin-bottom:6px">🌙 Pantalla</h4>
-    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="cfg-oled" onchange="elegirTema(this.checked ? 'oled' : 'normal')"> <span>Modo OLED (negro puro)<br><small style="color:var(--text2)">En pantallas OLED ahorra batería y se ve más nítido de noche.</small></span></label>
+    <h4 style="margin-bottom:6px">🎨 Apariencia</h4>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5">Elige el tema de la app. OLED usa negro puro y ahorra batería en esas pantallas.</p>
+    <div class="temas-grid" id="cfg-temas"></div>
   </div>
   <div class="card" id="cfg-tarjeta-al-pagar">
     <h4 style="margin-bottom:6px">💳 Compras con tarjeta</h4>
@@ -1046,9 +1047,9 @@
 <!-- FAB MENU — paleta Guacamaya Roja -->
 <div class="fab-menu" id="fab-menu">
   <div class="fab-menu-item" onclick="openModal('modal-gasto');closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(255,68,68,.18)">
+    <div class="fab-item-icon" style="background:rgba(var(--red-rgb),.18)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5252" stroke-width="2.2" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9" fill="rgba(255,68,68,.15)"/>
+        <circle cx="12" cy="12" r="9" style="fill:rgba(var(--red-rgb),.15)"/>
         <path d="M12 8v8M8 12h8" stroke="#FF5252" stroke-width="2.4"/>
       </svg>
     </div>
@@ -1058,10 +1059,10 @@
     </div>
   </div>
   <div class="fab-menu-item" onclick="openModal('modal-ingreso');closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(76,175,80,.18)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.2" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9" fill="rgba(76,175,80,.15)"/>
-        <path d="M12 16V8M8 12l4-4 4 4" stroke="#4CAF50" stroke-width="2.4"/>
+    <div class="fab-item-icon" style="background:rgba(var(--green-rgb),.18)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" style="stroke:var(--green)">
+        <circle cx="12" cy="12" r="9" style="fill:rgba(var(--green-rgb),.15)"/>
+        <path d="M12 16V8M8 12l4-4 4 4" stroke-width="2.4" style="stroke:var(--green)"/>
       </svg>
     </div>
     <div>
@@ -1070,12 +1071,12 @@
     </div>
   </div>
   <div class="fab-menu-item" onclick="openModal('modal-gasto');document.getElementById('ocr-input').click();closeFabMenu()">
-    <div class="fab-item-icon" style="background:rgba(66,133,244,.18)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round">
-        <rect x="3" y="6" width="18" height="13" rx="2" fill="rgba(66,133,244,.15)"/>
+    <div class="fab-item-icon" style="background:rgba(var(--blue-rgb),.18)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--blue)">
+        <rect x="3" y="6" width="18" height="13" rx="2" style="fill:rgba(var(--blue-rgb),.15)"/>
         <circle cx="12" cy="13" r="3"/>
         <path d="M8 6V5c0-.6.4-1 1-1h6c.6 0 1 .4 1 1v1"/>
-        <circle cx="18" cy="9" r="1" fill="#4285F4"/>
+        <circle cx="18" cy="9" r="1" style="fill:var(--blue)"/>
       </svg>
     </div>
     <div>
@@ -1596,7 +1597,7 @@
   <div class="modal-content">
     <h3>💸 El verdadero costo</h3>
     <p id="sim-nombre" style="font-size:12px;color:var(--text2);margin-bottom:12px"></p>
-    <div style="background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);padding:10px;border-radius:8px;margin-bottom:14px;font-size:13px">
+    <div style="background:rgba(var(--red-rgb),.08);border:1px solid rgba(var(--red-rgb),.3);padding:10px;border-radius:8px;margin-bottom:14px;font-size:13px">
       <div style="font-size:11px;color:var(--text2);margin-bottom:4px">⚠️ Si pagas solo el mínimo</div>
       <div id="sim-minimo"></div>
     </div>
@@ -1617,7 +1618,7 @@
         <option value="efectivo">💵 Desde Efectivo</option>
         <option value="ahorro">🏦 Desde Ahorro</option>
       </select>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--text2)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       <select id="tprog-hasta" class="input-field" style="margin:0">
         <option value="ahorro">🏦 Hacia Ahorro</option>
         <option value="efectivo">💵 Hacia Efectivo</option>
@@ -1655,14 +1656,14 @@
         </select>
         <div id="transfer-from-bal" style="font-size:11px;color:var(--amber);margin-top:6px;font-weight:700">L. 0.00</div>
       </div>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--text2)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:4px">HACIA</div>
         <select id="transfer-to" class="input-field" style="margin:0;font-size:13px" onchange="updateTransferPreview()">
           <option value="ahorro">🏦 Ahorro</option>
           <option value="efectivo">💵 Efectivo</option>
         </select>
-        <div id="transfer-to-bal" style="font-size:11px;color:#4285F4;margin-top:6px;font-weight:700">L. 0.00</div>
+        <div id="transfer-to-bal" style="font-size:11px;color:var(--blue);margin-top:6px;font-weight:700">L. 0.00</div>
       </div>
     </div>
     <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="transfer-monto" class="input-field" placeholder="Monto a transferir (L)" oninput="updateTransferPreview()">
