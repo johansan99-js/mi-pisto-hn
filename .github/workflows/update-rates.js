@@ -66,23 +66,12 @@ async function tryFetchBCHOfficial() {
         return { bid: bid, ask: ask, mid: (bid + ask) / 2 };
       }
     }
-    const numRegex = /(\d{2}\.\d{2,4})/g;
-    const matches = [...html.matchAll(numRegex)]
-      .map(m => parseFloat(m[1]))
-      .filter(n => n >= USD_HNL_RANGE.min && n <= USD_HNL_RANGE.max);
-    if (matches.length < 2) {
-      console.warn('  ❌ Insuficientes números en rango USD/HNL');
-      return null;
-    }
-    const sorted = [...new Set(matches)].sort((a, b) => a - b);
-    const bid = sorted[0];
-    const ask = sorted[sorted.length - 1] !== bid ? sorted[sorted.length - 1] : bid * (1 + DEFAULT_SPREAD * 2);
-    if (ask < bid || ask - bid > 1) {
-      console.warn('  ⚠️ Spread USD irrazonable, descartando');
-      return null;
-    }
-    console.log('  ✅ BCH oficial: USD bid=' + bid + ', ask=' + ask);
-    return { bid: bid, ask: ask, mid: (bid + ask) / 2 };
+    // La página del BCH solo trae el título: la tasa del día se carga después
+    // con JavaScript desde otro sistema. Tomar "cualquier número en rango"
+    // daba cifras que no eran la tasa (25.20), así que sin compra/venta
+    // juntas en el texto se usa la referencia del mercado.
+    console.warn('  ❌ El HTML del BCH no trae compra/venta del día');
+    return null;
   } catch (e) {
     console.warn('  ❌ BCH no accesible:', e.message);
     return null;
