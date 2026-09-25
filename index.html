@@ -708,6 +708,7 @@
       <button class="btn btn-secondary" style="width:auto;padding:10px 20px" onclick="openModal('modal-prestamo')">+ Nuevo Préstamo</button>
     </div>
   </div>
+  <div class="plan-deudas-acceso"></div>
   <div id="prestamos-list"></div>
 </div>
 
@@ -722,6 +723,7 @@
       <button class="btn btn-secondary" style="width:auto;padding:10px 20px" onclick="openModal('modal-tarjeta')">+ Agregar</button>
     </div>
   </div>
+  <div class="plan-deudas-acceso"></div>
   <div id="tarjetas-list"></div>
   <div id="beneficios-mes" class="card" style="display:none"></div>
   <div id="margen-dolares" class="card" style="display:none"></div>
@@ -1332,6 +1334,27 @@
     </div>
   </div>
 </div>
+<!-- PLAN PARA SALIR DE DEUDAS -->
+<div id="modal-plan-deudas" class="modal" onclick="closeModalIfBg(event,'modal-plan-deudas')">
+  <div class="modal-content">
+    <h3 style="margin-bottom:6px">🎯 Plan para salir de deudas</h3>
+    <p id="plan-total" style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">¿Cuánto puedes pagar al mes a tus deudas?</label>
+    <input type="text" inputmode="decimal" id="plan-presupuesto" class="input-field" placeholder="L 0.00" oninput="renderPlanDeudas()" style="margin-bottom:8px">
+    <div class="plan-rapidos">
+      <button type="button" id="plan-btn-minimos" onclick="sumarAlPresupuesto('minimos')">Solo mínimos</button>
+      <button type="button" onclick="sumarAlPresupuesto(500)">+ L 500</button>
+      <button type="button" onclick="sumarAlPresupuesto(1000)">+ L 1,000</button>
+    </div>
+    <div class="plan-estrategias">
+      <button type="button" data-estrategia="avalancha" onclick="elegirEstrategia('avalancha')"><strong>🔥 Avalancha</strong><small>Primero la tasa más alta. Pagas menos intereses.</small></button>
+      <button type="button" data-estrategia="bola" onclick="elegirEstrategia('bola')"><strong>❄️ Bola de nieve</strong><small>Primero la más chica. Liquidas deudas más rápido.</small></button>
+    </div>
+    <div id="plan-resultado"></div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-plan-deudas')" style="margin-top:12px">Listo</button>
+  </div>
+</div>
+
 <!-- BENEFICIOS DE UNA TARJETA (cashback, puntos, millas) -->
 <div id="modal-beneficios" class="modal" onclick="closeModalIfBg(event,'modal-beneficios')">
   <div class="modal-content">
@@ -1476,5 +1499,6 @@
 
 
 <script src="js/14-ux.js"></script>
+<script src="js/15-plan-deudas.js"></script>
 </body>
 </html>

@@ -421,6 +421,7 @@ function renderAll(){
     renderPrimerosPasos();
     renderMargenExtranjero();
     renderBeneficiosMes();
+    if (typeof renderAccesoPlanDeudas === 'function') renderAccesoPlanDeudas();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

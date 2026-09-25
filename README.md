@@ -78,7 +78,7 @@ Aplica el concepto de contabilidad de doble entrada: cada ingreso o gasto se imp
 - **Frontend:** HTML/CSS/JS puro, sin build ni framework — se despliega directo a GitHub Pages:
   - `index.html`: el marcado de todas las pantallas y modales
   - `css/app.css`: todos los estilos
-  - `js/00-config.js` … `js/14-ux.js`: el código, por tema. Son scripts clásicos que comparten el ámbito global y se cargan en el orden de `index.html`; una función usada **al cargar** debe estar en el mismo archivo o en uno anterior (`tests/arranque-sin-errores.test.js` lo vigila)
+  - `js/00-config.js` … `js/15-plan-deudas.js`: el código, por tema. Son scripts clásicos que comparten el ámbito global y se cargan en el orden de `index.html`; una función usada **al cargar** debe estar en el mismo archivo o en uno anterior (`tests/arranque-sin-errores.test.js` lo vigila)
   - Al agregar un archivo a `js/` o `css/`, súmalo también a `ASSETS_REQUIRED` en `sw.js` para que funcione sin conexión (una prueba lo verifica)
 - **Almacenamiento:** localStorage (cifrado) + IndexedDB como respaldo, todo en el dispositivo
 - **Sync opcional:** Supabase (Postgres + Auth), solo blobs cifrados
