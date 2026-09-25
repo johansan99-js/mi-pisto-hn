@@ -1292,3 +1292,18 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .reg-presu{font-size:12px;font-weight:700;line-height:1.4;padding:8px 10px;border-radius:10px;background:rgba(var(--green-rgb),.10);color:var(--text)}
 .reg-presu.aviso{background:rgba(var(--aviso-rgb),.14);color:var(--aviso)}
 .reg-presu.pasado{background:rgba(var(--red-rgb),.12);color:var(--red)}
+
+/* ── BUSCAR MOVIMIENTOS Y GASTOS QUE SE REPITEN (js/29-busqueda-y-recurrentes.js) ── */
+.rm-buscar{margin-bottom:10px}
+.rm-q{width:100%;box-sizing:border-box;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:11px 12px;font:inherit;font-size:14px;color:var(--text)}
+.rm-q:focus{outline:none;border-color:var(--amber)}
+.rm-filtros{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:3px;background:var(--bg3);border-radius:12px;padding:3px;margin-top:8px}
+.rm-limpiar{background:none;border:none;color:var(--text2);font-size:16px;padding:0 10px;cursor:pointer}
+.rm-busq-resumen{font-size:13px;color:var(--text2);padding:4px 2px 8px;border-bottom:1px solid var(--border)}
+.rm-busq-resumen strong{color:var(--text)}
+.sug-recurrente{border-color:rgba(var(--blue-rgb),.45)}
+.sug-rec-top{display:flex;gap:12px;align-items:flex-start}
+.sug-rec-top strong{display:block;font-size:14px;margin-bottom:3px}
+.sug-rec-top small{display:block;font-size:12px;color:var(--text2);line-height:1.45}
+.sug-rec-btns{display:grid;grid-template-columns:1.3fr 1fr;gap:8px;margin-top:12px}
+.sug-rec-btns .btn{margin:0;padding:10px 8px;font-size:13px}

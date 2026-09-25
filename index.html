@@ -480,7 +480,14 @@
   </div><!-- /cuentas-widget -->
   </div><!-- /balance-card -->
 
-  <div id="registros-mes" class="card registros-card"></div>
+  <div id="sugerencia-recurrente" class="card sug-recurrente" style="display:none"></div>
+  <div id="registros-mes" class="card registros-card" style="display:none">
+    <div class="rm-buscar">
+      <input type="search" id="rm-q" class="rm-q" placeholder="🔍 Buscar: comida, 350, BAC, Netflix…" autocomplete="off" aria-label="Buscar movimientos" oninput="buscarMovimientos(this.value)">
+      <div id="rm-filtros" class="rm-filtros" role="tablist" style="display:none"></div>
+    </div>
+    <div id="registros-mes-cuerpo"></div>
+  </div>
 
   <div id="presupuestos-card" class="card" style="display:none"></div>
 
@@ -1619,5 +1626,6 @@
 <script src="js/26-analisis.js"></script>
 <script src="js/27-presupuestos-categoria.js"></script>
 <script src="js/28-categorias.js"></script>
+<script src="js/29-busqueda-y-recurrentes.js"></script>
 </body>
 </html>

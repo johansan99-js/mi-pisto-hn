@@ -458,6 +458,7 @@ function renderAll(){
     if (typeof renderPremium === 'function') renderPremium();
     if (typeof renderRacha === 'function') renderRacha();
     if (typeof renderRegistrosMes === 'function') renderRegistrosMes();
+    if (typeof renderSugerenciaRecurrente === 'function') renderSugerenciaRecurrente();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
