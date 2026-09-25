@@ -63,9 +63,9 @@
   </div>
   <div class="sidebar-item" id="sb-historico" onclick="switchView('historico');setSidebarActive('sb-historico')">
     <div class="si-icon">
-      <svg width="17" height="17" viewBox="0 0 24 24"><rect x="3" y="14" width="4" height="7" rx="1.5" fill="currentColor" opacity=".5"/><rect x="10" y="9" width="4" height="12" rx="1.5" fill="currentColor" opacity=".75"/><rect x="17" y="4" width="4" height="17" rx="1.5" fill="currentColor" opacity=".95"/></svg>
+      <svg width="17" height="17" viewBox="0 0 24 24"><path d="M11 3.05A9 9 0 1 0 20.95 13H11z" fill="currentColor" opacity=".55"/><path d="M13 2.05V11h8.95A9 9 0 0 0 13 2.05z" fill="currentColor" opacity=".95"/></svg>
     </div>
-    Historial
+    Análisis
   </div>
   <div class="sidebar-item" id="sb-tarjetas" onclick="switchView('tarjetas');setSidebarActive('sb-tarjetas')">
     <div class="si-icon">
@@ -651,7 +651,8 @@
 </div>
 
 <div id="view-historico" class="view">
-  <h2 style="margin-bottom:15px">📈 Conciliación Histórica</h2>
+  <h2 style="margin-bottom:15px">📊 Análisis</h2>
+  <div id="analisis" class="card registros-card analisis-card"></div>
   <div class="card" id="resumen-mes-card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <h4>🗓️ Resumen del mes</h4>
@@ -667,13 +668,6 @@
       <span style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;background:var(--green);border-radius:2px"></div> Ingresos</span>
       <span style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;background:var(--red);border-radius:2px"></div> Gastos</span>
     </div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <h4>📊 Gastos por Categoría</h4>
-      <select id="catstats-mes" class="input-field" style="margin:0;width:auto;padding:8px 10px;font-size:12px" onchange="renderCategoryStats()"></select>
-    </div>
-    <div id="catstats-list"></div>
   </div>
   <button class="btn btn-primary" onclick="exportToExcelPro()" style="background: #1D6F42; color: white; margin-top: 15px;">
     📊 Exportar reporte en Excel
@@ -953,11 +947,9 @@
   </div>
   <div class="nav-tab" id="tab-historico" onclick="switchView('historico')">
     <svg class="nav-svg" viewBox="0 0 24 24">
-      <rect x="3" y="14" width="4" height="7" rx="1.5" fill="currentColor" opacity=".5"/>
-      <rect x="10" y="9" width="4" height="12" rx="1.5" fill="currentColor" opacity=".75"/>
-      <rect x="17" y="4" width="4" height="17" rx="1.5" fill="currentColor" opacity=".95"/>
+      <path d="M11 3.05A9 9 0 1 0 20.95 13H11z" fill="currentColor" opacity=".55"/><path d="M13 2.05V11h8.95A9 9 0 0 0 13 2.05z" fill="currentColor" opacity=".95"/>
     </svg>
-    <span class="nav-label">Historial</span>
+    <span class="nav-label">Análisis</span>
   </div>
   <button class="nav-fab" id="nav-fab-btn" onclick="toggleFabMenu()">+</button>
   <div class="nav-tab" id="tab-tarjetas" onclick="switchView('tarjetas')">
@@ -1561,5 +1553,6 @@
 <script src="js/23-excel.js"></script>
 <script src="js/24-registro-rapido.js"></script>
 <script src="js/25-registros-del-mes.js"></script>
+<script src="js/26-analisis.js"></script>
 </body>
 </html>

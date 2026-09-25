@@ -393,7 +393,7 @@ function renderHistorico() {
         html += '</div>';
     });
     chartContainer.innerHTML = html;
-    renderCategoryStats();
+    if (typeof renderAnalisis === 'function') renderAnalisis();
 }
 
 // ── ESTADÍSTICAS POR CATEGORÍA (con tendencia vs. mes anterior) ──
@@ -417,23 +417,6 @@ function getCategoryTotalsForMonth(year, month) {
         }
     });
     return totales;
-}
-
-function poblarSelectorMesCategoria() {
-    const sel = document.getElementById('catstats-mes');
-    if (!sel) return;
-    // Solo repoblar si está vacío (para no perder la selección del usuario en cada render)
-    if (sel.options.length) return;
-    const ahora = new Date();
-    for (let i = 0; i < 12; i++) {
-        const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-        const value = fecha.getFullYear() + '-' + fecha.getMonth();
-        const label = fecha.toLocaleDateString('es-HN', { month: 'long', year: 'numeric' });
-        const opt = document.createElement('option');
-        opt.value = value;
-        opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
-        sel.appendChild(opt);
-    }
 }
 
 // ═══ RESUMEN MENSUAL ══════════════════════════════════════════════════════
@@ -567,56 +550,6 @@ function verResumenMesPasado() {
   document.getElementById('resumen-mes-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderCategoryStats() {
-    const container = document.getElementById('catstats-list');
-    if (!container) return;
-    poblarSelectorMesCategoria();
-    const sel = document.getElementById('catstats-mes');
-    const [selYear, selMonth] = (sel.value || '').split('-').map(Number);
-    const ahora = new Date();
-    const year = Number.isFinite(selYear) ? selYear : ahora.getFullYear();
-    const month = Number.isFinite(selMonth) ? selMonth : ahora.getMonth();
-
-    const actual = getCategoryTotalsForMonth(year, month);
-    const prevFecha = new Date(year, month - 1, 1);
-    const anterior = getCategoryTotalsForMonth(prevFecha.getFullYear(), prevFecha.getMonth());
-
-    const categorias = Object.keys(actual).sort((a, b) => actual[b] - actual[a]);
-    const totalMes = categorias.reduce((a, c) => a + actual[c], 0);
-
-    if (categorias.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text2);padding:20px">Sin gastos registrados este mes</p>';
-        return;
-    }
-
-    const maxValor = Math.max(...categorias.map(c => actual[c]));
-    container.innerHTML = categorias.map(cat => {
-        const monto = actual[cat];
-        const pct = totalMes ? (monto / totalMes * 100) : 0;
-        const barPct = maxValor ? (monto / maxValor * 100) : 0;
-        const montoAnterior = anterior[cat] || 0;
-        let tendenciaHtml = '<span style="font-size:10px;color:var(--text2)">— sin datos del mes anterior</span>';
-        if (montoAnterior > 0) {
-            const variacion = ((monto - montoAnterior) / montoAnterior) * 100;
-            const subio = variacion > 0.5;
-            const bajo = variacion < -0.5;
-            const color = subio ? 'var(--red)' : (bajo ? 'var(--green)' : 'var(--text2)');
-            const flecha = subio ? '▲' : (bajo ? '▼' : '▬');
-            tendenciaHtml = `<span style="font-size:10px;color:${color};font-weight:700">${flecha} ${Math.abs(variacion).toFixed(0)}% vs. mes anterior</span>`;
-        }
-        return `
-        <div style="margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-            <span style="font-weight:700;font-size:13px">${esc(cat)}</span>
-            <span style="font-weight:700;font-size:13px;color:var(--amber)">${fL(monto)} <span style="font-weight:400;color:var(--text2);font-size:11px">(${pct.toFixed(0)}%)</span></span>
-          </div>
-          <div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden">
-            <div style="width:${barPct}%;height:100%;background:var(--grad-boton);border-radius:6px"></div>
-          </div>
-          <div style="margin-top:3px">${tendenciaHtml}</div>
-        </div>`;
-    }).join('');
-}
 function exportFullReport() {
     try {
         let csv = 'REPORTE FINANCIERO COMPLETO\n';
