@@ -974,6 +974,7 @@
     <input type="time" id="recordatorio-hora" class="input-field" value="20:00" onchange="guardarRecordatorio()" style="margin:0">
     <div id="recordatorio-nota" style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5"></div>
   </div>
+  <div class="card" id="premium-card"></div>
   <div class="card">
     <h4 style="margin-bottom:6px">🌙 Pantalla</h4>
     <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="cfg-oled" onchange="elegirTema(this.checked ? 'oled' : 'normal')"> <span>Modo OLED (negro puro)<br><small style="color:var(--text2)">En pantallas OLED ahorra batería y se ve más nítido de noche.</small></span></label>
@@ -1699,5 +1700,6 @@
 <script src="js/18-presupuestos.js"></script>
 <script src="js/19-cuentas.js"></script>
 <script src="js/20-extras.js"></script>
+<script src="js/21-premium.js"></script>
 </body>
 </html>

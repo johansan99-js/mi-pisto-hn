@@ -1027,3 +1027,16 @@ html.oled body{background:#000}
   .rep-movs tr{page-break-inside:avoid}
   .rep-pie{font-size:10px;color:#666;margin-top:10px}
 }
+
+/* Mi Pisto Premium */
+#premium-card{border-color:rgba(245,200,0,.45);background:linear-gradient(135deg,rgba(245,200,0,.07),var(--bg2))}
+.premium-estado{font-size:12px;background:var(--bg3);border-radius:8px;padding:8px 10px;margin:4px 0 10px;color:var(--text2)}
+.premium-estado.ok{color:var(--amber);font-weight:700}
+.premium-lista{list-style:none;padding:0;margin:0 0 10px}
+.premium-lista li{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--border);font-size:13px}
+.premium-lista li:first-child{border-top:none}
+.premium-lista li>span{font-size:18px;width:24px;text-align:center}
+.premium-lista small{display:block;font-size:11px;color:var(--text2)}
+.premium-precio{font-size:12px;color:var(--text2);margin:0 0 6px;line-height:1.5}
+.premium-precio strong{color:var(--text)}
+.premium-garantia{font-size:11px;color:var(--text2);background:var(--bg3);border-left:3px solid var(--green);border-radius:6px;padding:8px 10px;margin:0 0 10px;line-height:1.5}

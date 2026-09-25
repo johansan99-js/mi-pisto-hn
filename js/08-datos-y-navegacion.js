@@ -114,6 +114,8 @@ function _validarSchemaBackup(obj) {
     }
   }
   
+  if (obj.premium !== undefined && obj.premium !== null && (typeof obj.premium !== 'object' || Array.isArray(obj.premium))) return 'premium inválido';
+
   // ── Validar mis cuentas ──
   if (Array.isArray(obj.misCuentas)) {
     for (const c of obj.misCuentas.slice(0, 100)) {
@@ -460,6 +462,7 @@ function renderAll(){
     if (typeof renderConfigTarjetaAlPagar === 'function') renderConfigTarjetaAlPagar();
     if (typeof renderConfigTema === 'function') { renderConfigTema(); aplicarTema(temaActual()); }
     if (typeof renderAvisoCuadre === 'function') renderAvisoCuadre();
+    if (typeof renderPremium === 'function') renderPremium();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
