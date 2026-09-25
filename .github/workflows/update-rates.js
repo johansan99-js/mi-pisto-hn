@@ -45,7 +45,7 @@ async function fetchWithTimeout(url, ms) {
 async function tryFetchBCHOfficial() {
   try {
     console.log('🌐 Intentando BCH oficial...');
-    const r = await fetchWithTimeout(BCH_URL, 8000);
+    const r = await fetchWithTimeout(BCH_URL, 20000); // el sitio del BCH es lento: con 8 s a veces no respondía
     const html = await r.text();
     const lower = html.toLowerCase();
     if (lower.indexOf('compra') < 0 || lower.indexOf('venta') < 0) {
