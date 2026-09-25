@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v39-margen-dolares';
+const VERSION = 'v40-archivos';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -64,7 +64,24 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'index.html',
   BASE_PATH + 'offline.html',
   BASE_PATH + 'manifest.json',
-  BASE_PATH + 'tasas.json'
+  BASE_PATH + 'tasas.json',
+  // Código y estilos de la app, en el orden de index.html (una prueba verifica que coincidan)
+  BASE_PATH + 'js/00-config.js',
+  BASE_PATH + 'js/01-nucleo.js',
+  BASE_PATH + 'js/02-cifrado-y-guardado.js',
+  BASE_PATH + 'js/03-ocr-y-sms.js',
+  BASE_PATH + 'js/04-interfaz-y-kit.js',
+  BASE_PATH + 'js/05-movimientos.js',
+  BASE_PATH + 'js/06-deudas-y-tarjetas.js',
+  BASE_PATH + 'js/07-notificaciones-y-reportes.js',
+  BASE_PATH + 'js/08-datos-y-navegacion.js',
+  BASE_PATH + 'js/09-saldos-y-sincronizacion.js',
+  BASE_PATH + 'js/10-herramientas.js',
+  BASE_PATH + 'js/11-arranque.js',
+  BASE_PATH + 'js/12-nube.js',
+  BASE_PATH + 'js/13-monedas.js',
+  BASE_PATH + 'js/14-ux.js',
+  BASE_PATH + 'css/app.css'
 ];
 
 // Assets opcionales (no fallan si no existen)

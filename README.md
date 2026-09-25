@@ -70,12 +70,16 @@ Aplica el concepto de contabilidad de doble entrada: cada ingreso o gasto se imp
 
 1. Abre https://johansan99-js.github.io/mi-pisto-hn/ (o instala la app Android desde el paquete generado con PWABuilder)
 2. Configura tu nombre y saldo inicial (efectivo/ahorro)
-3. Crea un PIN de 4 dígitos — tus datos se cifran con eso
+3. Crea un PIN de 6 a 8 dígitos — tus datos se cifran con eso
 4. Registra tus movimientos; el dashboard, las estadísticas y las alertas se calculan solos
 
 ## Stack técnico
 
-- **Frontend:** HTML/CSS/JS puro en un solo archivo (`index.html`), sin build ni framework — se despliega directo a GitHub Pages
+- **Frontend:** HTML/CSS/JS puro, sin build ni framework — se despliega directo a GitHub Pages:
+  - `index.html`: el marcado de todas las pantallas y modales
+  - `css/app.css`: todos los estilos
+  - `js/00-config.js` … `js/14-ux.js`: el código, por tema. Son scripts clásicos que comparten el ámbito global y se cargan en el orden de `index.html`; una función usada **al cargar** debe estar en el mismo archivo o en uno anterior (`tests/arranque-sin-errores.test.js` lo vigila)
+  - Al agregar un archivo a `js/` o `css/`, súmalo también a `ASSETS_REQUIRED` en `sw.js` para que funcione sin conexión (una prueba lo verifica)
 - **Almacenamiento:** localStorage (cifrado) + IndexedDB como respaldo, todo en el dispositivo
 - **Sync opcional:** Supabase (Postgres + Auth), solo blobs cifrados
 - **OCR:** Tesseract.js (WebAssembly), cargado bajo demanda
@@ -87,8 +91,8 @@ Aplica el concepto de contabilidad de doble entrada: cada ingreso o gasto se imp
 ## Limitaciones conocidas (deuda técnica aceptada)
 
 - El CSP mantiene `'unsafe-inline'` en `script-src`/`style-src` — la app usa `onclick=""` inline extensivamente; quitarlo requiere migrar a `addEventListener` en todo el archivo (refactor grande, pendiente)
-- Todo vive en un solo archivo de ~9,700 líneas, sin build system; las pruebas automáticas cubren los flujos críticos, no cada pantalla
-- Sin importación automática de movimientos bancarios (SMS/Open Banking) — todo el registro es manual o vía OCR de recibo
+- Sin build system: el código comparte el ámbito global entre archivos; las pruebas automáticas cubren los flujos críticos, no cada pantalla
+- Sin importación automática de movimientos bancarios (Open Banking): el registro es manual, pegando o compartiendo el SMS del banco, o vía OCR de recibo
 
 ## Desarrollo local
 

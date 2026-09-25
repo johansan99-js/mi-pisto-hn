@@ -157,5 +157,5 @@ Mi Pisto HN no pide números de tarjeta, CVV ni claves de banco.
 
 ## Actualizaciones
 
-- **Cambios de la web** (todo lo de `index.html`, `sw.js`, etc.): llegan solos a la app de Play al publicarse en GitHub Pages, sin subir nada nuevo.
+- **Cambios de la web** (todo lo de `index.html`, `js/`, `css/`, `sw.js`, etc.): llegan solos a la app de Play al publicarse en GitHub Pages, sin subir nada nuevo.
 - **Nuevo `.aab`:** solo hace falta si cambia algo de la app Android (nombre, ícono de lanzador, colores de la barra, versión mínima de Android). Se regenera en PWABuilder con **la misma clave** (`.keystore`) y un número de versión mayor.

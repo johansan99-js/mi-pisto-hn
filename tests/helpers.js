@@ -9,7 +9,7 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 
 const ROOT = path.join(__dirname, '..');
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const LS_KEY = 'mifinanzashn_pro_v20_full';
 const UUID_TC = '3f2a9c1e-1111-4a2b-9c3d-000000000001';
 
