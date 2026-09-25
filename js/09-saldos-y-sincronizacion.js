@@ -382,7 +382,7 @@ function renderTransferenciasProgramadas(){
         ? '<span style="color:var(--text2)">⏸️ Pausada</span>'
         : (yaEsteMonth
             ? `<span style="color:var(--green)">✓ Ya se ejecutó este mes</span>`
-            : `<span style="color:var(--amber)">Próxima: día ${t.dia}</span>`);
+            : `<span style="color:var(--aviso)">Próxima: día ${t.dia}</span>`);
     return `<div class="card" style="padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="flex:1;min-width:0">
@@ -819,7 +819,7 @@ function calcularProgresoPresupuestoMes() {
 }
 
 function _barraPresupuesto(nombre, info) {
-  var color = info.pct >= 100 ? 'var(--red)' : (info.pct >= 80 ? 'var(--amber)' : 'var(--green)');
+  var color = info.pct >= 100 ? 'var(--red)' : (info.pct >= 80 ? 'var(--aviso)' : 'var(--green)');
   var pctBarra = Math.min(100, info.pct);
   return '<div style="margin-bottom:8px">' +
     '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">' +
@@ -1112,7 +1112,7 @@ async function tourActivarRecordatorio() {
   if (!leerRecordatorio().activo) {
     const el = document.getElementById('tour-recordatorio-estado');
     el.textContent = '⚠️ Sin permiso de notificaciones no podemos avisarte. Puedes activarlo después en Config.';
-    el.style.color = 'var(--amber)';
+    el.style.color = 'var(--aviso)';
   }
   renderPrimerosPasos();
 }

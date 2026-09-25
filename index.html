@@ -924,6 +924,7 @@
       <div><small id="reg-lbl-a">Cuenta</small><button type="button" id="reg-btn-a" class="reg-elegir-btn" onclick="abrirSelectorRegistro('a')">💵 Efectivo</button></div>
       <div><small id="reg-lbl-b">Categoría</small><button type="button" id="reg-btn-b" class="reg-elegir-btn" onclick="abrirSelectorRegistro('b')">Elegir categoría</button></div>
     </div>
+    <div id="reg-presu" class="reg-presu" role="status" style="display:none"></div>
     <input type="text" id="reg-nota" class="input-field reg-nota" maxlength="80" autocomplete="off" placeholder="Nota o comercio (opcional)">
     <div class="reg-monto-caja" id="reg-monto-caja">
       <div class="reg-monto-txt"><span class="reg-moneda">L</span><span id="reg-monto" class="vacio">0</span></div>
@@ -949,8 +950,8 @@
       <button type="button" class="op igual" onclick="teclaRegistro('=')">=</button>
     </div>
     <div class="reg-fecha">
-      <input type="date" id="reg-fecha" aria-label="Fecha">
-      <input type="time" id="reg-hora" aria-label="Hora" oninput="this.dataset.tocada='1'">
+      <input type="date" id="reg-fecha" aria-label="Fecha" onchange="renderPresuRegistro()">
+      <input type="time" id="reg-hora" aria-label="Hora" oninput="this.dataset.tocada='1';renderPresuRegistro()">
     </div>
     <div class="reg-extras">
       <button type="button" class="solo-gasto" onclick="masOpcionesRegistro('recibo')">📸 Recibo</button>
@@ -1299,7 +1300,7 @@
     <h3 style="margin-bottom:6px">🆘 Kit de recuperación</h3>
     <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">Si olvidas tu PIN, esta clave te deja crear uno nuevo sin perder tus datos. Guárdala fuera del teléfono: impresa, en otro dispositivo o en un gestor de contraseñas.</p>
     <div id="kit-rec-clave" style="font-family:monospace;font-size:19px;font-weight:700;letter-spacing:1px;text-align:center;background:var(--bg3);padding:14px 10px;border-radius:8px;margin-bottom:12px;word-break:normal;overflow-wrap:normal;user-select:all"></div>
-    <p style="font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.5">⚠️ Funciona solo en este teléfono. Quien tenga esta clave y tu teléfono puede abrir tus datos: no la compartas.</p>
+    <p style="font-size:11px;color:var(--aviso);margin-bottom:12px;line-height:1.5">⚠️ Funciona solo en este teléfono. Quien tenga esta clave y tu teléfono puede abrir tus datos: no la compartas.</p>
     <button class="btn btn-primary" id="btn-kit-descargar" style="margin-bottom:8px">⬇️ Descargar como archivo</button>
     <button class="btn btn-secondary" onclick="closeModal('modal-kit-rec')">Ya la guardé</button>
   </div>

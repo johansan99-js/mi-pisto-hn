@@ -166,8 +166,8 @@ function _textoVence(p) {
   if (!p.vence) return '';
   const dias = Math.round((new Date(p.vence + 'T12:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T12:00:00')) / 864e5);
   if (dias < 0) return '<span style="color:var(--red);font-weight:700">⚠️ Venció hace ' + (-dias) + (dias === -1 ? ' día' : ' días') + '</span>';
-  if (dias === 0) return '<span style="color:var(--amber);font-weight:700">⏰ Vence hoy</span>';
-  return '<span style="color:' + (dias <= 7 ? 'var(--amber)' : 'var(--text2)') + '">Vence en ' + dias + (dias === 1 ? ' día' : ' días') + '</span>';
+  if (dias === 0) return '<span style="color:var(--aviso);font-weight:700">⏰ Vence hoy</span>';
+  return '<span style="color:' + (dias <= 7 ? 'var(--aviso)' : 'var(--text2)') + '">Vence en ' + dias + (dias === 1 ? ' día' : ' días') + '</span>';
 }
 function _movimientosDeuda(p) {
   return (state.transactions || []).filter(t => !t.deletedAt && t.deudaId === p.id).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -304,7 +304,7 @@ function renderTarjetas(){
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
-        if(totalPagoMinimo>0){resumenContainer.innerHTML=`<div class="alert-card" style="border-left-color: var(--amber);"><div class="alert-icon">💳</div><div class="alert-content"><div class="alert-title">Pago Mínimo Total Recomendado</div><div class="alert-detail">Para mantener tus tarjetas al día, considera pagar al menos <strong>${fL(totalPagoMinimo)}</strong> este mes${totalCuotasMes>0?` (incluye ${fL(totalCuotasMes)} de cuotas Tasa Cero)`:''}.</div></div></div>`;}
+        if(totalPagoMinimo>0){resumenContainer.innerHTML=`<div class="alert-card" style="border-left-color: var(--aviso);"><div class="alert-icon">💳</div><div class="alert-content"><div class="alert-title">Pago Mínimo Total Recomendado</div><div class="alert-detail">Para mantener tus tarjetas al día, considera pagar al menos <strong>${fL(totalPagoMinimo)}</strong> este mes${totalCuotasMes>0?` (incluye ${fL(totalCuotasMes)} de cuotas Tasa Cero)`:''}.</div></div></div>`;}
         else{resumenContainer.innerHTML='<p style="font-size:12px; color:var(--text2); text-align:center;">Sin saldos en tarjetas de crédito.</p>';}
     }
 }
@@ -597,7 +597,7 @@ function renderBeneficiosMes() {
   }
   card.innerHTML = '<h4 style="margin-bottom:6px">🎁 Beneficios de este mes</h4>' +
     '<div style="font-size:13px;line-height:1.6">Tus tarjetas te devuelven <strong style="color:var(--green)">~' + fL(r.ganado) + '</strong>.</div>' +
-    (r.perdido > 0 ? '<div style="font-size:12px;color:var(--amber);margin-top:4px;line-height:1.5">Dejaste de ganar ~' + fL(r.perdido) + ' pagando con otra tarjeta' +
+    (r.perdido > 0 ? '<div style="font-size:12px;color:var(--aviso);margin-top:4px;line-height:1.5">Dejaste de ganar ~' + fL(r.perdido) + ' pagando con otra tarjeta' +
       (r.mayorPerdida ? ': en ' + esc(r.mayorPerdida.compra || 'una compra') + ', ' + esc(r.mayorPerdida.tarjeta) + ' te daba ' + fL(r.mayorPerdida.dif) + ' más.' : '.') + '</div>' : '') +
     '<p style="font-size:10px;color:var(--text2);margin-top:6px">Estimado con los beneficios que anotaste; tu banco puede redondear distinto.</p>';
 }
@@ -622,7 +622,7 @@ function htmlCuotasTarjeta(t) {
   return `<div style="margin:-4px 0 12px;padding:10px;border-radius:8px;background:var(--bg3)">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
       <span style="font-size:12px;font-weight:700">🧾 Compras a cuotas Tasa Cero</span>${btnNuevo}</div>
-    ${activos.length ? `<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Cupo comprometido: <strong style="color:var(--amber)">${fL(cupoComprometido(t))}</strong> · Cuotas del mes: <strong>${fL(cuotasDelMes(t))}</strong></div>` : ''}
+    ${activos.length ? `<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Cupo comprometido: <strong style="color:var(--aviso)">${fL(cupoComprometido(t))}</strong> · Cuotas del mes: <strong>${fL(cuotasDelMes(t))}</strong></div>` : ''}
     ${filas}</div>`;
 }
 let _cuotasTarjetaId = null;

@@ -757,9 +757,9 @@ const cloudSync = {
     renderSection('📱 ESTE DISPOSITIVO (' + esc(localDeviceName||'Local') + ')', 'rgba(var(--green-rgb),.12)', Object.entries(diff.localNew));
     renderSection('☁️ NUBE (' + esc(remoteDeviceName||'otro dispositivo') + (remoteDate?', '+remoteDate:'') + ')', 'rgba(var(--blue-rgb),.12)', Object.entries(diff.remoteNew));
     if (diff.totalConflicts > 0) {
-      html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">⚠️ CONFLICTOS RESUELTOS (' + diff.totalConflicts + ')</div>';
+      html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--aviso);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">⚠️ CONFLICTOS RESUELTOS (' + diff.totalConflicts + ')</div>';
       Object.entries(diff.conflicts).forEach(([field, items]) => {
-        html += '<div style="padding:4px 8px;background:rgba(var(--amber-rgb),.1);border-radius:4px;margin-bottom:3px;font-size:12px">';
+        html += '<div style="padding:4px 8px;background:rgba(var(--aviso-rgb),.1);border-radius:4px;margin-bottom:3px;font-size:12px">';
         html += '🔀 ' + items.length + ' ' + (LABELS[field]||field) + ': se conservó el cambio más reciente';
         html += '</div>';
       });
@@ -851,7 +851,7 @@ async function renderCloudSyncUI() {
   // Estado 1: Supabase no disponible (offline o el CDN falló)
   if (!cloudSync.sdkAvailable()) {
     container.innerHTML =
-      '<div style="padding:14px;background:var(--bg3);border-radius:10px;border-left:3px solid var(--amber);font-size:12px;color:var(--text2);line-height:1.5">' +
+      '<div style="padding:14px;background:var(--bg3);border-radius:10px;border-left:3px solid var(--aviso);font-size:12px;color:var(--text2);line-height:1.5">' +
         '⚠️ No hay conexión con el servidor de sincronización.<br>' +
         'Verifica tu internet y recarga la app.' +
       '</div>';
@@ -917,14 +917,14 @@ async function renderCloudSyncUI() {
       '</div>' +
       // Nota para iOS: el auto-sync solo funciona con la app abierta
       (/iPhone|iPad|iPod/.test(navigator.userAgent) ?
-        '<div style="background:rgba(var(--amber-rgb),.1);border:1px solid rgba(var(--amber-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
+        '<div style="background:rgba(var(--aviso-rgb),.1);border:1px solid rgba(var(--aviso-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
           '🍎 <strong>iOS detectado:</strong> el auto-sync solo funciona con la app abierta. ' +
           'Usá el botón <strong>"⬆️ Subir ahora"</strong> antes de cambiar de dispositivo.' +
         '</div>' : '') +
 
       remoteStatusHtml +
       (cloudSync.hasCloudKey() ? '' :
-        '<div style="background:rgba(var(--amber-rgb),.1);border:1px solid rgba(var(--amber-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
+        '<div style="background:rgba(var(--aviso-rgb),.1);border:1px solid rgba(var(--aviso-rgb),.3);padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:12px;line-height:1.5;color:var(--text)">' +
           '🔑 <strong>Falta la contraseña de la nube</strong> en este dispositivo. Se te pedirá al tocar "⬆️ Subir ahora" o "⬇️ Bajar de la nube".' +
         '</div>') +
 

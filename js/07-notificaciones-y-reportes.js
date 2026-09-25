@@ -117,7 +117,7 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
       ${p.monto?fL(p.monto):'Sin monto'} · 
-      ${_pagadoEsteMes(p)?'<span style="color:var(--green);font-weight:700">✅ Pagado este mes</span>':diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--amber);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
+      ${_pagadoEsteMes(p)?'<span style="color:var(--green);font-weight:700">✅ Pagado este mes</span>':diasParaPago===0?'<span style="color:var(--red);font-weight:700">¡Hoy vence!</span>':diasParaPago===1?'<span style="color:var(--aviso);font-weight:700">Vence mañana</span>':`En ${diasParaPago} días`}
     </div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
       <button class="btn btn-primary" onclick=\"marcarPagoRecurrente('${esc(p.id)}')\"" style="min-height:40px;font-size:13px${_pagadoEsteMes(p)?';opacity:.6':''}">${_pagadoEsteMes(p)?'✓ Pagado':'✓ Marcar pagado'}</button>

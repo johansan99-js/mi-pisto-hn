@@ -230,7 +230,7 @@ function _renderGastoGrupo() {
   if (!(monto > 0)) { el.innerHTML = 'Escribe el monto del gasto.'; return; }
   const falta = _c2(monto - suma);
   el.innerHTML = (_modoDivision === 'exactos' && Math.abs(falta) > 0.005
-    ? `<span style="color:var(--amber)">⚠️ Las partes suman ${fL(suma)}: ${falta > 0 ? 'faltan ' + fL(falta) : 'sobran ' + fL(-falta)}.</span><br>` : '') +
+    ? `<span style="color:var(--aviso)">⚠️ Las partes suman ${fL(suma)}: ${falta > 0 ? 'faltan ' + fL(falta) : 'sobran ' + fL(-falta)}.</span><br>` : '') +
     `Tu parte: <strong>${fL(mia)}</strong>` + (pagaYo && monto - mia > 0.005 ? ` · adelantas <strong>${fL(monto - mia)}</strong> que te deben` : '') +
     (!pagaYo && mia > 0 ? ` · se lo quedas debiendo a ${esc(nombreMiembro(grupoPorId(_gastoGrupoId), document.getElementById('gg-pago').value))}` : '');
 }

@@ -334,7 +334,7 @@ function updateSurvivalIndex(balance) {
     } else if (dias <= 90) {
         state_class = 'state-warning'; statusClass = 'warning';
         statusText  = '🟡 Precaución — entre 30 y 90 días';
-        numColor    = 'var(--amber)';
+        numColor    = 'var(--aviso)';
     } else {
         state_class = 'state-safe';    statusClass = 'safe';
         statusText  = '🟢 Seguro — más de 90 días';
@@ -531,7 +531,7 @@ function leerSMSBanco() {
     (r.categoria ? '<br>🏷️ ' + esc(r.categoria) : '') +
     (tarjeta ? '<br>💳 ' + esc(tarjeta.nombre) + (tarjeta.ultimos4 ? ' •••• ' + esc(tarjeta.ultimos4) : '')
       : r.debito ? '<br>🏦 Débito (cuenta de ahorro)'
-      : r.ultimos4 ? '<br>💳 Tarjeta •••• ' + esc(r.ultimos4) + ' <span style="color:var(--amber)">(no la tienes registrada: agrega sus últimos 4 dígitos en TC)</span>' : '') + enviar;
+      : r.ultimos4 ? '<br>💳 Tarjeta •••• ' + esc(r.ultimos4) + ' <span style="color:var(--aviso)">(no la tienes registrada: agrega sus últimos 4 dígitos en TC)</span>' : '') + enviar;
 }
 function usarSMSBanco() {
   const r = _smsLeido;
