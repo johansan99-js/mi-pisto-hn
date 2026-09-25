@@ -169,6 +169,7 @@ function guardarPresupuesto() {
   if (!state.presupuestos) state.presupuestos = [];
   const previo = state.presupuestos.find(p => p.periodo === periodo && _mismaCat(p.cat, cat));
   if (previo) previo.monto = _c2(monto);
+  else if (typeof puedeUsarPremium === 'function' && !puedeUsarPremium('presupuestos')) return;
   else state.presupuestos.push({ id: uid(), cat, monto: _c2(monto), periodo });
   document.getElementById('presu-cat').value = '';
   document.getElementById('presu-monto').value = '';

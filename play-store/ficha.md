@@ -78,6 +78,7 @@ Mi Pisto HN no está afiliada a ningún banco. Las tasas de cambio son de refere
 ```
 
 ## Notas
-- No menciona Premium porque está apagado. Cuando lo actives, agrega una línea con el precio y el tipo de pago.
+- No menciona Premium porque está apagado. Cuando lo actives, agrega antes de "¿Dudas o ideas?":
+  `⭐ Mi Pisto Premium (opcional): reporte en PDF y cuentas, grupos y presupuestos sin límite. L 25 al mes o L 199 al año, con 30 días gratis sin tarjeta. Se renueva solo y lo cancelas cuando quieras en Google Play. Tus datos nunca se bloquean.`
 - La última línea aclara que la app no está afiliada a ningún banco. Google revisa que las apps no parezcan de un banco cuando mencionan sus nombres.
 - El lector de SMS está probado con los 6 bancos que se mencionan. Las tasas de cambio se leen de Promerica, Ficohsa, Banco de Occidente y Banco Atlántida.

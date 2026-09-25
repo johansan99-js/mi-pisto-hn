@@ -176,6 +176,8 @@ function guardarPresupuestoCat() {
   // Una categoría tiene un solo tope por período: si ya había otro, se reemplaza
   const actual = id ? state.presupuestos.find(p => p.id === id) : null;
   const choque = state.presupuestos.find(p => p !== actual && p.periodo === periodo && _mismaCat(p.cat, cat));
+  // Uno nuevo (que no reemplaza a otro) cuenta para el límite de lo gratis
+  if (!actual && !choque && typeof puedeUsarPremium === 'function' && !puedeUsarPremium('presupuestos')) return;
   if (choque) state.presupuestos = state.presupuestos.filter(p => p !== choque);
   if (actual) { actual.monto = _c2(monto); actual.periodo = periodo; }
   else state.presupuestos.push({ id: uid(), cat, monto: _c2(monto), periodo });

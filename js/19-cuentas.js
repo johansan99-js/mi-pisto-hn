@@ -191,6 +191,7 @@ function renderTilesCuentas() {
 let _cuentaEditando = null, _colorCuenta = COLORES_CUENTA[0];
 function abrirModalCuenta(id) {
   const c = id && (state.misCuentas || []).find(x => x.id === id);
+  if (!c && typeof puedeUsarPremium === 'function' && !puedeUsarPremium('cuentas')) return;
   _cuentaEditando = c ? c.id : null;
   _colorCuenta = c ? c.color : COLORES_CUENTA[(state.misCuentas || []).length % COLORES_CUENTA.length];
   document.getElementById('cuenta-titulo').textContent = c ? '✏️ Editar cuenta' : '🏦 Nueva cuenta';
@@ -228,6 +229,7 @@ function guardarCuenta() {
   let c = _cuentaEditando && state.misCuentas.find(x => x.id === _cuentaEditando);
   if (c) Object.assign(c, { nombre, grupo, tipo, icono: TIPOS_CUENTA[tipo].icono, color: _colorCuenta, tasaAnual: _c2(tasa) });
   else {
+    if (typeof puedeUsarPremium === 'function' && !puedeUsarPremium('cuentas')) return;
     const saldo = leerMonto(document.getElementById('cuenta-saldo').value) || 0;
     const usd = document.getElementById('cuenta-moneda').value === 'USD';
     c = { id: uid(), nombre, grupo, tipo, icono: TIPOS_CUENTA[tipo].icono, color: _colorCuenta, tasaAnual: _c2(tasa), creada: new Date().toISOString() };
@@ -253,6 +255,7 @@ function archivarCuenta() {
 function desarchivarCuenta(id) {
   const c = (state.misCuentas || []).find(x => x.id === id);
   if (!c) return;
+  if (typeof puedeUsarPremium === 'function' && !puedeUsarPremium('cuentas')) return;
   c.archivada = false;
   save(); renderAll(); renderMisCuentas();
 }
