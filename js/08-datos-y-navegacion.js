@@ -399,6 +399,8 @@ function closeModalIfBg(e,id){if(e.target.id===id){if(hasUnsavedModalData){if(co
 
 let _fabOpen = false;
 function toggleFabMenu(){
+  // El botón + abre el registro rápido con teclado (24-registro-rapido.js)
+  if (typeof abrirRegistro === 'function') { abrirRegistro('gasto'); return; }
   _fabOpen = !_fabOpen;
   const menu=document.getElementById('fab-menu');
   const btn=document.getElementById('nav-fab-btn');
@@ -440,6 +442,7 @@ function renderAll(){
     if (typeof renderAvisoCuadre === 'function') renderAvisoCuadre();
     if (typeof renderPremium === 'function') renderPremium();
     if (typeof renderRacha === 'function') renderRacha();
+    if (typeof renderRegistrosMes === 'function') renderRegistrosMes();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

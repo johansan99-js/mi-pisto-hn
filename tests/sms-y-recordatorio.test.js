@@ -105,11 +105,11 @@ describe('Pegar SMS del banco y recordatorio diario', () => {
     assert.deepEqual(r, { antes: false, conMovimiento: false, primera: true, segunda: false, avisos: ['mph-recordatorio'], ficha: [true, '20:00', true] });
   });
 
-  it('los enlaces ?action=new-expense y Compartir abren el formulario', async () => {
+  it('los enlaces ?action=new-expense (teclado) y Compartir (SMS) abren el formulario', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase());
     await page.goto(env.url + '?action=new-expense');
-    await page.waitForSelector('#modal-gasto', { state: 'visible', timeout: 15000 });
+    await page.waitForSelector('#modal-registro', { state: 'visible', timeout: 15000 });
     assert.equal(new URL(page.url()).search, '');
 
     await page.goto(env.url + '?title=BAC&text=' + encodeURIComponent('Compra por L.99.00 en KFC'));

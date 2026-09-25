@@ -314,7 +314,10 @@ function updateTransferPreview(){
     else preview.innerHTML=`Después: <strong>${nombreCompletoCuenta(infoCuenta(from))}</strong> ${fL(saldoFrom-monto)} → <strong>${nombreCompletoCuenta(infoCuenta(to))}</strong> ${fL(saldoTo+monto)}`;
   }
 }
-function ejecutarTransferencia(){
+// opts (del registro rápido): { silencioso: sin alerta al terminar, fecha: Date del movimiento }
+function ejecutarTransferencia(opts){
+  opts=opts||{};
+  const fechaTx=(opts.fecha||new Date()).toISOString();
   const from=document.getElementById('transfer-from')?.value||'efectivo';
   const to=document.getElementById('transfer-to')?.value||'ahorro';
   const monto=parseMonto(document.getElementById('transfer-monto')?.value);
@@ -326,10 +329,10 @@ function ejecutarTransferencia(){
   const fromNom=from==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(from));
   const toNom=to==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(to));
   // Registrar como par de transacciones internas — el saldo se recalcula automáticamente
-  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Transferencia',subcat:`Salida de ${fromNom}`,cuenta:from,tipo:'fijo',date:new Date().toISOString(),esTransferencia:true});
-  state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:new Date().toISOString(),esTransferencia:true});
+  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Transferencia',subcat:`Salida de ${fromNom}`,cuenta:from,tipo:'fijo',date:fechaTx,esTransferencia:true});
+  state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:fechaTx,esTransferencia:true});
   save();closeModal('modal-transferir');renderAll();
-  alert(`✅ Transferencia completada.\n${fromNom}: ${fL(getCuentaBalance(from))}\n${toNom}: ${fL(getCuentaBalance(to))}`);
+  if(!opts.silencioso)alert(`✅ Transferencia completada.\n${fromNom}: ${fL(getCuentaBalance(from))}\n${toNom}: ${fL(getCuentaBalance(to))}`);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -968,13 +971,13 @@ function procesarAccionDeURL() {
   history.replaceState({}, document.title, location.pathname);
   setTimeout(() => {
     if (compartido) { openModal('modal-gasto'); abrirModalSMS(compartido.slice(0, 1000)); }
-    else if (accion === 'new-expense') openModal('modal-gasto');
+    else if (accion === 'new-expense') abrirRegistro('gasto');
     else if (accion === 'balance' && typeof switchView === 'function') switchView('dashboard');
   }, 400);
 }
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.tipo === 'accion' && e.data.accion === 'new-expense' && state.setup) openModal('modal-gasto');
+    if (e.data && e.data.tipo === 'accion' && e.data.accion === 'new-expense' && state.setup) abrirRegistro('gasto');
   });
 }
 
