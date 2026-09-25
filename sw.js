@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v42-correcciones';
+const VERSION = 'v43-plan-deudas';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -81,6 +81,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/12-nube.js',
   BASE_PATH + 'js/13-monedas.js',
   BASE_PATH + 'js/14-ux.js',
+  BASE_PATH + 'js/15-plan-deudas.js',
   BASE_PATH + 'css/app.css'
 ];
 
