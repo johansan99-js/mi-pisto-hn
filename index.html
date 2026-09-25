@@ -774,6 +774,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
   #desktop-grid-left, #desktop-grid-right { display: contents !important; }
   body { padding-left: 0 !important; }
 }
+body.modo-discreto canvas{filter:blur(10px)}
 </style>
 </head>
 <body>
@@ -921,7 +922,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     </div>
   </div>
 <div class="hamburger-menu">
-  <div class="hamburger-spacer"></div>
+  <button class="hamburger-btn" id="btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="justify-self:start;font-size:20px">👁️</button>
   <div class="hamburger-title" style="display:flex;align-items:center;justify-content:center;gap:7px;-webkit-text-fill-color:initial;background:none">
     <svg width="28" height="28" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(160,160,160,.5))">
       <defs>
@@ -2234,11 +2235,31 @@ let recordarPIN = false;
 // El state SIEMPRE guarda en HNL (moneda base); fL solo cambia el display.
 // ─────────────────────────────────────────────────────────────────
 const fL = n => {
+  let txt;
   if (window.currencyManager && typeof window.currencyManager.formatFromBase === 'function') {
-    return window.currencyManager.formatFromBase(Number(n) || 0);
+    txt = window.currencyManager.formatFromBase(Number(n) || 0);
+  } else {
+    txt = 'L. ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
   }
-  return 'L. ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+  // Modo discreto: se conserva el símbolo de la moneda, se ocultan las cifras
+  return document.body && document.body.classList.contains('modo-discreto') ? txt.replace(/-?[\d][\d.,]*/g, '••••') : txt;
 };
+function toggleModoDiscreto() {
+  const activo = document.body.classList.toggle('modo-discreto');
+  try { localStorage.setItem('mph_modo_discreto', activo ? '1' : '0'); } catch (e) {}
+  const btn = document.getElementById('btn-modo-discreto');
+  if (btn) { btn.textContent = activo ? '🙈' : '👁️'; btn.title = activo ? 'Mostrar montos' : 'Ocultar montos'; }
+  if (typeof renderAll === 'function' && state.setup) renderAll();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  let activo = false;
+  try { activo = localStorage.getItem('mph_modo_discreto') === '1'; } catch (e) {}
+  if (activo) {
+    document.body.classList.add('modo-discreto');
+    const btn = document.getElementById('btn-modo-discreto');
+    if (btn) { btn.textContent = '🙈'; btn.title = 'Mostrar montos'; }
+  }
+});
 // P1-6: escape HTML para todos los campos del usuario insertados vía innerHTML.
 // Esto cierra la superficie XSS aunque alguien logre meter datos maliciosos
 // (por import, edición manual de localStorage, o un payload en una transacción).
@@ -3002,7 +3023,7 @@ function updateSurvivalIndex(balance) {
         numColor    = 'var(--green)';
     }
 
-    if (el) { el.textContent = dias.toLocaleString('es-HN'); el.style.color = numColor; }
+    if (el) { el.textContent = document.body.classList.contains('modo-discreto') ? '••' : dias.toLocaleString('es-HN'); el.style.color = numColor; }
     if (box) { box.classList.remove('state-danger','state-warning','state-safe'); box.classList.add(state_class); }
     if (statusEl) { statusEl.className = `survival-status ${statusClass}`; statusEl.textContent = statusText; }
 }
@@ -4135,7 +4156,7 @@ function renderTarjetas(){
         totalDeuda+=t.saldo+comprometido;
         const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
         const hoy=new Date().getDate();let estadoCorte='';if(hoy>=t.corte&&hoy<=t.pago)estadoCorte='🟡 En periodo de pago';else if(hoy>t.pago)estadoCorte='🔴 Pago vencido';
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div></div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">✏️ Ajustar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div>${t.ultimaConciliacion?`<div style="font-size:10px;color:var(--text2)">🧾 Conciliada el ${new Date(t.ultimaConciliacion).toLocaleDateString('es-HN')}</div>`:''}</div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">🧾 Conciliar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
@@ -4315,7 +4336,30 @@ function pagarTarjeta(id){
     state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${tarjeta.nombre}`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:tarjeta.id,date:new Date().toISOString(),notas:`Abono a tarjeta ${tarjeta.nombre}`});
     save();renderAll();alert(`✅ Pago de ${fL(monto)} registrado.\nNuevo saldo de tarjeta: ${fL(tarjeta.saldo)}${tarjeta.saldo<0?' (saldo a favor)':''}`);
 }
-function ajustarSaldoTarjeta(id){const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;const nuevoSaldo=parseFloat(prompt(`Saldo actual: ${fL(tarjeta.saldo)}\nNuevo saldo:`));if(!isNaN(nuevoSaldo)){tarjeta.saldo=nuevoSaldo;save();renderAll();}}
+// Conciliar contra el estado de cuenta: la diferencia no se pierde. Si el
+// banco cobra más (seguro de deuda, membresía, comisiones), se registra como
+// gasto; si cobra menos, puede ser un pago que no se anotó.
+function ajustarSaldoTarjeta(id){
+  const t=state.tarjetas.find(x=>x.id===id);if(!t)return;
+  const cuotas=cupoComprometido(t);
+  const txt=prompt(`Conciliar ${t.nombre} con tu estado de cuenta\n\nSaldo en la app: ${fL(t.saldo)}${cuotas>0?`\n(sin contar ${fL(cuotas)} de compras a cuotas Tasa Cero)`:''}\n\n¿Qué saldo dice tu estado de cuenta? (usa - para saldo a favor)`,t.saldo.toFixed(2));
+  if(txt===null)return;
+  const limpio=String(txt).trim(),neg=limpio.startsWith('-'),valor=leerMonto(neg?limpio.slice(1):limpio);
+  if(isNaN(valor))return alert('Monto inválido');
+  const nuevo=neg?-valor:valor,dif=Math.round((nuevo-t.saldo)*100)/100;
+  t.ultimaConciliacion=new Date().toISOString();
+  if(dif===0){save();renderAll();return alert('✅ El saldo coincide con tu estado de cuenta.');}
+  if(dif>0){
+    if(confirm(`El banco cobra ${fL(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (seguro de deuda, membresía, comisiones…)?\n\n[Cancelar] = solo corregir el saldo`)){
+      state.transactions.push({id:uid(),type:'expense',amount:dif,cat:'Cargos Bancarios',subcat:`Conciliación ${t.nombre}`,pago:'credito',cuenta:null,tipo:'fijo',tarjetaId:t.id,tarjetaNombre:t.nombre,date:new Date().toISOString()});
+    }
+  }else if(confirm(`El estado de cuenta dice ${fL(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`)){
+    const cuenta=confirm(`¿De dónde salió ese pago de ${fL(-dif)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+    state.transactions.push({id:uid(),type:'expense',amount:-dif,cat:'Pago Tarjeta',subcat:`Pago a ${t.nombre} (conciliación)`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:t.id,date:new Date().toISOString()});
+  }
+  t.saldo=nuevo;
+  save();renderAll();alert(`✅ Tarjeta conciliada. Nuevo saldo: ${fL(nuevo)}`);
+}
 function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
 
 // ========== PAGOS RECURRENTES ==========
@@ -6393,9 +6437,9 @@ function calcularProyeccionCaja() {
   if (!proyectDiv) return;
   if (diasSupervivencia < 999 && balance > 0) {
     var html = '<div class="cashflow-projection">';
-    html += '<span class="cashflow-number">' + diasSupervivencia + '</span>';
+    html += '<span class="cashflow-number">' + (document.body.classList.contains('modo-discreto') ? '••' : diasSupervivencia) + '</span>';
     html += '<span class="cashflow-label">Dias hasta fin de fondos</span>';
-    html += '<small style="color:var(--text2);display:block;margin-top:5px">Con gasto promedio de L.' + gastoDiario.toFixed(2) + '/dia</small>';
+    html += '<small style="color:var(--text2);display:block;margin-top:5px">Con gasto promedio de ' + fL(gastoDiario) + '/dia</small>';
     html += '</div>';
     proyectDiv.innerHTML = html;
   } else {
