@@ -1863,6 +1863,16 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     <select id="gasto-tarjeta" class="input-field hidden">
       <option value="">Selecciona tarjeta...</option>
     </select>
+    <div id="gasto-cuotas-wrap" class="hidden" style="background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px">
+        <input type="checkbox" id="gasto-es-cuotas" onchange="document.getElementById('gasto-cuotas-meses').classList.toggle('hidden',!this.checked)">
+        <span>🧾 Compra a cuotas Tasa Cero</span>
+      </label>
+      <select id="gasto-cuotas-meses" class="input-field hidden" style="margin:8px 0 0">
+        <option value="3">3 meses</option><option value="6">6 meses</option><option value="9">9 meses</option>
+        <option value="12" selected>12 meses</option><option value="18">18 meses</option><option value="24">24 meses</option><option value="36">36 meses</option>
+      </select>
+    </div>
     <!-- CAMPO ETIQUETA (Opción 4) -->
     <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">Etiqueta <span style="font-weight:400">(opcional · para filtros)</span></label>
     <div class="etiqueta-wrap" id="etiqueta-wrap-gasto">
@@ -1961,6 +1971,25 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
   </div>
 </div>
 
+<div id="modal-cuotas" class="modal" onclick="closeModalIfBg(event,'modal-cuotas')">
+  <div class="modal-content">
+    <h3>🧾 Compra a cuotas Tasa Cero</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Para compras a cuotas que ya tenías. Para una compra nueva, regístrala como gasto con tarjeta y marca "Compra a cuotas Tasa Cero": así también cuenta como gasto.</p>
+    <input type="text" id="cuotas-desc" class="input-field" placeholder="¿Qué compraste? (Ej. Refrigeradora)" maxlength="100">
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="cuotas-total" class="input-field" placeholder="Monto total (L)">
+    <div class="input-row">
+      <select id="cuotas-meses" class="input-field">
+        <option value="3">3 meses</option><option value="6">6 meses</option><option value="9">9 meses</option>
+        <option value="12" selected>12 meses</option><option value="18">18 meses</option><option value="24">24 meses</option><option value="36">36 meses</option>
+      </select>
+      <input type="number" id="cuotas-pagadas" class="input-field" placeholder="Ya pagadas" min="0">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('modal-cuotas')" style="flex:1">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPlanCuotas()" style="flex:2">Guardar</button>
+    </div>
+  </div>
+</div>
 <div id="modal-simulador" class="modal" onclick="closeModalIfBg(event,'modal-simulador')">
   <div class="modal-content">
     <h3>💸 El verdadero costo</h3>
@@ -3347,7 +3376,7 @@ function toggleFabMenu_legacy(){/* reemplazada por la v2 */}
 document.addEventListener('click_legacy',(e)=>{/* reemplazado por la v2 */});
 
 function calculateLoan(){const P=leerMonto(document.getElementById('prest-monto').value)||0,r=(leerMonto(document.getElementById('prest-tasa').value)||0)/100/12,n=parseInt(document.getElementById('prest-cuotas').value)||1;let cuota=r===0?P/n:P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);document.getElementById('prest-cuota-calc').value=fL(cuota);const interes=P*r,capital=cuota-interes;document.getElementById('prest-breakdown').classList.remove('hidden');document.getElementById('prest-breakdown').innerHTML=`<div class="loan-breakdown-row"><span>Cuota mensual:</span><strong>${fL(cuota)}</strong></div><div class="loan-breakdown-row"><span>→ Interés:</span><span style="color:var(--red)">${fL(interes)}</span></div>`;return cuota}
-function checkCreditCard(){const cuentaEl=document.getElementById('gasto-cuenta');const pagoType=cuentaEl?cuentaEl.value:document.getElementById('gasto-pago').value;const tarjetaSelect=document.getElementById('gasto-tarjeta');if(pagoType==='credito'){tarjetaSelect.classList.remove('hidden');tarjetaSelect.innerHTML='<option value="">Selecciona tarjeta...</option>';state.tarjetas.forEach(t=>{tarjetaSelect.innerHTML+=`<option value="${t.id}">${esc(t.nombre)} (Saldo: ${fL(t.saldo)})</option>`})}else{tarjetaSelect.classList.add('hidden')}}
+function checkCreditCard(){const cuentaEl=document.getElementById('gasto-cuenta');const pagoType=cuentaEl?cuentaEl.value:document.getElementById('gasto-pago').value;const tarjetaSelect=document.getElementById('gasto-tarjeta');if(pagoType==='credito'){tarjetaSelect.classList.remove('hidden');tarjetaSelect.innerHTML='<option value="">Selecciona tarjeta...</option>';state.tarjetas.forEach(t=>{tarjetaSelect.innerHTML+=`<option value="${t.id}">${esc(t.nombre)} (Saldo: ${fL(t.saldo)})</option>`})}else{tarjetaSelect.classList.add('hidden')}document.getElementById('gasto-cuotas-wrap')?.classList.toggle('hidden',pagoType!=='credito')}
 
 // ═══════════════════════════════════════════════════════════════════════
 // MULTIMONEDA: helpers para conversión en vivo en modales de gasto/ingreso
@@ -3544,9 +3573,18 @@ function saveGasto(){
         const tarjeta = tarjetaId && state.tarjetas.find(t => String(t.id) === String(tarjetaId));
         // Sin tarjeta el gasto no bajaría ninguna cuenta ni subiría ninguna deuda
         if(!tarjeta) return alert('Selecciona la tarjeta de crédito con la que pagaste.');
-        tarjeta.saldo += monto;
         transaction.tarjetaId = tarjeta.id;
         transaction.tarjetaNombre = tarjeta.nombre;
+        if(document.getElementById('gasto-es-cuotas')?.checked){
+            // Tasa Cero: bloquea cupo por el total pero no suma al saldo que
+            // genera interés; se paga en cuotas fijas.
+            const meses = parseInt(document.getElementById('gasto-cuotas-meses').value) || 12;
+            const plan = nuevoPlanCuotas(subcat || cat, monto, meses, 0);
+            (tarjeta.cuotas = tarjeta.cuotas || []).push(plan);
+            transaction.planCuotasId = plan.id;
+        } else {
+            tarjeta.saldo += monto;
+        }
     }
     
     state.transactions.push(transaction);
@@ -3561,6 +3599,8 @@ function saveGasto(){
     
     ['gasto-monto','gasto-cat','gasto-subcat','gasto-banco'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('gasto-tipo').value = 'extra';
+    const esCuotas = document.getElementById('gasto-es-cuotas');
+    if (esCuotas) { esCuotas.checked = false; document.getElementById('gasto-cuotas-meses').classList.add('hidden'); }
     // MULTIMONEDA: resetear moneda y ocultar info de conversión
     const monedaSel = document.getElementById('gasto-moneda');
     if (monedaSel) monedaSel.value = 'HNL';
@@ -4087,16 +4127,17 @@ function limpiarFormTarjeta(){['tc-nombre','tc-corte','tc-pago','tc-limite','tc-
 function renderTarjetas(){
     const container=document.getElementById('tarjetas-list'),resumenContainer=document.getElementById('resumen-pagos-minimos');if(!container)return;
     if(state.tarjetas.length===0){container.innerHTML=`<div class="empty-state-simple"><div class="es-icon">💳</div><div class="es-title">Sin tarjetas registradas</div><div class="es-sub">Agrega tus tarjetas de crédito para monitorear saldos, fechas de corte y pagos mínimos.</div><button class="btn-empty-secondary" onclick="openModal('modal-tarjeta')">➕ Agregar tarjeta</button></div>`;return;}
-    let totalDeuda=0,totalPagoMinimo=0;
+    let totalDeuda=0,totalPagoMinimo=0,totalCuotasMes=0;
     container.innerHTML=state.tarjetas.map(t=>{
-        totalDeuda+=t.saldo;
-        const pagoMinimo=t.calcularMinimo&&t.saldo>0?Math.min(t.saldo,Math.max(t.saldo*0.05,100)):0,interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo;
+        const comprometido=cupoComprometido(t),cuotasMes=cuotasDelMes(t);
+        totalDeuda+=t.saldo+comprometido;
+        const pagoMinimo=pagoMinimoTarjeta(t),interesMensual=t.saldo*(t.tasaInteres/100/12);totalPagoMinimo+=pagoMinimo+cuotasMes;totalCuotasMes+=cuotasMes;
         const hoy=new Date().getDate();let estadoCorte='';if(hoy>=t.corte&&hoy<=t.pago)estadoCorte='🟡 En periodo de pago';else if(hoy>t.pago)estadoCorte='🔴 Pago vencido';
-        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div></div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ Pago Mínimo:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo)}</span></div></div>${avisoCostoReal(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">✏️ Ajustar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
+        return `<div class="card card-credit"><div style="display: flex; justify-content: space-between; align-items: start;"><div><div style="font-weight:700; font-size:16px;">${esc(t.nombre)}</div><div style="font-size:11px; color: var(--text2);">📅 Corte: día ${t.corte} | 📅 Pago: día ${t.pago} <span style="color: ${hoy>t.pago?'var(--red)':'var(--green)'}">${estadoCorte}</span></div></div><div style="text-align: right;"><div style="font-weight: 700; color: var(--red);">${fL(t.saldo)}</div><div style="font-size: 10px;">Límite: ${fL(t.limite)}</div>${t.limite>0&&comprometido>0?`<div style="font-size:10px;color:var(--text2)">Disponible: ${fL(t.limite-Math.max(0,t.saldo)-comprometido)}</div>`:''}</div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; background: var(--bg3); padding: 10px; border-radius: 8px;"><div><span style="font-size: 10px; color: var(--text2);">💸 Interés Est. (${t.tasaInteres}%):</span><span style="display: block; font-weight: 600; color: var(--red);">${fL(interesMensual)} / mes</span></div><div><span style="font-size: 10px; color: var(--text2);">⚠️ ${cuotasMes>0?'Pago del mes':'Pago Mínimo'}:</span><span style="display: block; font-weight: 600;">${fL(pagoMinimo+cuotasMes)}</span>${cuotasMes>0?`<span style="display:block;font-size:10px;color:var(--text2)">mín. ${fL(pagoMinimo)} + cuotas ${fL(cuotasMes)}</span>`:''}</div></div>${avisoCostoReal(t)}${htmlCuotasTarjeta(t)}<div class="debt-actions"><button class="btn btn-primary" style="padding: 8px;" onclick=\"pagarTarjeta('${esc(t.id)}')\"">💳 Registrar Pago</button><button class="btn btn-secondary" style="padding: 8px;" onclick=\"ajustarSaldoTarjeta('${esc(t.id)}')\"">✏️ Ajustar</button><button class="btn btn-danger" style="padding: 8px;" onclick=\"deleteTarjeta('${esc(t.id)}')\"">🗑️</button></div></div>`;
     }).join('');
     document.getElementById('total-deuda-tc').textContent=fL(totalDeuda);
     if(resumenContainer){
-        if(totalPagoMinimo>0){resumenContainer.innerHTML=`<div class="alert-card" style="border-left-color: var(--amber);"><div class="alert-icon">💳</div><div class="alert-content"><div class="alert-title">Pago Mínimo Total Recomendado</div><div class="alert-detail">Para mantener tus tarjetas al día, considera pagar al menos <strong>${fL(totalPagoMinimo)}</strong> este mes.</div></div></div>`;}
+        if(totalPagoMinimo>0){resumenContainer.innerHTML=`<div class="alert-card" style="border-left-color: var(--amber);"><div class="alert-icon">💳</div><div class="alert-content"><div class="alert-title">Pago Mínimo Total Recomendado</div><div class="alert-detail">Para mantener tus tarjetas al día, considera pagar al menos <strong>${fL(totalPagoMinimo)}</strong> este mes${totalCuotasMes>0?` (incluye ${fL(totalCuotasMes)} de cuotas Tasa Cero)`:''}.</div></div></div>`;}
         else{resumenContainer.innerHTML='<p style="font-size:12px; color:var(--text2); text-align:center;">Sin saldos en tarjetas de crédito.</p>';}
     }
 }
@@ -4167,9 +4208,101 @@ function actualizarSimulador() {
   out.innerHTML = `Terminas en <strong>${fmtDuracion(fijo.meses)}</strong> y pagas <strong>${fL(fijo.interes)}</strong> en intereses.${ahorro}`;
 }
 
+// ═══ COMPRAS A CUOTAS TASA CERO ═══════════════════════════════════════
+function nuevoPlanCuotas(descripcion, total, meses, cuotasPagadas) {
+  return { id: uid(), descripcion, total, meses, cuota: Math.round(total / meses * 100) / 100,
+           cuotasPagadas: cuotasPagadas || 0, fecha: new Date().toISOString(), ultimoPago: null };
+}
+const pendientePlan = c => Math.max(0, Math.round((c.total - c.cuota * c.cuotasPagadas) * 100) / 100);
+const planActivo = c => c.cuotasPagadas < c.meses && pendientePlan(c) > 0;
+// Monto de la próxima cuota (la última ajusta el redondeo)
+const montoCuota = c => c.cuotasPagadas >= c.meses - 1 ? pendientePlan(c) : Math.min(c.cuota, pendientePlan(c));
+function _mismoMes(iso) {
+  if (!iso) return false;
+  const d = new Date(iso), h = new Date();
+  return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth();
+}
+function cupoComprometido(t) {
+  return (t.cuotas || []).filter(planActivo).reduce((a, c) => a + pendientePlan(c), 0);
+}
+// Cuotas que faltan por pagar este mes (una por plan, si no se pagó ya)
+function cuotasDelMes(t) {
+  return (t.cuotas || []).filter(c => planActivo(c) && !_mismoMes(c.ultimoPago)).reduce((a, c) => a + montoCuota(c), 0);
+}
+function pagoMinimoTarjeta(t) {
+  return t.calcularMinimo && t.saldo > 0 ? Math.min(t.saldo, Math.max(t.saldo * 0.05, 100)) : 0;
+}
+function htmlCuotasTarjeta(t) {
+  const planes = t.cuotas || [];
+  const activos = planes.filter(planActivo);
+  const btnNuevo = `<button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;width:auto;margin:0" onclick="abrirModalCuotas('${esc(t.id)}')">➕ Compra a cuotas</button>`;
+  if (!planes.length) return `<div style="margin:-4px 0 12px;text-align:right">${btnNuevo}</div>`;
+  const filas = planes.map(c => {
+    const act = planActivo(c);
+    const pct = Math.min(100, c.cuotasPagadas / c.meses * 100);
+    const estado = !act ? '✅ Pagada' : _mismoMes(c.ultimoPago) ? '✅ Cuota del mes pagada' : `Próxima cuota: ${fL(montoCuota(c))}`;
+    return `<div style="padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><strong>${esc(c.descripcion || 'Compra a cuotas')}</strong><span style="color:var(--text2)">${c.cuotasPagadas}/${c.meses} · ${fL(c.cuota)}/mes</span></div>
+      <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin:6px 0"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--text2)">
+        <span>${act ? 'Quedan ' + fL(pendientePlan(c)) + ' · ' : ''}${estado}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0">${act ? `<button class="btn btn-primary" style="padding:5px 9px;font-size:11px;width:auto;margin:0" onclick="pagarCuotaTasaCero('${esc(t.id)}','${esc(c.id)}')">Pagar cuota</button>` : ''}<button class="btn btn-danger" style="padding:5px 9px;font-size:11px;width:auto;margin:0" onclick="eliminarPlanCuotas('${esc(t.id)}','${esc(c.id)}')">🗑️</button></span>
+      </div></div>`;
+  }).join('');
+  return `<div style="margin:-4px 0 12px;padding:10px;border-radius:8px;background:var(--bg3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-size:12px;font-weight:700">🧾 Compras a cuotas Tasa Cero</span>${btnNuevo}</div>
+    ${activos.length ? `<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Cupo comprometido: <strong style="color:var(--amber)">${fL(cupoComprometido(t))}</strong> · Cuotas del mes: <strong>${fL(cuotasDelMes(t))}</strong></div>` : ''}
+    ${filas}</div>`;
+}
+let _cuotasTarjetaId = null;
+function abrirModalCuotas(tarjetaId) {
+  _cuotasTarjetaId = tarjetaId;
+  ['cuotas-desc','cuotas-total','cuotas-pagadas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cuotas-meses').value = '12';
+  openModal('modal-cuotas');
+}
+function guardarPlanCuotas() {
+  const t = state.tarjetas.find(x => x.id === _cuotasTarjetaId);
+  if (!t) return;
+  const descripcion = document.getElementById('cuotas-desc').value.trim();
+  const total = leerMonto(document.getElementById('cuotas-total').value);
+  const meses = parseInt(document.getElementById('cuotas-meses').value);
+  const pagadas = parseInt(document.getElementById('cuotas-pagadas').value) || 0;
+  if (!descripcion) return alert('Escribe qué compraste.');
+  if (!(total > 0)) return alert('Escribe el monto total de la compra.');
+  if (pagadas < 0 || pagadas >= meses) return alert(`Las cuotas ya pagadas deben ser entre 0 y ${meses - 1}.`);
+  (t.cuotas = t.cuotas || []).push(nuevoPlanCuotas(descripcion, total, meses, pagadas));
+  save(); closeModal('modal-cuotas'); renderAll();
+}
+function pagarCuotaTasaCero(tarjetaId, planId) {
+  const t = state.tarjetas.find(x => x.id === tarjetaId);
+  const c = t && (t.cuotas || []).find(x => x.id === planId);
+  if (!c || !planActivo(c)) return;
+  const monto = montoCuota(c);
+  if (_mismoMes(c.ultimoPago) && !confirm('Ya pagaste una cuota de esta compra este mes. ¿Registrar otra (adelantar)?')) return;
+  const cuenta = confirm(`¿De dónde sale la cuota ${c.cuotasPagadas + 1}/${c.meses} de ${fL(monto)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`) ? 'ahorro' : 'efectivo';
+  c.cuotasPagadas++;
+  c.ultimoPago = new Date().toISOString();
+  // La compra ya se registró como gasto: la cuota solo mueve dinero a la tarjeta
+  state.transactions.push({ id: uid(), type: 'expense', amount: monto, cat: 'Pago Tarjeta',
+    subcat: `Cuota ${c.cuotasPagadas}/${c.meses} · ${c.descripcion}`, pago: cuenta, cuenta, tipo: 'fijo',
+    esTransferencia: true, tarjetaId: t.id, planCuotasId: c.id, date: new Date().toISOString() });
+  save(); renderAll();
+  alert(planActivo(c) ? `✅ Cuota registrada. Quedan ${fL(pendientePlan(c))}.` : `🎉 ¡Terminaste de pagar "${c.descripcion}"!`);
+}
+function eliminarPlanCuotas(tarjetaId, planId) {
+  const t = state.tarjetas.find(x => x.id === tarjetaId);
+  const c = t && (t.cuotas || []).find(x => x.id === planId);
+  if (!c) return;
+  if (!confirm(`¿Eliminar la compra a cuotas "${c.descripcion}"?\n\nNo se borran los gastos ni los pagos ya registrados.`)) return;
+  t.cuotas = t.cuotas.filter(x => x.id !== planId);
+  save(); renderAll();
+}
+
 function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
-    const pagoMinimo=tarjeta.calcularMinimo&&tarjeta.saldo>0?Math.min(tarjeta.saldo,Math.max(tarjeta.saldo*0.05,100)):0;
+    const pagoMinimo=pagoMinimoTarjeta(tarjeta);
     const montoStr=prompt(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
@@ -5110,6 +5243,13 @@ function _validarSchemaBackup(obj) {
     for (const tc of obj.tarjetas.slice(0, 20)) {
       if (!esIdValido(tc.id)) return `ID inválido en tarjeta: ${tc.id}`;
       if (!esStringSeguro(tc.nombre, 100)) return 'nombre de tarjeta sospechoso';
+      if (tc.cuotas !== undefined) {
+        if (!Array.isArray(tc.cuotas)) return 'cuotas de tarjeta inválidas';
+        for (const c of tc.cuotas) {
+          if (!esIdValido(c.id)) return `ID inválido en compra a cuotas: ${c.id}`;
+          if (!esStringSeguro(c.descripcion, 100)) return 'descripción de compra a cuotas sospechosa';
+        }
+      }
     }
   }
   
@@ -6374,11 +6514,12 @@ function renderLiquidez7Dias() {
     if (dias>=0 && dias<=7) pagosProximos.push({nombre:'Cuota: '+p.entidad, monto:p.cuota, dias});
   });
   (state.tarjetas||[]).forEach(t => {
-    if (t.saldo<=0) return;
+    const monto = pagoMinimoTarjeta(t) + cuotasDelMes(t);
+    if (monto <= 0) return;
     let fp = new Date(hoy.getFullYear(), hoy.getMonth(), t.pago||15);
     if (fp < hoy) fp.setMonth(fp.getMonth()+1);
     const dias = Math.ceil((fp-hoy)/86400000);
-    if (dias>=0 && dias<=7) pagosProximos.push({nombre:'Mín. '+t.nombre, monto:Math.max(t.saldo*0.05,100), dias});
+    if (dias>=0 && dias<=7) pagosProximos.push({nombre:(cuotasDelMes(t)>0?'Pago ':'Mín. ')+t.nombre, monto, dias});
   });
   const totalEgresos = pagosProximos.reduce((a,b)=>a+b.monto,0);
   const liquidezReal = saldoActual - totalEgresos;
