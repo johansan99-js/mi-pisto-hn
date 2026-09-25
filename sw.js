@@ -40,13 +40,14 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v33-descargas';
+const VERSION = 'v34-sms-recordatorio';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
 // Esto resuelve URLs como /mi-pisto-hn/, /mis-finanzas/, /, etc.
 const SCOPE = self.registration ? self.registration.scope : self.location.href.replace(/sw\.js.*$/, '');
-const BASE_PATH = new URL(SCOPE).pathname;  // ej: "/mi-pisto-hn/"
+const BASE_PATH = new URL(SCOPE).pathname;
+const FICHA_CACHE = 'mph-recordatorio';  // la comparte index.html; no se borra al actualizar  // ej: "/mi-pisto-hn/"
 
 console.log(`📍 [SW ${VERSION}] Base path detectado: ${BASE_PATH}`);
 
@@ -143,7 +144,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames
-          .filter(name => name !== CACHE_NAME)
+          .filter(name => name !== CACHE_NAME && name !== FICHA_CACHE)
           .map(name => {
             console.log('🗑️ Eliminando caché antiguo:', name);
             return caches.delete(name);
@@ -237,8 +238,10 @@ self.addEventListener('fetch', event => {
   // ── Navegación: caché-rápido + revalidación en background ──
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
-      // FIX: Usar BASE_PATH dinámico para fallback
-      const cached = await caches.match(event.request) ||
+      // Se guarda sin el query: ?action= y ?text= (un SMS compartido) no
+      // deben quedar como entradas de la caché.
+      const cacheKey = url.origin + url.pathname;
+      const cached = await caches.match(cacheKey) ||
                      await caches.match(BASE_PATH + 'index.html');
 
       const updateCacheInBackground = (async () => {
@@ -247,7 +250,7 @@ self.addEventListener('fetch', event => {
           if (fresh && fresh.status === 200) {
             const clone = fresh.clone();
             const cache = await caches.open(CACHE_NAME);
-            await cache.put(event.request, clone);
+            await cache.put(cacheKey, clone);
           }
         } catch (e) {
           // Silencioso
@@ -315,19 +318,56 @@ self.addEventListener('push', event => {
 // ── NOTIFICATION CLICK ────────────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url)
-    ? event.notification.data.url
-    : BASE_PATH;
+  const url = new URL((event.notification.data && event.notification.data.url) || BASE_PATH, self.registration.scope);
+  // El botón de la notificación manda sobre la URL
+  const accion = event.action || url.searchParams.get('action');
+  if (event.action) url.searchParams.set('action', event.action);
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
         if (client.url.includes(BASE_PATH) && 'focus' in client) {
+          if (accion) client.postMessage({ tipo: 'accion', accion });
           return client.focus();
         }
       }
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+      if (clients.openWindow) return clients.openWindow(url.href);
     })
   );
+});
+
+// ── RECORDATORIO DIARIO (Periodic Background Sync) ────────────
+// La app deja en FICHA_CACHE solo lo necesario (activo, hora, fecha del
+// último movimiento y del último aviso), nunca montos ni datos cifrados.
+// Android decide cuándo despierta al SW, así que la hora es aproximada.
+function fechaLocalSW(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function revisarRecordatorio(ahora = new Date()) {
+  const cache = await caches.open(FICHA_CACHE);
+  const resp = await cache.match('ficha.json');
+  if (!resp) return false;
+  let ficha;
+  try { ficha = await resp.json(); } catch (e) { return false; }
+  const hoy = fechaLocalSW(ahora);
+  const [h, m] = String(ficha.hora || '20:00').split(':').map(Number);
+  const minutos = ahora.getHours() * 60 + ahora.getMinutes();
+  if (!ficha.activo || minutos < h * 60 + (m || 0) || ficha.ultimoRegistro === hoy || ficha.avisado === hoy) return false;
+  await self.registration.showNotification('📝 ¿Anotaste tus gastos de hoy?', {
+    body: 'Tómate un minuto para registrar lo que gastaste hoy.',
+    icon: BASE_PATH + 'icon-192.png',
+    badge: BASE_PATH + 'icon-192.png',
+    tag: 'mph-recordatorio',
+    actions: [{ action: 'new-expense', title: '➕ Registrar gasto' }],
+    data: { url: BASE_PATH + '?action=new-expense' }
+  });
+  ficha.avisado = hoy;
+  await cache.put('ficha.json', new Response(JSON.stringify(ficha), { headers: { 'Content-Type': 'application/json' } }));
+  return true;
+}
+
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'mph-recordatorio') event.waitUntil(revisarRecordatorio());
 });
 
 // ── MESSAGE: control desde la app ─────────────────────────────

@@ -89,6 +89,8 @@ Mi Pisto HN es la app de finanzas personales hecha para Honduras: en lempiras, c
 • Ingresos y gastos por categoría, con etiquetas y gastos divididos
 • Transferencias entre cuentas, manuales o programadas cada mes
 • Escanea tus facturas: el monto se lee con la cámara, sin enviar la foto a ningún lado
+• Pega o comparte el SMS de tu banco y el gasto se llena solo
+• Recordatorio diario para anotar tus gastos, a la hora que elijas
 
 💳 TARJETAS SIN SORPRESAS
 • Fecha de corte, fecha de pago, pago mínimo y cupo disponible
