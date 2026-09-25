@@ -28,6 +28,7 @@ function _textoBuscable(t) {
     t.type === 'income' ? 'ingreso' : 'gasto',
     monto.toFixed(2), monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), String(Math.round(monto))];
   if (Array.isArray(t.splits)) t.splits.forEach(s => partes.push(s.cat));
+  if (t.remesa) partes.push(t.remesa.de, t.remesa.via, 'remesa');
   return _normCat(partes.filter(Boolean).join(' '));
 }
 function resultadosBusqueda(q, tipo) {
