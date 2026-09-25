@@ -1491,6 +1491,7 @@ body.modo-discreto canvas{filter:blur(10px)}
     </div>
   </div>
   <div id="tarjetas-list"></div>
+  <div id="margen-dolares" class="card" style="display:none"></div>
   
   <!-- NUEVA SECCIÓN: ALERTAS DE PAGO MÍNIMO -->
   <h3 style="margin-top: 20px;">⚠️ Resumen de Pagos Mínimos</h3>
@@ -1732,6 +1733,11 @@ body.modo-discreto canvas{filter:blur(10px)}
     <input type="hidden" id="edit-tx-id">
     <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">Monto (L.)</label>
     <input type="number" id="edit-monto" class="input-field" placeholder="0.00" step="0.01">
+    <div id="edit-cobrado-wrap" style="display:none">
+      <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">🏦 Lo que te cobró el banco en lempiras</label>
+      <input type="text" inputmode="decimal" id="edit-cobrado" class="input-field" placeholder="Del estado de cuenta" oninput="_renderMargenEdicion()" style="margin-bottom:4px">
+      <div id="edit-margen-info" style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5"></div>
+    </div>
     <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">Categoría</label>
     <input type="text" id="edit-cat" class="input-field" placeholder="Ej: Alimentación">
     <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">Comercio / Subcategoría</label>
@@ -1882,6 +1888,11 @@ body.modo-discreto canvas{filter:blur(10px)}
       </select>
     </div>
     <div id="gasto-conversion-info" class="conversion-info" style="display:none"></div>
+    <div id="gasto-cobrado-wrap" style="display:none">
+      <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px">🏦 Lo que te cobró el banco en lempiras (opcional)</label>
+      <input type="text" inputmode="decimal" id="gasto-cobrado" class="input-field" placeholder="Del SMS o del estado de cuenta" oninput="actualizarConversionGasto()" style="margin-bottom:4px">
+      <div id="gasto-margen-info" style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5"></div>
+    </div>
     <input type="text" id="gasto-cat" class="input-field" placeholder="Categoría">
     <input type="text" id="gasto-subcat" class="input-field" placeholder="Comercio / Subcategoría">
 
@@ -3240,7 +3251,17 @@ function interpretarMensajeBanco(texto) {
   const r = { monto: null, moneda: 'HNL', comercio: '', ultimos4: '', banco: '', tipo: 'gasto', debito: false,
               categoria: '', subcategoria: '', tipoGasto: 'extra' };
   const NUM = '(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d{1,9}(?:[.,]\\d{1,2})?)';
-  let m = t.match(new RegExp('(\\bL\\.?|\\bLPS\\.?|\\bHNL|\\bUSD\\$?|US\\$|\\$)\\s?' + NUM, 'i')), moneda = '', num = '';
+  const CON_MONEDA = new RegExp('(\\bL\\.?|\\bLPS\\.?|\\bHNL|\\bUSD\\$?|US\\$|\\$)\\s?' + NUM, 'gi');
+  const pares = [...t.matchAll(CON_MONEDA)], esUSD = p => /us|\$/i.test(p[1]);
+  let m = pares[0], moneda = '', num = '';
+  // "USD 15.99 (L 430.12)" o "L 430.12 (USD 15.99)": juntos son la misma compra
+  // en dólares con lo que cobra el banco en lempiras. Separados (ej. un saldo
+  // disponible más adelante), manda el primero.
+  const [a, b] = pares;
+  if (a && b && esUSD(a) !== esUSD(b) && b.index - (a.index + a[0].length) <= 40) {
+    const usd = esUSD(a) ? a : b, hnl = esUSD(a) ? b : a;
+    m = usd; r.montoLempiras = parseMonto(hnl[2]);
+  }
   if (m) { moneda = m[1]; num = m[2]; }
   else if ((m = t.match(new RegExp(NUM + '\\s?(HNL|LPS|lempiras|USD|d[oó]lares)\\b', 'i')))) { num = m[1]; moneda = m[2]; }
   // Sin moneda escrita: "monto 120.50", "por 350.00" (se asume lempiras)
@@ -3344,6 +3365,7 @@ function usarSMSBanco() {
   if (getComputedStyle(document.getElementById('modal-gasto')).display === 'none') openModal('modal-gasto');
   set('gasto-monto', r.monto.toFixed(2));
   set('gasto-moneda', r.moneda);
+  document.getElementById('gasto-cobrado').value = r.moneda !== 'HNL' && r.montoLempiras ? r.montoLempiras.toFixed(2) : '';
   if (typeof actualizarConversionGasto === 'function') actualizarConversionGasto();
   set('gasto-cat', r.categoria);
   set('gasto-subcat', r.subcategoria);
@@ -3806,7 +3828,7 @@ function _renderConversion(infoEl, monto, moneda, tipoTx) {
   infoEl.className = 'conversion-info';
   infoEl.innerHTML =
     '💱 Equivale a <span class="conv-amount">L. ' + equivalenteHNL.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span>' +
-    '<span class="conv-note">' + ladoIcon + ' Tasa de ' + ladoLabel + ' del banco: 1 ' + moneda + ' = L. ' + tasa.toFixed(4) + ' · Se guardará en HNL</span>';
+    '<span class="conv-note">' + ladoIcon + ' Tasa de referencia (' + ladoLabel + '): 1 ' + moneda + ' = L. ' + tasa.toFixed(4) + ' · Se guardará en HNL</span>';
   infoEl.style.display = 'block';
 }
 
@@ -3815,6 +3837,15 @@ function actualizarConversionGasto() {
   const moneda = document.getElementById('gasto-moneda')?.value || 'HNL';
   const info = document.getElementById('gasto-conversion-info');
   _renderConversion(info, monto, moneda, 'expense');
+  const wrap = document.getElementById('gasto-cobrado-wrap');
+  if (wrap) {
+    wrap.style.display = moneda !== 'HNL' ? 'block' : 'none';
+    const rate = moneda !== 'HNL' && window.currencyManager && window.currencyManager.getRate(moneda);
+    const cobrado = parseMonto(document.getElementById('gasto-cobrado').value);
+    document.getElementById('gasto-margen-info').innerHTML = rate && monto > 0 && cobrado > 0
+      ? _textoMargen(monto, moneda, r2(monto * rate.ask), cobrado)
+      : 'Si lo anotas, el gasto queda por lo que de verdad pagaste y ves cuánto cobra tu banco por el cambio.';
+  }
   if (typeof updateGastoSplitTotal === 'function') updateGastoSplitTotal();
 }
 
@@ -3823,6 +3854,80 @@ function actualizarConversionIngreso() {
   const moneda = document.getElementById('ingreso-moneda')?.value || 'HNL';
   const info = document.getElementById('ingreso-conversion-info');
   _renderConversion(info, monto, moneda, 'income');
+}
+
+// ═══ MARGEN DEL BANCO EN COMPRAS EN MONEDA EXTRANJERA ═════════════════════
+// La conversión se guarda con la tasa de referencia del día (conversionRate).
+// El banco cobra con su propia tasa, casi siempre más alta: si el usuario anota
+// lo que de verdad le cobraron, el gasto pasa a ese monto (cobradoBanco) y la
+// diferencia con la referencia es el margen.
+const r2 = n => Math.round(n * 100) / 100;
+function referenciaHNL(t) { return r2((t.originalAmount || 0) * (t.conversionRate || 0)); }
+function margenDeTx(t) {
+  if (!t.cobradoBanco || !t.originalAmount || !t.conversionRate) return null;
+  const ref = referenciaHNL(t);
+  return { referencia: ref, cobrado: t.amount, margen: r2(t.amount - ref), pct: ref ? (t.amount - ref) / ref * 100 : 0, tasaBanco: t.amount / t.originalAmount };
+}
+function _textoMargen(original, moneda, referencia, cobrado) {
+  const dif = r2(cobrado - referencia), pct = referencia ? dif / referencia * 100 : 0;
+  const tasa = (cobrado / original).toFixed(4);
+  if (Math.abs(dif) < 0.01) return '✅ Te cobraron a la tasa de referencia.';
+  return (dif > 0 ? '🏦 El banco te cobró ' + fL(dif) + ' de más' : '🎉 Te cobraron ' + fL(-dif) + ' menos') +
+    ' (' + (dif > 0 ? '+' : '') + pct.toFixed(1) + '%). Tasa del banco: 1 ' + esc(moneda) + ' = L. ' + tasa + '.';
+}
+// Un monto muy lejos de la referencia suele ser un error (se escribió en dólares)
+function _cobradoRazonable(cobrado, referencia) {
+  return !(referencia > 0) || (cobrado >= referencia * 0.8 && cobrado <= referencia * 1.25) ||
+    confirm('Lo que te cobró el banco (' + fL(cobrado) + ') está muy lejos de la tasa de referencia (' + fL(referencia) + ').\n\n¿Está bien escrito en lempiras?');
+}
+// Reparte el nuevo total entre las partes de un gasto dividido, en proporción
+function _escalarSplits(splits, total) {
+  if (!Array.isArray(splits) || !splits.length) return splits;
+  const suma = splits.reduce((a, p) => a + p.monto, 0);
+  if (!(suma > 0)) return splits;
+  let resto = total;
+  return splits.map((p, i) => {
+    const m = i === splits.length - 1 ? r2(resto) : r2(p.monto * total / suma);
+    resto -= m;
+    return { cat: p.cat, monto: m };
+  });
+}
+
+function resumenMargenExtranjero(desde) {
+  const lim = desde || new Date(Date.now() - 365 * 864e5);
+  const tx = state.transactions.filter(t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia &&
+    t.originalCurrency && t.originalCurrency !== 'HNL' && t.originalAmount && t.conversionRate && new Date(t.date) >= lim);
+  const conf = tx.filter(t => t.cobradoBanco), pend = tx.filter(t => !t.cobradoBanco);
+  const ref = conf.reduce((a, t) => a + referenciaHNL(t), 0), cob = conf.reduce((a, t) => a + t.amount, 0);
+  const usd = conf.filter(t => t.originalCurrency === 'USD');
+  const usdOrig = usd.reduce((a, t) => a + t.originalAmount, 0);
+  return {
+    total: tx.length, confirmadas: conf.length, pendientes: pend.sort((a, b) => new Date(b.date) - new Date(a.date)),
+    referencia: r2(ref), cobrado: r2(cob), margen: r2(cob - ref), pct: ref ? (cob - ref) / ref * 100 : 0,
+    tasaBancoUSD: usdOrig ? usd.reduce((a, t) => a + t.amount, 0) / usdOrig : null,
+    tasaRefUSD: usdOrig ? usd.reduce((a, t) => a + referenciaHNL(t), 0) / usdOrig : null,
+  };
+}
+function renderMargenExtranjero() {
+  const card = document.getElementById('margen-dolares');
+  if (!card) return;
+  const r = resumenMargenExtranjero();
+  if (!r.total) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  let html = '<h4 style="margin-bottom:6px">💱 Tus compras en dólares</h4><p style="font-size:11px;color:var(--text2);margin-bottom:10px">Últimos 12 meses, contra la tasa de referencia del día de cada compra.</p>';
+  if (r.confirmadas) {
+    html += '<div style="font-size:13px;line-height:1.6">' + (r.margen > 0
+        ? 'El banco te cobró <strong style="color:var(--red)">' + fL(r.margen) + ' de más</strong> (+' + r.pct.toFixed(1) + '%) en ' + r.confirmadas + (r.confirmadas === 1 ? ' compra.' : ' compras.')
+        : 'En ' + r.confirmadas + (r.confirmadas === 1 ? ' compra' : ' compras') + ' te cobraron a la tasa de referencia o menos.') + '</div>';
+    if (r.tasaBancoUSD) html += '<div style="font-size:12px;color:var(--text2);margin-top:4px">Tasa promedio del banco: <strong>L. ' + r.tasaBancoUSD.toFixed(4) + '</strong> · referencia: L. ' + r.tasaRefUSD.toFixed(4) + '</div>';
+  }
+  if (r.pendientes.length) {
+    html += '<div style="font-size:12px;margin-top:12px;color:var(--amber)">⚠️ ' + r.pendientes.length + (r.pendientes.length === 1 ? ' compra' : ' compras') +
+      ' sin confirmar lo que te cobró el banco. Búscalo en tu estado de cuenta:</div>' +
+      r.pendientes.slice(0, 5).map(t => '<div class="pasos-item" data-tx="' + esc(t.id) + '" onclick="abrirEdicionTx(\'' + esc(t.id) + '\')"><span style="flex:1">' + esc(t.subcat || t.cat || 'Compra') +
+        ' <span style="color:var(--text2);font-size:11px">· ' + new Date(t.date).toLocaleDateString('es-HN') + '</span></span><span>' + esc(window.currencyManager ? window.currencyManager.format(t.originalAmount, t.originalCurrency) : t.originalAmount + ' ' + t.originalCurrency) + ' ›</span></div>').join('');
+  }
+  card.innerHTML = html;
 }
 
 /** MULTIMONEDA: Helper para renderizar el monto de una transacción.
@@ -3912,6 +4017,17 @@ function saveGasto(){
         monto: rate ? Math.round(p.monto * rate.ask * 100) / 100 : p.monto
     })) : null;
 
+    // Lo que de verdad cobró el banco manda sobre la conversión de referencia
+    let cobradoBanco = false;
+    const cobradoTxt = originalCurrency ? (document.getElementById('gasto-cobrado')?.value || '').trim() : '';
+    if (cobradoTxt) {
+        const cobrado = parseMonto(cobradoTxt);
+        if (!(cobrado > 0)) return alert('El monto que te cobró el banco no es válido.');
+        if (!_cobradoRazonable(cobrado, monto)) return;
+        monto = cobrado; cobradoBanco = true;
+    }
+    const splitsFinal = cobradoBanco ? _escalarSplits(splits, monto) : splits;
+
     // Recuperar ID de imagen desde IDB (no base64 de localStorage)
     const facturaImagenId = _tempFacturaId || null;
 
@@ -3946,13 +4062,14 @@ function saveGasto(){
         transaction.originalCurrency = originalCurrency;
         transaction.conversionRate = conversionRate;
         transaction.conversionSide = conversionSide;
+        if (cobradoBanco) transaction.cobradoBanco = true;
     }
     // Gasto dividido en varias categorías (ej. una factura de supermercado con
     // comida + limpieza + higiene en un solo pago): el monto total sigue
     // impactando la cuenta una sola vez, pero cada parte cuenta para su
     // propia categoría en las estadísticas.
-    if (splits) {
-        transaction.splits = splits;
+    if (splitsFinal) {
+        transaction.splits = splitsFinal;
     }
 
     if(pago === 'credito'){
@@ -3983,7 +4100,8 @@ function saveGasto(){
     closeModal('modal-gasto');
     renderAll();
     
-    ['gasto-monto','gasto-cat','gasto-subcat','gasto-banco'].forEach(id => document.getElementById(id).value = '');
+    ['gasto-monto','gasto-cat','gasto-subcat','gasto-banco','gasto-cobrado'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('gasto-cobrado-wrap').style.display = 'none';
     document.getElementById('gasto-tipo').value = 'extra';
     const esCuotas = document.getElementById('gasto-es-cuotas');
     if (esCuotas) { esCuotas.checked = false; document.getElementById('gasto-cuotas-meses').classList.add('hidden'); }
@@ -6070,6 +6188,7 @@ function renderAll(){
     setTimeout(function(){ renderLiquidez7Dias(); renderChipsRapidas(); }, 50);
     renderRecordatorioConfig();
     renderPrimerosPasos();
+    renderMargenExtranjero();
     renderResumenMes();
     renderAvisoResumen();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }
@@ -7336,6 +7455,11 @@ function abrirEdicionTx(id) {
   document.getElementById('edit-cat').value = t.cat || '';
   document.getElementById('edit-subcat').value = t.subcat || '';
   document.getElementById('edit-etiqueta').value = t.etiqueta || '';
+  // Compra en moneda extranjera: lo que cobró el banco
+  const extranjera = t.type === 'expense' && t.originalCurrency && t.originalCurrency !== 'HNL' && t.originalAmount && t.conversionRate;
+  document.getElementById('edit-cobrado-wrap').style.display = extranjera ? 'block' : 'none';
+  document.getElementById('edit-cobrado').value = extranjera && t.cobradoBanco ? t.amount.toFixed(2) : '';
+  _renderMargenEdicion();
   // Fecha
   const d = new Date(t.date);
   const localISO = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -7361,6 +7485,15 @@ function setEditType(tipo) {
   document.getElementById('edit-tipo-wrap').style.display = tipo==='expense' ? 'block' : 'none';
 }
 
+function _renderMargenEdicion() {
+  const t = state.transactions.find(x => String(x.id) === String(document.getElementById('edit-tx-id').value));
+  const el = document.getElementById('edit-margen-info');
+  if (!t || !el || !t.originalAmount || !t.conversionRate) return;
+  const cobrado = parseMonto(document.getElementById('edit-cobrado').value);
+  const moneda = window.currencyManager ? window.currencyManager.format(t.originalAmount, t.originalCurrency) : t.originalAmount + ' ' + t.originalCurrency;
+  el.innerHTML = cobrado > 0 ? _textoMargen(t.originalAmount, t.originalCurrency, referenciaHNL(t), cobrado)
+    : 'Compra de ' + esc(moneda) + ' · a la tasa de referencia serían ' + fL(referenciaHNL(t)) + '. Anota lo que dice tu estado de cuenta.';
+}
 function guardarEdicionTx() {
   const id = document.getElementById('edit-tx-id').value; // P1-4: UUID string, no parseInt
   const t = state.transactions.find(x => String(x.id) === String(id));
@@ -7370,8 +7503,23 @@ function guardarEdicionTx() {
   // Ajustar saldo si cambió el monto o tipo
   const montoDiff = nuevoMonto - t.amount;
   const tipoCambio = _editTxType !== t.type;
+  // Lo que cobró el banco manda sobre el monto (compras en moneda extranjera)
+  let montoFinal = nuevoMonto;
+  const wrapCobrado = document.getElementById('edit-cobrado-wrap');
+  if (wrapCobrado && wrapCobrado.style.display !== 'none') {
+    const txt = document.getElementById('edit-cobrado').value.trim();
+    if (txt) {
+      const cobrado = parseMonto(txt);
+      if (!(cobrado > 0)) { alert('El monto que te cobró el banco no es válido.'); return; }
+      if (!_cobradoRazonable(cobrado, referenciaHNL(t))) return;
+      montoFinal = cobrado; t.cobradoBanco = true;
+    } else if (t.cobradoBanco) {
+      delete t.cobradoBanco;
+    }
+  }
+  if (Array.isArray(t.splits) && t.splits.length && montoFinal !== t.amount) t.splits = _escalarSplits(t.splits, montoFinal);
   // Actualizar campos
-  t.amount   = nuevoMonto;
+  t.amount   = montoFinal;
   t.cat      = document.getElementById('edit-cat').value || t.cat;
   t.subcat   = document.getElementById('edit-subcat').value;
   t.etiqueta = document.getElementById('edit-etiqueta').value.trim();
