@@ -45,7 +45,7 @@ describe('Carga, montos y saldos', () => {
   it('cobrar una deuda suma una sola vez', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase({ cuentasIniciales: { efectivo: 1000, ahorro: 0 }, receivables: [{ id: 'cobro1', persona: 'Ana', monto: 500, pagado: 0 }] }));
-    page.respuestas = ['200'];
+    page.respuestas = ['200', false]; // monto; [Cancelar] = efectivo
     await page.evaluate(() => abonarCobrar('cobro1'));
     await page.evaluate(() => save());
     await page.reload(); await page.waitForTimeout(1200);

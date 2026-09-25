@@ -2,7 +2,7 @@
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
 // ========== COBRAR Y PAGAR (MEJORADO CON FLUJO DE CAJA) ==========
 function saveCobrar(){const persona=document.getElementById('cobrar-persona').value.trim(),monto=leerMonto(document.getElementById('cobrar-monto').value),pagado=leerMonto(document.getElementById('cobrar-pagado').value)||0;if(!persona||!monto)return;state.receivables.push({id:uid(),persona,monto,pagado,fecha:document.getElementById('cobrar-fecha').value});save();closeModal('modal-cobrar');renderAll();}
-function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)return;if(state.receivables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🤝</div><div class="es-title">Nadie te debe dinero</div><div class="es-sub">Registra aquí los préstamos que has hecho a otras personas para llevar el control.</div><button class="btn-empty-secondary" onclick="openModal('modal-cobrar')">➕ Registrar cobro pendiente</button></div>`;return;}c.innerHTML=state.receivables.map(r=>{
+function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)return;const tot=document.getElementById('total-cobrar');if(tot)tot.textContent=fL(state.receivables.reduce((a,r)=>a+Math.max(0,r.monto-(r.pagado||0)),0));if(state.receivables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🤝</div><div class="es-title">Nadie te debe dinero</div><div class="es-sub">Registra aquí los préstamos que has hecho a otras personas para llevar el control.</div><button class="btn-empty-secondary" onclick="openModal('modal-cobrar')">➕ Registrar cobro pendiente</button></div>`;return;}c.innerHTML=state.receivables.map(r=>{
   const pendiente=r.monto-(r.pagado||0);
   return `<div class="card card-receivable">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -22,7 +22,7 @@ function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)ret
       </button>
     </div>
   </div>`;}).join('')}
-function renderPagar(){const c=document.getElementById('pagar-list');if(!c)return;if(state.payables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">✅</div><div class="es-title">Sin deudas personales</div><div class="es-sub">Cuando debas dinero a alguien (no a un banco), regístralo aquí para no olvidarlo.</div><button class="btn-empty-secondary" onclick="openModal('modal-pagar')">➕ Registrar deuda personal</button></div>`;return;}c.innerHTML=state.payables.map(p=>{
+function renderPagar(){const c=document.getElementById('pagar-list');if(!c)return;const tot=document.getElementById('total-pagar');if(tot)tot.textContent=fL(state.payables.reduce((a,p)=>a+Math.max(0,p.monto-(p.pagado||0)),0));if(state.payables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">✅</div><div class="es-title">Sin deudas personales</div><div class="es-sub">Cuando debas dinero a alguien (no a un banco), regístralo aquí para no olvidarlo.</div><button class="btn-empty-secondary" onclick="openModal('modal-pagar')">➕ Registrar deuda personal</button></div>`;return;}c.innerHTML=state.payables.map(p=>{
   const pendiente=p.monto-(p.pagado||0);
   return `<div class="card card-debt">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -47,12 +47,14 @@ function abonarCobrar(id){
   if(!r)return;
   const pendiente=r.monto-(r.pagado||0);
   if(pendiente<=0)return alert('Este cobro ya está saldado ✅');
-  const m=leerMonto(prompt(`¿Cuánto te pagó ${esc(r.persona)}?\nPendiente: ${fL(pendiente)}`));
+  // prompt y confirm muestran texto plano: esc() dejaba "&amp;" a la vista y guardado
+  const m=leerMonto(prompt(`¿Cuánto te pagó ${r.persona}?\nPendiente: ${fL(pendiente)}`));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
+  const cuenta=confirm(`¿Dónde recibiste los ${fL(abono)}?\n\n[Aceptar] = Cuenta de Ahorro (transferencia)\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
   r.pagado=(r.pagado||0)+abono;
-  state.transactions.push({id:uid(),type:'income',amount:abono,cat:'Cobro Deuda',subcat:`Cobro a ${esc(r.persona)}`,cuenta:'efectivo',date:new Date().toISOString()});
-  if(r.pagado>=r.monto){if(confirm(`✅ Cobro saldado. ¿Eliminar el registro de "${esc(r.persona)}"?`)){state.receivables=state.receivables.filter(x=>x.id!==id);}}
+  state.transactions.push({id:uid(),type:'income',amount:abono,cat:'Cobro Deuda',subcat:`Cobro a ${r.persona}`,cuenta,date:new Date().toISOString()});
+  if(r.pagado>=r.monto){if(confirm(`✅ Cobro saldado. ¿Eliminar el registro de "${r.persona}"?`)){state.receivables=state.receivables.filter(x=>x.id!==id);}}
   save();renderAll();
 }
 
@@ -62,12 +64,13 @@ function abonarPagar(id){
   if(!p)return;
   const pendiente=p.monto-(p.pagado||0);
   if(pendiente<=0)return alert('Esta deuda ya está saldada ✅');
-  const m=leerMonto(prompt(`¿Cuánto le pagas a ${esc(p.creditor)}?\nPendiente: ${fL(pendiente)}`));
+  const m=leerMonto(prompt(`¿Cuánto le pagas a ${p.creditor}?\nPendiente: ${fL(pendiente)}`));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
+  const cuenta=confirm(`¿De dónde sale el pago de ${fL(abono)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
   p.pagado=(p.pagado||0)+abono;
-  state.transactions.push({id:uid(),type:'expense',amount:abono,cat:'Pago Deuda',subcat:`Pago a ${esc(p.creditor)}`,cuenta:'efectivo',tipo:'fijo',date:new Date().toISOString()});
-  if(p.pagado>=p.monto){if(confirm(`✅ Deuda con "${esc(p.creditor)}" saldada. ¿Eliminar el registro?`)){state.payables=state.payables.filter(x=>x.id!==id);}}
+  state.transactions.push({id:uid(),type:'expense',amount:abono,cat:'Pago Deuda',subcat:`Pago a ${p.creditor}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
+  if(p.pagado>=p.monto){if(confirm(`✅ Deuda con "${p.creditor}" saldada. ¿Eliminar el registro?`)){state.payables=state.payables.filter(x=>x.id!==id);}}
   save();renderAll();
 }
 
@@ -78,7 +81,7 @@ function savePrestamo(){
   if(!entidad)return alert('Escribe la entidad del préstamo.');
   if(!(monto>0))return alert('Escribe un monto válido.');
   if(!(cuotasTotal>=1))return alert('Escribe el número de cuotas (1 o más).');
-  state.prestamos.push({id:uid(),entidad,monto,tasaInteres:tasa,cuota:calculateLoan(),cuotasPagadas:0,cuotasTotal});save();closeModal('modal-prestamo');renderAll();
+  state.prestamos.push({id:uid(),entidad,monto,tasaInteres:tasa,cuota:Math.round(calculateLoan()*100)/100,cuotasPagadas:0,cuotasTotal});save();closeModal('modal-prestamo');renderAll();
 }
 // Tasa mensual implícita en (monto, cuota, n): la cuota puede haberse editado
 // a mano, así que se deduce de ella en vez de usar la tasa guardada.
@@ -123,7 +126,7 @@ function pagarCuotaPrestamo(id){
   const cuentaOpc=confirm(`¿Pagar cuota de ${fL(prestamo.cuota)}?\n\n[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo`);
   const cuenta=cuentaOpc?'ahorro':'efectivo';
   prestamo.cuotasPagadas=(prestamo.cuotasPagadas||0)+1;
-  state.transactions.push({id:uid(),type:'expense',amount:prestamo.cuota,cat:'Préstamo',subcat:`Cuota ${prestamo.entidad}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
+  state.transactions.push({id:uid(),type:'expense',amount:Math.round(prestamo.cuota*100)/100,cat:'Préstamo',subcat:`Cuota ${prestamo.entidad}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
   const restantes=(prestamo.cuotasTotal||0)-(prestamo.cuotasPagadas||0);
   const msg=restantes<=0?`🎉 ¡Préstamo con ${prestamo.entidad} pagado completamente!`:`✅ Cuota registrada. Quedan ${restantes} cuotas.`;
   save();renderAll();alert(msg);

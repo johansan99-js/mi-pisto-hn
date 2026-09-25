@@ -252,6 +252,11 @@ function saveGasto(){
     if (pago === 'efectivo' || pago === 'ahorro') cuentaImputacion = pago;
     else if (pago === 'credito') cuentaImputacion = null;
     else cuentaImputacion = 'efectivo';
+    // Una cuenta en negativo casi siempre es un ingreso sin anotar: se avisa, no se bloquea
+    if (cuentaImputacion) {
+        const saldo = getCuentaBalance(cuentaImputacion);
+        if (monto > saldo + 0.005 && !confirm(`Tu ${cuentaImputacion === 'efectivo' ? 'efectivo' : 'cuenta de ahorro'} tiene ${fL(saldo)}: con este gasto quedaría en ${fL(saldo - monto)}.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = guardar el gasto de todos modos`)) return;
+    }
 
     const transaction = {
         id: uid(),
@@ -579,7 +584,9 @@ function saveAbono(){
   }
   // Aplicar abono a la meta
   g.actual+=monto;
-  // Registrar como gasto de tipo "Ahorro" CON el campo cuenta para que getCuentaBalance lo descuente
+  // Sale de la cuenta pero sigue siendo tuyo: es un movimiento interno
+  // (esTransferencia), no un gasto. Antes bajaba el patrimonio y el resumen
+  // del mes lo contaba como "gastaste".
   state.transactions.push({
     id:uid(),
     type:'expense',
@@ -590,6 +597,7 @@ function saveAbono(){
     cuenta:cuenta,
     tipo:'fijo',
     metaId:g.id,
+    esTransferencia:true,
     date:new Date().toISOString()
   });
   save();
@@ -607,6 +615,12 @@ function deleteMeta(id){
   if(!g)return;
   const pct=((g.actual/g.objetivo)*100).toFixed(0);
   if(confirm(`¿Eliminar la meta "${g.nombre}"?\n\nProgreso actual: ${fL(g.actual)} de ${fL(g.objetivo)} (${pct}%)\n\nEsta acción no se puede deshacer. Los abonos ya registrados como transacciones permanecerán en tu historial.`)){
+    // Lo abonado desde tus cuentas vuelve a una de ellas (si no, desaparecería de los saldos)
+    const abonado=Math.round(state.transactions.filter(t=>!t.deletedAt&&t.metaId===g.id&&t.esTransferencia).reduce((a,t)=>a+(t.type==='expense'?t.amount:-t.amount),0)*100)/100;
+    if(abonado>0){
+      const cuenta=confirm(`Devolver los ${fL(abonado)} abonados a "${g.nombre}".\n\n[Aceptar] = a la Cuenta de Ahorro\n[Cancelar] = a Efectivo`)?'ahorro':'efectivo';
+      state.transactions.push({id:uid(),type:'income',amount:abonado,cat:'Ahorros',subcat:`Retiro de meta: ${g.nombre}`,cuenta,metaId:g.id,esTransferencia:true,date:new Date().toISOString()});
+    }
     state.goals=state.goals.filter(x=>String(x.id)!==String(id));
     save();renderAll();
   }
