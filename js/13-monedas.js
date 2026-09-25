@@ -75,6 +75,19 @@
   }
 
   /** Helper: extrae el valor mid de una tasa (para legacy) */
+  // Bancos de tasas.json: { clave: { nombre, bid, ask } } con valores sensatos
+  function _bancosValidos(obj) {
+    const out = {};
+    if (!obj || typeof obj !== 'object') return out;
+    Object.keys(obj).slice(0, 20).forEach(k => {
+      const b = obj[k];
+      if (!/^[a-z0-9_]{2,20}$/.test(k) || !b || typeof b.nombre !== 'string' || b.nombre.length > 40) return;
+      const bid = Number(b.bid), ask = Number(b.ask);
+      if (bid >= USD_HNL_VALID_RANGE.min && ask <= USD_HNL_VALID_RANGE.max && ask >= bid) out[k] = { nombre: b.nombre, bid, ask };
+    });
+    return out;
+  }
+
   function _midOf(rate) {
     if (typeof rate === 'number') return rate;
     if (rate && typeof rate.mid === 'number') return rate.mid;
@@ -91,6 +104,8 @@
       this.rates = JSON.parse(JSON.stringify(DEFAULT_RATES));  // deep clone
       this.ratesLastUpdate = null;
       this.ratesSource = 'default';   // 'default' | 'json' | 'api' | 'manual'
+      this.bancos = {};               // compra/venta del dólar de cada banco (tasas.json)
+      this.bancoElegido = null;       // null = mediana de los bancos
       this.ratesExpiryMs = 24 * 60 * 60 * 1000;  // 24h
       this.loadFromStorage();
       this._migrateOldRatesIfNeeded();
@@ -118,6 +133,8 @@
         this.ratesLastUpdate = cfg.ratesLastUpdate ? new Date(cfg.ratesLastUpdate) : null;
         this.ratesSource = cfg.ratesSource || 'default';
         this.ratesOrigin = cfg.ratesOrigin || null;
+        this.bancos = _bancosValidos(cfg.bancos);
+        this.bancoElegido = typeof cfg.bancoElegido === 'string' ? cfg.bancoElegido : null;
         this._formatVersion = cfg._formatVersion || 1;
       } catch (e) { console.warn('Currency config load fail:', e); }
     }
@@ -167,6 +184,8 @@
           ratesLastUpdate: this.ratesLastUpdate ? this.ratesLastUpdate.toISOString() : null,
           ratesSource: this.ratesSource,
           ratesOrigin: this.ratesOrigin || null,
+          bancos: this.bancos,
+          bancoElegido: this.bancoElegido,
           _formatVersion: 3
         }));
       } catch (e) { console.warn('Currency config save fail:', e); }
@@ -253,10 +272,12 @@
         });
 
         if (Object.keys(filtered).length >= 3) {
+          this.bancos = _bancosValidos(data.bancos);
           this.rates = filtered;
           this.ratesLastUpdate = data.updated_at ? new Date(data.updated_at) : new Date();
           this.ratesSource = 'json';
-          this.ratesOrigin = /BCH/i.test(data.source || '') ? 'bch' : 'mercado';
+          this.ratesOrigin = /Bancos/i.test(data.source || '') ? 'bancos' : /BCH/i.test(data.source || '') ? 'bch' : 'mercado';
+          this._aplicarBanco();
           this.saveToStorage();
           console.log('✅ [Nivel 1] Tasas cargadas de tasas.json (formato v' + (data.format_version || 1) + '):', filtered);
           return true;
@@ -265,6 +286,35 @@
         console.log('ℹ️ [Nivel 1] tasas.json no disponible:', e.message);
       }
       return false;
+    }
+
+    /** Con un banco elegido, el dólar (y el balboa, que vale lo mismo) usa su compra/venta */
+    _aplicarBanco() {
+      const b = this.bancoElegido && this.bancos[this.bancoElegido];
+      if (!b) return false;
+      const r = { bid: b.bid, ask: b.ask, mid: (b.bid + b.ask) / 2 };
+      this.rates.USD = r;
+      if (this.rates.PAB) this.rates.PAB = Object.assign({}, r);
+      this.ratesOrigin = 'banco';
+      return true;
+    }
+
+    /** Elige el banco para el dólar (null = mediana de los bancos). Deja las tasas escritas a mano. */
+    async elegirBanco(key) {
+      this.bancoElegido = key && this.bancos[key] ? key : null;
+      this.saveToStorage();
+      if (await this.loadFromJson()) return true;
+      // Sin conexión: se aplica con las tasas de bancos guardadas
+      if (!this._aplicarBanco() && Object.keys(this.bancos).length) {
+        const med = xs => { const o = [...xs].sort((a, b) => a - b), m = o.length >> 1; return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2; };
+        const bs = Object.values(this.bancos), bid = med(bs.map(b => b.bid)), ask = med(bs.map(b => b.ask));
+        this.rates.USD = { bid, ask, mid: (bid + ask) / 2 };
+        if (this.rates.PAB) this.rates.PAB = Object.assign({}, this.rates.USD);
+        this.ratesOrigin = 'bancos';
+      }
+      this.ratesSource = 'json';
+      this.saveToStorage();
+      return true;
     }
 
     /** ═══ NIVEL 2: API externa con failover ═══ */
@@ -335,12 +385,8 @@
         console.log('ℹ️ Usando las tasas manuales del usuario');
         return;
       }
-      // Si las tasas son recientes (< 24h) y vienen de json/api, no tocar
-      if (!this.areRatesStale() && (this.ratesSource === 'json' || this.ratesSource === 'api')) {
-        console.log('ℹ️ Tasas en caché aún frescas (' + this.ratesSource + ')');
-        return;
-      }
-      // Intento 1: archivo estático del repo
+      // Intento 1 (siempre: el archivo es chico y se actualiza varias veces
+      // al día; antes se esperaba 24 h desde su fecha y la app quedaba atrasada): archivo estático del repo
       if (await this.loadFromJson()) return;
       // Intento 2: API externa (solo si hay internet)
       if (navigator.onLine && await this.loadFromApi()) return;
@@ -428,7 +474,13 @@
     /** Etiqueta humana para la fuente actual de las tasas */
     getSourceLabel() {
       switch (this.ratesSource) {
-        case 'json':   return this.ratesOrigin === 'bch' ? 'Banco Central de Honduras (se actualiza cada día)' : 'referencia del mercado internacional (se actualiza cada día)';
+        case 'json': {
+          const b = this.ratesOrigin === 'banco' && this.bancos[this.bancoElegido];
+          if (b) return b.nombre + ' (se actualiza varias veces al día)';
+          const n = Object.keys(this.bancos).length;
+          if (this.ratesOrigin === 'bancos' && n) return 'promedio de ' + n + ' bancos de Honduras (se actualiza varias veces al día)';
+          return this.ratesOrigin === 'bch' ? 'Banco Central de Honduras (se actualiza cada día)' : 'referencia del mercado internacional (se actualiza cada día)';
+        }
         case 'api':    return 'referencia del mercado internacional (en línea)';
         case 'manual': return 'las tasas de tu banco, escritas por ti';
         default:       return 'predeterminadas (sin conexión)';
@@ -540,6 +592,7 @@
             Ej: si <strong>1 USD = L 26.73</strong>, escribe <strong>26.73</strong> en USD.
           </p>
           <div id="rates-fuente" style="background:var(--bg3);border-left:3px solid var(--blue);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.5"></div>
+          <div id="rates-bancos"></div>
           <div id="rates-form-container"></div>
           <div style="display:flex;gap:8px;margin-top:14px">
             <button class="btn btn-secondary" onclick="updateRatesFromAPI()" style="flex:1">🌐 Auto</button>
@@ -560,7 +613,20 @@
       fuente.innerHTML = '📍 <strong>Fuente:</strong> ' + cm.getSourceLabel() + fecha + '<br>' +
         (cm.ratesSource === 'manual'
           ? 'Se mantienen hasta que toques <strong>🌐 Auto</strong>.'
-          : '<strong>Cada banco cobra distinto</strong> (Promerica, BAC, Ficohsa…). Si quieres que la app use las de tu banco, escríbelas y toca <strong>💾 Guardar</strong>: se mantienen hasta que toques 🌐 Auto.');
+          : '<strong>Cada banco cobra distinto</strong> (Promerica, BAC, Ficohsa…): elige el tuyo o escribe sus tasas y toca <strong>💾 Guardar</strong>.');
+    }
+    const bancosEl = document.getElementById('rates-bancos');
+    if (bancosEl) {
+      const keys = Object.keys(cm.bancos || {});
+      const activo = k => cm.ratesSource === 'json' && (k ? cm.ratesOrigin === 'banco' && cm.bancoElegido === k : cm.ratesOrigin !== 'banco');
+      const f = n => n.toFixed(4);
+      bancosEl.innerHTML = keys.length ? `
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px">🏦 ¿Con qué banco cambias dólares?</div>
+        <div class="rates-bancos">
+          <button type="button" data-banco="" class="${activo(null) ? 'activa' : ''}" onclick="elegirBancoTasas('')"><strong>Promedio de los bancos</strong><small>El punto medio entre ${keys.length}</small></button>
+          ${keys.map(k => { const b = cm.bancos[k]; return `<button type="button" data-banco="${k}" class="${activo(k) ? 'activa' : ''}" onclick="elegirBancoTasas('${k}')"><strong>${b.nombre.replace(/[<>&"']/g, '')}</strong><small>Compra ${f(b.bid)} · Venta ${f(b.ask)}</small></button>`; }).join('')}
+        </div>
+        <p style="font-size:10px;color:var(--text2);margin:6px 0 12px;line-height:1.4">¿Tu banco no está? (BAC y Banpaís no dejan leer su tasa.) Escribe sus tasas abajo y toca 💾 Guardar.</p>` : '';
     }
     const currencies = cm.getAvailableCurrencies().filter(c => c.code !== 'HNL');
     container.innerHTML = `
@@ -640,6 +706,13 @@
     renderCurrencySelector('currency-selector-container');
     if (typeof window.renderAll === 'function') window.renderAll();
     alert('✓ Tasas guardadas (con compra/venta)');
+  };
+
+  window.elegirBancoTasas = async function (key) {
+    await cm.elegirBanco(key || null);
+    renderRatesForm();
+    renderCurrencySelector('currency-selector-container');
+    if (typeof window.renderAll === 'function') window.renderAll();
   };
 
   window.updateRatesFromAPI = async function () {

@@ -22,26 +22,6 @@ function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)ret
       </button>
     </div>
   </div>`;}).join('')}
-function renderPagar(){const c=document.getElementById('pagar-list');if(!c)return;const tot=document.getElementById('total-pagar');if(tot)tot.textContent=fL(state.payables.reduce((a,p)=>a+Math.max(0,p.monto-(p.pagado||0)),0));if(state.payables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">✅</div><div class="es-title">Sin deudas personales</div><div class="es-sub">Cuando debas dinero a alguien (no a un banco), regístralo aquí para no olvidarlo.</div><button class="btn-empty-secondary" onclick="openModal('modal-pagar')">➕ Registrar deuda personal</button></div>`;return;}c.innerHTML=state.payables.map(p=>{
-  const pendiente=p.monto-(p.pagado||0);
-  return `<div class="card card-debt">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div>
-        <div style="font-weight:700;font-size:15px">${esc(p.creditor)}</div>
-        <div style="font-size:12px;color:var(--text2)">Total: ${fL(p.monto)} · Pagado: ${fL(p.pagado||0)}</div>
-      </div>
-      <div style="font-weight:800;font-size:16px;color:var(--red)">${fL(pendiente)}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
-      <button class="btn btn-secondary" onclick=\"abonarPagar('${esc(p.id)}')\"" style="min-height:40px;font-size:13px">Abonar</button>
-      <button onclick=\"editarPagar('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>
-      <button onclick=\"eliminarPagar('${esc(p.id)}')\"" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-      </button>
-    </div>
-  </div>`;}).join('')}
 function abonarCobrar(id){
   const r=state.receivables.find(x=>x.id===id);
   if(!r)return;
@@ -58,20 +38,188 @@ function abonarCobrar(id){
   save();renderAll();
 }
 
-function savePagar(){const creditor=document.getElementById('pagar-creditor').value.trim(),monto=leerMonto(document.getElementById('pagar-monto').value),pagado=leerMonto(document.getElementById('pagar-pagado').value)||0;if(!creditor||!monto)return;state.payables.push({id:uid(),creditor,monto,pagado,fecha:document.getElementById('pagar-fecha').value});save();closeModal('modal-pagar');renderAll();}
-function abonarPagar(id){
-  const p=state.payables.find(x=>x.id===id);
-  if(!p)return;
-  const pendiente=p.monto-(p.pagado||0);
-  if(pendiente<=0)return alert('Esta deuda ya está saldada ✅');
-  const m=leerMonto(prompt(`¿Cuánto le pagas a ${p.creditor}?\nPendiente: ${fL(pendiente)}`));
-  if(!m||m<=0)return;
-  const abono=Math.min(m,pendiente);
-  const cuenta=confirm(`¿De dónde sale el pago de ${fL(abono)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
-  p.pagado=(p.pagado||0)+abono;
-  state.transactions.push({id:uid(),type:'expense',amount:abono,cat:'Pago Deuda',subcat:`Pago a ${p.creditor}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
-  if(p.pagado>=p.monto){if(confirm(`✅ Deuda con "${p.creditor}" saldada. ¿Eliminar el registro?`)){state.payables=state.payables.filter(x=>x.id!==id);}}
-  save();renderAll();
+// ========== LO QUE DEBO: bancos y personas, como cuentas en rojo ==========
+// Si el dinero de la deuda entró a una de tus cuentas (te prestaron), esa
+// entrada y los abonos al capital son movimientos internos (esTransferencia +
+// deudaId): pedir prestado no es un ingreso ni pagar el capital es un gasto,
+// y el patrimonio no se mueve. Si la deuda es de antes (el dinero no se
+// anotó), cada abono sí es un gasto, como siempre. Los intereses y cargos se
+// anotan aparte como gasto. Al liquidarla se guarda en "Liquidadas".
+// Las deudas de versiones anteriores no tienen tipo: eran con personas.
+const BANCOS_HN = ['BAC Credomatic', 'Banco Atlántida', 'Ficohsa', 'Banpaís', 'Promerica', 'Davivienda', 'Banco de Occidente', 'LAFISE', 'Banrural', 'Banco Azteca', 'Cuscatlán', 'Ficensa', 'Banco Popular', 'Cooperativa'];
+const pendienteDeuda = p => Math.max(0, Math.round(((p.monto || 0) - (p.pagado || 0)) * 100) / 100);
+const deudaActiva = p => !p.liquidadaEn && pendienteDeuda(p) > 0.005;
+const _nombreCuentaDeuda = c => c === 'efectivo' ? 'efectivo' : 'cuenta de ahorro';
+const _fechaDeInput = f => f && f !== new Date().toISOString().slice(0, 10) ? new Date(f + 'T12:00:00').toISOString() : new Date().toISOString();
+let _tipoDeuda = 'banco';
+function elegirTipoDeuda(t) {
+  _tipoDeuda = t === 'persona' ? 'persona' : 'banco';
+  document.querySelectorAll('#modal-pagar [data-tipo]').forEach(b => b.classList.toggle('activa', b.dataset.tipo === _tipoDeuda));
+  const inp = document.getElementById('pagar-creditor');
+  inp.placeholder = _tipoDeuda === 'banco' ? 'Banco o financiera (ej. BAC, Ficohsa)' : '¿A quién le debes?';
+  if (_tipoDeuda === 'banco') inp.setAttribute('list', 'lista-bancos'); else inp.removeAttribute('list');
+}
+function _renderEntradaDeuda() {
+  const e = document.getElementById('pagar-entrada').value;
+  document.getElementById('pagar-pagado-wrap').style.display = e ? 'none' : '';
+  document.getElementById('pagar-entrada-info').textContent = e
+    ? 'El dinero se suma a tu ' + _nombreCuentaDeuda(e) + ' sin contar como ingreso, y los abonos no cuentan como gasto: solo los intereses.'
+    : 'Cada abono se anotará como gasto.';
+}
+function abrirNuevaDeuda(tipo) {
+  ['pagar-creditor', 'pagar-monto', 'pagar-vence'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('pagar-pagado').value = '0';
+  document.getElementById('pagar-entrada').value = '';
+  document.getElementById('pagar-fecha').value = new Date().toISOString().slice(0, 10);
+  const dl = document.getElementById('lista-bancos');
+  if (dl && !dl.options.length) dl.innerHTML = BANCOS_HN.map(b => '<option value="' + esc(b) + '">').join('');
+  elegirTipoDeuda(tipo || 'banco');
+  _renderEntradaDeuda();
+  openModal('modal-pagar');
+}
+function savePagar() {
+  const creditor = document.getElementById('pagar-creditor').value.trim();
+  const monto = leerMonto(document.getElementById('pagar-monto').value);
+  const entrada = document.getElementById('pagar-entrada').value || null;
+  const pagado = entrada ? 0 : (leerMonto(document.getElementById('pagar-pagado').value) || 0);
+  const fecha = document.getElementById('pagar-fecha').value || new Date().toISOString().slice(0, 10);
+  const vence = document.getElementById('pagar-vence').value || null;
+  if (!creditor) return alert(_tipoDeuda === 'banco' ? 'Escribe el banco o la financiera.' : 'Escribe a quién le debes.');
+  if (!(monto > 0)) return alert('Escribe cuánto debes.');
+  if (pagado < 0 || pagado >= monto) return alert('Lo que ya pagaste tiene que ser menor que la deuda.');
+  const d = { id: uid(), creditor, monto, pagado, fecha, tipo: _tipoDeuda, vence, entrada };
+  state.payables.push(d);
+  if (entrada) state.transactions.push({ id: uid(), type: 'income', amount: monto, cat: 'Préstamo recibido', subcat: 'Préstamo de ' + creditor, cuenta: entrada, esTransferencia: true, deudaId: d.id, date: _fechaDeInput(fecha) });
+  save(); closeModal('modal-pagar'); renderAll();
+}
+
+// Abonar o liquidar
+function abonarPagar(id, liquidar) {
+  const p = state.payables.find(x => x.id === id);
+  if (!p) return;
+  const pendiente = pendienteDeuda(p);
+  if (pendiente <= 0.005) return alert('Esta deuda ya está liquidada ✅');
+  document.getElementById('abono-deuda-id').value = p.id;
+  document.getElementById('abono-deuda-titulo').textContent = (liquidar ? '✅ Liquidar deuda con ' : '💸 Abonar a ') + p.creditor;
+  document.getElementById('abono-deuda-pendiente').textContent = 'Te falta pagar ' + fL(pendiente) + '.';
+  document.getElementById('abono-deuda-todo').textContent = 'Todo';
+  document.getElementById('abono-deuda-monto').value = liquidar ? pendiente.toFixed(2) : '';
+  document.getElementById('abono-deuda-interes').value = '';
+  const cuenta = document.getElementById('abono-deuda-cuenta');
+  cuenta.value = p.entrada || (getCuentaBalance('ahorro') >= pendiente || getCuentaBalance('ahorro') >= getCuentaBalance('efectivo') ? 'ahorro' : 'efectivo');
+  _renderAbonoDeuda();
+  openModal('modal-abono-deuda');
+}
+function liquidarDeuda(id) { abonarPagar(id, true); }
+function abonoDeudaTodo() {
+  const p = state.payables.find(x => x.id === document.getElementById('abono-deuda-id').value);
+  if (!p) return;
+  document.getElementById('abono-deuda-monto').value = pendienteDeuda(p).toFixed(2);
+  _renderAbonoDeuda();
+}
+function _renderAbonoDeuda() {
+  const p = state.payables.find(x => x.id === document.getElementById('abono-deuda-id').value);
+  if (!p) return;
+  const cuenta = document.getElementById('abono-deuda-cuenta').value;
+  const abono = leerMonto(document.getElementById('abono-deuda-monto').value) || 0;
+  const interes = leerMonto(document.getElementById('abono-deuda-interes').value) || 0;
+  const saldo = getCuentaBalance(cuenta), total = abono + interes, pendiente = pendienteDeuda(p);
+  const liquida = abono >= pendiente - 0.005;
+  document.getElementById('abono-deuda-btn').textContent = liquida ? '✅ Liquidar deuda' : '💸 Abonar';
+  document.getElementById('abono-deuda-resumen').innerHTML =
+    'Tu ' + _nombreCuentaDeuda(cuenta) + ' tiene <strong>' + fL(saldo) + '</strong>' +
+    (total > 0 ? '; después del pago quedaría en <strong style="color:' + (saldo - total < 0 ? 'var(--red)' : 'var(--text)') + '">' + fL(saldo - total) + '</strong>.' : '.') +
+    (abono > 0 ? '<br>' + (liquida ? '🎉 Con esto quedas libre de esta deuda.' : 'Después te faltará ' + fL(pendiente - abono) + '.') : '');
+}
+function guardarAbonoDeuda() {
+  const p = state.payables.find(x => x.id === document.getElementById('abono-deuda-id').value);
+  if (!p) return;
+  const cuenta = document.getElementById('abono-deuda-cuenta').value === 'efectivo' ? 'efectivo' : 'ahorro';
+  const pendiente = pendienteDeuda(p);
+  let abono = leerMonto(document.getElementById('abono-deuda-monto').value) || 0;
+  const interes = leerMonto(document.getElementById('abono-deuda-interes').value) || 0;
+  if (!(abono > 0) && !(interes > 0)) return alert('Escribe cuánto vas a abonar.');
+  if (abono < 0 || interes < 0) return alert('Los montos no pueden ser negativos.');
+  if (abono > pendiente + 0.005 && !confirm('Solo debes ' + fL(pendiente) + '. ¿Abonar solo eso?')) return;
+  abono = Math.min(abono, pendiente);
+  const total = abono + interes, saldo = getCuentaBalance(cuenta);
+  if (total > saldo + 0.005 && !confirm('Tu ' + _nombreCuentaDeuda(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - total) + '.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = pagar de todos modos')) return;
+  const ahora = new Date().toISOString();
+  if (abono > 0) {
+    const tx = { id: uid(), type: 'expense', amount: Math.round(abono * 100) / 100, cat: 'Pago Deuda', subcat: 'Pago a ' + p.creditor, cuenta, tipo: 'fijo', deudaId: p.id, date: ahora };
+    if (p.entrada) tx.esTransferencia = true;
+    state.transactions.push(tx);
+    p.pagado = Math.round(((p.pagado || 0) + abono) * 100) / 100;
+  }
+  if (interes > 0) state.transactions.push({ id: uid(), type: 'expense', amount: Math.round(interes * 100) / 100, cat: 'Intereses', subcat: 'Intereses y cargos · ' + p.creditor, cuenta, tipo: 'fijo', deudaId: p.id, date: ahora });
+  const liquidada = pendienteDeuda(p) <= 0.005;
+  if (liquidada) p.liquidadaEn = ahora.slice(0, 10);
+  save(); closeModal('modal-abono-deuda'); renderAll();
+  if (liquidada) alert('🎉 ¡Liquidaste tu deuda con ' + p.creditor + '! Queda guardada en "Liquidadas".');
+}
+
+// Vista: dos grupos (bancos y personas) y las liquidadas al final
+const _ICONO_EDITAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C800" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const _ICONO_BORRAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+function _textoVence(p) {
+  if (!p.vence) return '';
+  const dias = Math.round((new Date(p.vence + 'T12:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T12:00:00')) / 864e5);
+  if (dias < 0) return '<span style="color:var(--red);font-weight:700">⚠️ Venció hace ' + (-dias) + (dias === -1 ? ' día' : ' días') + '</span>';
+  if (dias === 0) return '<span style="color:var(--amber);font-weight:700">⏰ Vence hoy</span>';
+  return '<span style="color:' + (dias <= 7 ? 'var(--amber)' : 'var(--text2)') + '">Vence en ' + dias + (dias === 1 ? ' día' : ' días') + '</span>';
+}
+function _movimientosDeuda(p) {
+  return (state.transactions || []).filter(t => !t.deletedAt && t.deudaId === p.id).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+function _htmlDeuda(p) {
+  const pendiente = pendienteDeuda(p), pct = p.monto > 0 ? Math.min(100, (p.pagado || 0) / p.monto * 100) : 0;
+  const movs = _movimientosDeuda(p), id = esc(p.id), vence = _textoVence(p);
+  return `<div class="card card-debt deuda-cuenta">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis">${p.tipo === 'banco' ? '🏦' : '👤'} ${esc(p.creditor)}</div>
+        <div style="font-size:12px;color:var(--text2)">Debías ${fL(p.monto)} · Pagado ${fL(p.pagado || 0)}</div>
+        ${vence ? `<div style="font-size:11px;margin-top:2px">${vence}</div>` : ''}
+      </div>
+      <div style="font-weight:800;font-size:17px;color:var(--red);white-space:nowrap">-${fL(pendiente)}</div>
+    </div>
+    <div class="debt-progress"><div class="debt-progress-bar" style="width:${pct}%;background:var(--green)"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;margin-top:10px">
+      <button class="btn btn-secondary" onclick="abonarPagar('${id}')" style="min-height:40px;font-size:13px;margin:0">💸 Abonar</button>
+      <button class="btn btn-primary" onclick="liquidarDeuda('${id}')" style="min-height:40px;font-size:13px;margin:0">✅ Liquidar</button>
+      <button onclick="editarPagar('${id}')" aria-label="Editar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_EDITAR}</button>
+      <button onclick="eliminarPagar('${id}')" aria-label="Eliminar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_BORRAR}</button>
+    </div>
+    ${movs.length ? `<details class="deuda-movs"><summary>Movimientos (${movs.length})</summary>${movs.map(t => `<div class="deuda-mov"><span>${new Date(t.date).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · ${esc(t.cat === 'Préstamo recibido' ? 'Te prestaron' : t.cat === 'Intereses' ? 'Intereses y cargos' : 'Abono')} · ${t.cuenta === 'efectivo' ? '💵' : '🏦'}</span><strong style="color:${t.type === 'income' ? 'var(--green)' : 'var(--text)'}">${t.type === 'income' ? '+' : '-'}${fL(t.amount)}</strong></div>`).join('')}</details>` : ''}
+  </div>`;
+}
+function renderPagar() {
+  const c = document.getElementById('pagar-list');
+  if (!c) return;
+  const activas = state.payables.filter(deudaActiva), liquidadas = state.payables.filter(p => !deudaActiva(p));
+  const tot = document.getElementById('total-pagar');
+  if (tot) tot.textContent = fL(activas.reduce((a, p) => a + pendienteDeuda(p), 0));
+  if (!state.payables.length) {
+    c.innerHTML = `<div class="empty-state-simple"><div class="es-icon">✅</div><div class="es-title">Sin deudas registradas</div><div class="es-sub">Anota lo que le debes a un banco, una financiera o una persona. Verás cuánto te falta y podrás abonar o liquidar desde tus cuentas.</div><button class="btn-empty-secondary" onclick="abrirNuevaDeuda('banco')">🏦 Deuda con un banco</button> <button class="btn-empty-secondary" onclick="abrirNuevaDeuda('persona')">👤 Deuda con una persona</button></div>`;
+    return;
+  }
+  const grupo = (titulo, lista) => {
+    if (!lista.length) return '';
+    const suma = lista.reduce((a, p) => a + pendienteDeuda(p), 0);
+    return `<div class="deuda-grupo"><span>${titulo}</span><strong>-${fL(suma)}</strong></div>` + lista.map(_htmlDeuda).join('');
+  };
+  c.innerHTML = grupo('🏦 Bancos y financieras', activas.filter(p => p.tipo === 'banco')) +
+    grupo('👤 Personas', activas.filter(p => p.tipo !== 'banco')) +
+    (activas.length ? '' : '<p style="text-align:center;color:var(--text2);font-size:13px;padding:10px">🎉 No debes nada. ¡Bien hecho!</p>') +
+    (liquidadas.length ? `<details class="deuda-liquidadas"><summary>✅ Liquidadas (${liquidadas.length})</summary>${liquidadas.map(p => `<div class="deuda-mov"><span>${p.tipo === 'banco' ? '🏦' : '👤'} ${esc(p.creditor)} · ${fL(p.monto)}${p.liquidadaEn ? ' · ' + new Date(p.liquidadaEn + 'T12:00:00').toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span><button onclick="eliminarPagar('${esc(p.id)}')" aria-label="Eliminar" style="background:none;border:none;cursor:pointer;padding:4px">${_ICONO_BORRAR}</button></div>`).join('')}</details>` : '');
+}
+// Casilla roja junto a Efectivo y Ahorro en el Inicio
+function renderTileDeudas() {
+  const tile = document.getElementById('cuenta-deudas-tile');
+  if (!tile) return;
+  const total = (state.payables || []).filter(deudaActiva).reduce((a, p) => a + pendienteDeuda(p), 0);
+  tile.style.display = total > 0.005 ? '' : 'none';
+  document.getElementById('cuenta-deudas-val').textContent = '-' + fL(total);
 }
 
 // ========== PRÉSTAMOS ==========
@@ -588,7 +736,7 @@ function eliminarCobrar(id){
 // ── EDITAR / ELIMINAR PAGAR (dinero que debo) ────────────────
 function editarPagar(id){
   const p=state.payables.find(x=>x.id===id);if(!p)return;
-  const nuevo=prompt(`Editar acreedor "${esc(p.creditor)}":`,p.creditor);
+  const nuevo=prompt(`Editar acreedor "${p.creditor}":`,p.creditor);
   if(nuevo===null)return;
   const monto=leerMonto(prompt('Monto total:',p.monto));
   if(isNaN(monto)||monto<=0)return;
@@ -598,7 +746,7 @@ function editarPagar(id){
 }
 function eliminarPagar(id){
   const p=state.payables.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`¿Eliminar deuda con "${esc(p.creditor)}"?`))return;
+  if(!confirm(`¿Eliminar la deuda con "${p.creditor}"?\n\nLos movimientos que ya anotaste se quedan en tu historial.`))return;
   state.payables=state.payables.filter(x=>x.id!==id);
   save();renderAll();
 }

@@ -62,8 +62,7 @@ describe('Correcciones de la prueba exhaustiva', () => {
     await sembrar(page, conSaldo({ receivables: [{ id: 'cobro01', persona: 'José & María', monto: 2000, pagado: 0 }], payables: [{ id: 'deuda01', creditor: 'Tía <Rosa>', monto: 1000, pagado: 0 }] }));
     page.respuestas = ['500', true];
     await page.evaluate(() => abonarCobrar('cobro01'));
-    page.respuestas = ['300', false];
-    await page.evaluate(() => abonarPagar('deuda01'));
+    await page.evaluate(() => { abonarPagar('deuda01'); document.getElementById('abono-deuda-cuenta').value = 'efectivo'; document.getElementById('abono-deuda-monto').value = '300'; guardarAbonoDeuda(); });
     const [c, p] = await page.evaluate(() => state.transactions.slice(-2));
     assert.deepEqual([c.subcat, c.cuenta, p.subcat, p.cuenta], ['Cobro a José & María', 'ahorro', 'Pago a Tía <Rosa>', 'efectivo']);
     assert.ok(page.dialogos.some(m => m.includes('¿Cuánto te pagó José & María?')));

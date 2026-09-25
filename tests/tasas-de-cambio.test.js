@@ -18,7 +18,7 @@ describe('Tasas de cambio', () => {
     await page.waitForFunction(() => currencyManager.ratesSource === 'json', null, { timeout: 15000 });
     await page.evaluate(() => openRatesModal());
     const txt = await page.textContent('#rates-fuente');
-    assert.match(txt, /Fuente: .*(Banco Central de Honduras|mercado internacional)/);
+    assert.match(txt, /Fuente: .*(bancos de Honduras|Banco Central de Honduras|mercado internacional)/);
     assert.match(txt, /Cada banco cobra distinto/);
   });
 
