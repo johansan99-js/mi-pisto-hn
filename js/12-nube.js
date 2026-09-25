@@ -675,6 +675,9 @@ const cloudSync = {
     ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','premium','setup'].forEach(f => {
       merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
     });
+    // Días sin gastos (racha): se juntan los de ambos lados; la mejor racha, la mayor
+    merged.diasSinGastos = [...new Set([].concat(localState.diasSinGastos || [], remoteState.diasSinGastos || []))].sort().slice(-400);
+    merged.mejorRacha = Math.max(localState.mejorRacha || 0, remoteState.mejorRacha || 0);
     merged.sellosV = Math.max(localState.sellosV || 0, remoteState.sellosV || 0);
     // Borrados definitivos de ambos lados (se queda la fecha más reciente)
     const eliminados = Object.assign({}, localState.eliminados || {});
