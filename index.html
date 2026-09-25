@@ -1612,7 +1612,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
         <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Contraseña de la nube</label>
         <input type="password" id="cloud-download-pass" class="input-field" placeholder="La que creaste al subir tus datos" autocomplete="current-password">
       </div>
-      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">PIN de este dispositivo (4 a 8 dígitos)</label>
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">PIN de este dispositivo (6 a 8 dígitos)</label>
       <input type="password" id="cloud-download-pin" class="input-field" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       <div id="cloud-download-status" style="font-size:12px;margin-bottom:10px;display:none;line-height:1.4"></div>
       <div style="display:flex;gap:10px;margin-top:8px">
@@ -1958,12 +1958,12 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 <!-- Modal de contraseña de la nube (crear o escribir la existente) -->
 <div id="modal-cloud-pass" class="modal">
   <div class="modal-content">
-    <h3 style="margin-bottom:6px">🔑 Contraseña de la nube</h3>
+    <h3 style="margin-bottom:6px" id="cloud-pass-titulo">🔑 Contraseña de la nube</h3>
     <p id="cloud-pass-intro" style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
     <input type="password" id="cloud-pass-1" class="input-field" placeholder="Contraseña (mínimo 12 caracteres)" autocomplete="new-password">
     <input type="password" id="cloud-pass-2" class="input-field" placeholder="Repite la contraseña" autocomplete="new-password">
     <div id="cloud-pass-error" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
-    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Guárdala en un lugar seguro: la necesitarás para bajar tus datos en otro dispositivo y no se puede recuperar.</p>
+    <p id="cloud-pass-nota" style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
     <div style="display:flex;gap:10px">
       <button class="btn btn-secondary" id="btn-cloud-pass-cancel" style="flex:1">Cancelar</button>
       <button class="btn btn-primary" id="btn-cloud-pass-ok" style="flex:2">Continuar</button>
@@ -3088,23 +3088,49 @@ document.getElementById('install-btn')?.addEventListener('click',async()=>{if(!d
 function dismissPwaBanner(){document.getElementById('pwa-banner').classList.add('hidden');localStorage.setItem('pwa_banner_dismissed','true');pwaDismissed=true}
 
 // ── P0-1: PBKDF2 helpers ─────────────────────────────────────
-async function _derivarHashPIN(pin, salt) {
+async function _derivarHashPIN(pin, salt, iterations = 100000) {
   const keyMaterial = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(pin), { name: 'PBKDF2' }, false, ['deriveBits']
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     keyMaterial, 256
   );
   return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function configurarPIN() {
+// Parámetros del PIN local. "legacy": hash a 100k y KEK a 250k con el mismo
+// salt. "v2": ambos a 600k; el hash usa un salt con sufijo propio porque, con
+// mismo salt e iteraciones, el hash guardado sería idéntico a la KEK.
+const PIN_KDF = {
+  legacy: { hashIter: 100000, kekIter: 250000, sep: false },
+  v2:     { hashIter: 600000, kekIter: 600000, sep: true },
+};
+const PIN_MIN_DIGITOS = 6;
+function _pinKdf() { return localStorage.getItem('finanzas_pin_kdf') === 'v2' ? PIN_KDF.v2 : PIN_KDF.legacy; }
+function _saltHashPIN(salt, kdf) {
+  return kdf.sep ? new Uint8Array([...salt, ...new TextEncoder().encode('|mph-pin-hash')]) : salt;
+}
+async function _hashPIN(pin, salt, kdf = _pinKdf()) { return _derivarHashPIN(pin, _saltHashPIN(salt, kdf), kdf.hashIter); }
+async function _kekPIN(pin, salt, kdf = _pinKdf()) { return _deriveKEKFromPIN(pin, salt, kdf.kekIter); }
+// Guarda hash + salt + DEK envuelta con los parámetros v2
+async function _guardarPINv2(pin, salt, dek) {
+  const { encrypted, iv } = await _encryptDEK(dek, await _kekPIN(pin, salt, PIN_KDF.v2));
+  const hash = await _hashPIN(pin, salt, PIN_KDF.v2);
+  localStorage.setItem('finanzas_pin_hash', hash);
+  localStorage.setItem('finanzas_pin_salt', _b64EncodeArr(salt));
+  _saveDEKToStorage(encrypted, iv);
+  localStorage.setItem('finanzas_pin_kdf', 'v2');
+  appPIN = hash;
+  return hash;
+}
+
+async function configurarPIN({ soloCambiar = false } = {}) {
   const esPrimerPIN = !localStorage.getItem('finanzas_pin_hash');
   const esActualizacion = !esPrimerPIN && _sessionDEK; // Tiene PIN + DEK en sesión
   
-  const nuevoPIN = prompt('Crea un PIN de 4 a 8 dígitos (mientras más largo, más seguro):\n(Deja en blanco para eliminar)');
-  if (nuevoPIN === null) return;
+  const nuevoPIN = prompt('Crea un PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar ? '' : '\n(Deja en blanco para eliminar)'));
+  if (nuevoPIN === null || (soloCambiar && nuevoPIN === '')) return;
   
   if (nuevoPIN === '') {
     // ⚠️ Eliminar PIN cuando hay datos cifrados es DESTRUCTIVO
@@ -3119,11 +3145,13 @@ async function configurarPIN() {
     
     // Guardar en plano ANTES de borrar la DEK: sin ella, las copias cifradas
     // de localStorage e IndexedDB ya no se podrían leer.
+    await _convertirFacturas(false);
     _sessionDEK = null;
     _sessionPIN = null;
     if (state.setup) await save();
     localStorage.removeItem('finanzas_pin_hash');
     localStorage.removeItem('finanzas_pin_salt');
+    localStorage.removeItem('finanzas_pin_kdf');
     localStorage.removeItem('finanzas_dek_encrypted');
     localStorage.removeItem('finanzas_dek_iv');
     localStorage.removeItem('finanzas_pin'); // legacy
@@ -3137,10 +3165,9 @@ async function configurarPIN() {
   // SEGURIDAD: un PIN de 4 dígitos (10,000 combinaciones) se fuerza por
   // fuerza bruta offline en minutos si alguien roba el localStorage. Se
   // permite hasta 8 dígitos — mientras más largo, más seguro.
-  if (!/^\d{4,8}$/.test(nuevoPIN)) { alert('❌ Debe tener entre 4 y 8 números'); return; }
+  if (!/^\d{6,8}$/.test(nuevoPIN)) { alert('❌ Debe tener entre 6 y 8 números'); return; }
 
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await _derivarHashPIN(nuevoPIN, salt);
 
   // ────────────────────────────────────────────────────────────
   // CASO 1: Primer PIN (creación inicial)
@@ -3151,22 +3178,15 @@ async function configurarPIN() {
     _sessionDEK = dek;
     _sessionPIN = nuevoPIN;
     
-    // Cifrar DEK con KEK derivada del PIN
-    const kek = await _deriveKEKFromPIN(nuevoPIN, salt);
-    const { encrypted, iv } = await _encryptDEK(dek, kek);
-    
-    // Guardar PIN hash + salt + DEK cifrada
-    localStorage.setItem('finanzas_pin_hash', hash);
-    localStorage.setItem('finanzas_pin_salt', btoa(String.fromCharCode(...salt)));
-    _saveDEKToStorage(encrypted, iv);
-    
-    appPIN = hash;
+    // Guardar PIN hash + salt + DEK cifrada (parámetros v2)
+    await _guardarPINv2(nuevoPIN, salt, dek);
     
     // Si ya hay state (ej. terminó onboarding), cifrarlo ahora
     if (state.setup) {
       const encryptedState = await _encryptState(state, dek);
       localStorage.setItem(LS_KEY, encryptedState);
       await saveStateToDB(state); // reemplaza la copia en plano de IDB por una cifrada
+      await _convertirFacturas(true);
       console.log('🔒 State inicial cifrado');
     }
     
@@ -3179,15 +3199,7 @@ async function configurarPIN() {
   // ────────────────────────────────────────────────────────────
   if (esActualizacion) {
     // La DEK ya está en memoria, solo re-cifrarla con el nuevo PIN
-    const newKEK = await _deriveKEKFromPIN(nuevoPIN, salt);
-    const { encrypted, iv } = await _encryptDEK(_sessionDEK, newKEK);
-    
-    // Actualizar PIN hash + salt + DEK cifrada
-    localStorage.setItem('finanzas_pin_hash', hash);
-    localStorage.setItem('finanzas_pin_salt', btoa(String.fromCharCode(...salt)));
-    _saveDEKToStorage(encrypted, iv);
-    
-    appPIN = hash;
+    await _guardarPINv2(nuevoPIN, salt, _sessionDEK);
     _sessionPIN = nuevoPIN;
     
     alert('✅ PIN actualizado. Tu DEK se re-cifró con el nuevo PIN.');
@@ -3295,7 +3307,7 @@ async function finishOnboarding(){
   const tienePIN = localStorage.getItem('finanzas_pin_hash');
   if (!tienePIN) {
     const crearPIN = confirm(
-      '🔐 Para proteger tus datos, necesitas crear un PIN de 4 a 8 dígitos.\n\n' +
+      '🔐 Para proteger tus datos, necesitas crear un PIN de 6 a 8 dígitos.\n\n' +
       'Tu PIN cifra todos tus movimientos con AES-256.\n' +
       'Sin el PIN, nadie puede acceder a tus datos.\n\n' +
       '¿Crear PIN ahora?'
@@ -3308,9 +3320,9 @@ async function finishOnboarding(){
     // Solicitar PIN. SEGURIDAD: 4 dígitos = solo 10,000 combinaciones,
     // forzable offline en minutos si alguien roba el localStorage. Se
     // permite hasta 8 — mientras más largo, más seguro.
-    const nuevoPIN = prompt('Crea tu PIN (4 a 8 dígitos — mientras más largo, más seguro):');
-    if (!nuevoPIN || !/^\d{4,8}$/.test(nuevoPIN)) {
-      alert('❌ PIN inválido. Debe tener entre 4 y 8 números.');
+    const nuevoPIN = prompt('Crea tu PIN (6 a 8 dígitos — mientras más largo, más seguro):');
+    if (!nuevoPIN || !/^\d{6,8}$/.test(nuevoPIN)) {
+      alert('❌ PIN inválido. Debe tener entre 6 y 8 números.');
       return;
     }
     
@@ -3320,22 +3332,12 @@ async function finishOnboarding(){
       return;
     }
     
-    // Generar salt + hash + DEK
+    // Generar salt + DEK y guardar con parámetros v2
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const hash = await _derivarHashPIN(nuevoPIN, salt);
     const dek = _generateDEK();
     _sessionDEK = dek;
     _sessionPIN = nuevoPIN;
-    
-    // Cifrar DEK con KEK
-    const kek = await _deriveKEKFromPIN(nuevoPIN, salt);
-    const { encrypted, iv } = await _encryptDEK(dek, kek);
-    
-    // Guardar todo
-    localStorage.setItem('finanzas_pin_hash', hash);
-    localStorage.setItem('finanzas_pin_salt', btoa(String.fromCharCode(...salt)));
-    _saveDEKToStorage(encrypted, iv);
-    appPIN = hash;
+    await _guardarPINv2(nuevoPIN, salt, dek);
   }
   
   // ────────────────────────────────────────────────────────────
@@ -4995,36 +4997,32 @@ function _b64Decode(b64) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
-async function _deriveBackupKey(password, salt) {
+async function _deriveBackupKey(password, salt, iterations = 250000) {
   const baseKey = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(password),
     { name: 'PBKDF2' }, false, ['deriveKey']
   );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false, ['encrypt', 'decrypt']
   );
 }
+const BACKUP_KDF_ITER = 600000;
 
 async function exportDataEncriptado() {
   try {
-    const password = prompt('🔐 Crea una contraseña para cifrar el respaldo:\n(Mínimo 8 caracteres — GUÁRDALA en un lugar seguro)');
-    if (password === null) return;
-    if (!password || password.length < 8) {
-      alert('❌ La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    const confirmar = prompt('🔐 Confirma la contraseña:');
-    if (password !== confirmar) {
-      alert('❌ Las contraseñas no coinciden');
-      return;
-    }
+    const password = await pedirContrasenaNube(false, {
+      titulo: '💾 Respaldo cifrado',
+      intro: 'Crea una contraseña para cifrar el archivo de respaldo (mínimo ' + cloudSync.CLOUD_PASS_MIN + ' caracteres).',
+      nota: 'Guárdala fuera del teléfono: sin ella el archivo no se puede abrir.',
+    });
+    if (!password) return;
 
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv   = crypto.getRandomValues(new Uint8Array(12));
-    const key  = await _deriveBackupKey(password, salt);
+    const key  = await _deriveBackupKey(password, salt, BACKUP_KDF_ITER);
     const plaintext = new TextEncoder().encode(JSON.stringify(state));
     const cipherBuf = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv }, key, plaintext
@@ -5033,7 +5031,8 @@ async function exportDataEncriptado() {
     const archivoFinal = {
       version: '2.0',
       tipo: 'mipistohn-aes-gcm',
-      algoritmo: 'AES-GCM-256 + PBKDF2-SHA256 (250k iter)',
+      algoritmo: 'AES-GCM-256 + PBKDF2-SHA256 (600k iter)',
+      iteraciones: BACKUP_KDF_ITER,
       fecha: new Date().toISOString(),
       cliente: state.nombre || 'Usuario',
       salt: _b64Encode(salt),
@@ -5060,7 +5059,10 @@ async function _descifrarBackupAES(archivo, password) {
   const salt = _b64Decode(archivo.salt);
   const iv   = _b64Decode(archivo.iv);
   const datos = _b64Decode(archivo.datos);
-  const key  = await _deriveBackupKey(password, salt);
+  // Respaldos anteriores no guardaban las iteraciones: usaban 250k
+  const iter = Number.isInteger(archivo.iteraciones) && archivo.iteraciones >= 100000 && archivo.iteraciones <= 5000000
+    ? archivo.iteraciones : 250000;
+  const key  = await _deriveBackupKey(password, salt, iter);
   const plainBuf = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv }, key, datos
   );
@@ -5279,7 +5281,11 @@ function importData(event) {
     }
     // 2) Backup cifrado AES-GCM (nuevo formato P0-5)
     else if (parsed && parsed.tipo === 'mipistohn-aes-gcm' && parsed.salt && parsed.iv && parsed.datos) {
-      const password = prompt('🔐 Contraseña del respaldo cifrado:');
+      const password = await pedirContrasenaNube(true, {
+        titulo: '💾 Respaldo cifrado',
+        intro: 'Escribe la contraseña con la que cifraste este respaldo.',
+        nota: '',
+      });
       if (!password) { event.target.value=''; return; }
       try {
         datosRecuperados = await _descifrarBackupAES(parsed, password);
@@ -6113,7 +6119,7 @@ verificarPIN = async function() {
   }
   
   const salt = Uint8Array.from(atob(storedSaltB64), c => c.charCodeAt(0));
-  const intentoHash = await _derivarHashPIN(intento, salt);
+  const intentoHash = await _hashPIN(intento, salt);
   
   if (intentoHash === storedHash) {
     // ✅ PIN correcto
@@ -6128,7 +6134,7 @@ verificarPIN = async function() {
     
     if (dekData) {
       // Hay DEK cifrada → descifrarla y cargar state cifrado
-      const kek = await _deriveKEKFromPIN(intento, salt);
+      const kek = await _kekPIN(intento, salt);
       _sessionDEK = await _decryptDEK(dekData.encrypted, dekData.iv, kek);
       
       if (!_sessionDEK) {
@@ -6176,10 +6182,22 @@ verificarPIN = async function() {
       }
       await _migrarStatePlanoACifrado(intento, salt);
     }
+    _convertirFacturas(true).then(n => { if (n) console.log('🔐 ' + n + ' facturas cifradas'); });
+    // Subir a parámetros v2 una sola vez, ya con el PIN verificado
+    if (_sessionDEK && localStorage.getItem('finanzas_pin_kdf') !== 'v2') {
+      try { await _guardarPINv2(intento, salt, _sessionDEK); console.log('🔐 PIN actualizado a 600k iteraciones'); }
+      catch (e) { console.warn('No se pudo actualizar el PIN a v2:', e); }
+    }
     
     document.getElementById('modal-pin').style.display='none';
     document.getElementById('pin-input').value='';
     document.getElementById('pin-error').style.display='none';
+    if (intento.length < PIN_MIN_DIGITOS && sessionStorage.getItem('pinCortoAvisado') !== '1') {
+      sessionStorage.setItem('pinCortoAvisado', '1');
+      setTimeout(() => {
+        if (confirm(`🔐 Tu PIN tiene ${intento.length} dígitos. Con tan pocos, alguien con acceso a tu teléfono puede adivinarlo probando todas las combinaciones.\n\n¿Cambiarlo ahora por uno de ${PIN_MIN_DIGITOS} a 8 dígitos?`)) configurarPIN({ soloCambiar: true });
+      }, 800);
+    }
     
     if (!state.setup) {
       document.getElementById('onboarding').style.display='flex';
@@ -6821,6 +6839,15 @@ async function intentarBiometriaDesdePin() {
   _setBioResult(ok);
   setTimeout(() => {
     _hideBioScreen();
+    if (ok && !_sessionDEK && _isStateEncrypted()) {
+      // La huella confirma quién eres, pero no libera la clave de cifrado:
+      // sin ella la app se abriría vacía (y el onboarding podría pisar los datos)
+      document.getElementById('modal-pin').style.display='flex';
+      const errEl = document.getElementById('pin-error');
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '🔐 Para descifrar tus datos necesitas tu PIN.'; }
+      document.getElementById('pin-input')?.focus();
+      return;
+    }
     if (ok) {
       sessionStorage.setItem('pinVerificado','true');
       if (!state.setup) document.getElementById('onboarding').style.display='flex';
@@ -6907,10 +6934,12 @@ async function _guardarTempFactura(dataURL) {
   if (!dataURL) return null;
   const id = (crypto.randomUUID ? crypto.randomUUID() : `fac_${Date.now()}_${Math.random().toString(36).slice(2,7)}`);
   try {
+    // Con PIN desbloqueado la imagen se guarda cifrada con la DEK
+    const valor = _sessionDEK ? { _enc: await _encryptState(dataURL, _sessionDEK) } : dataURL;
     const db = await initDB();
     await new Promise((res, rej) => {
       const tx = db.transaction(IDB_FACTURAS, 'readwrite');
-      tx.objectStore(IDB_FACTURAS).put(dataURL, id);
+      tx.objectStore(IDB_FACTURAS).put(valor, id);
       tx.oncomplete = res;
       tx.onerror = rej;
     });
@@ -6922,13 +6951,44 @@ async function _obtenerFactura(id) {
   if (!id) return null;
   try {
     const db = await initDB();
-    return await new Promise((res) => {
+    const valor = await new Promise((res) => {
       const tx = db.transaction(IDB_FACTURAS, 'readonly');
       const req = tx.objectStore(IDB_FACTURAS).get(id);
       req.onsuccess = () => res(req.result || null);
       req.onerror = () => res(null);
     });
+    if (valor && valor._enc) return _sessionDEK ? await _decryptState(valor._enc, _sessionDEK) : null;
+    return valor;
   } catch { return null; }
+}
+
+// Re-escribe todas las facturas: cifrar=true cifra las que están en plano
+// (tras desbloquear); cifrar=false las deja en plano (antes de quitar el PIN,
+// porque sin la DEK ya no se podrían leer).
+async function _convertirFacturas(cifrar) {
+  if (!_sessionDEK) return 0;
+  try {
+    const db = await initDB();
+    const todas = await new Promise(res => {
+      const out = [];
+      const req = db.transaction(IDB_FACTURAS, 'readonly').objectStore(IDB_FACTURAS).openCursor();
+      req.onsuccess = () => { const c = req.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); };
+      req.onerror = () => res(out);
+    });
+    const cambios = [];
+    for (const [k, v] of todas) {
+      if (cifrar && typeof v === 'string') cambios.push([k, { _enc: await _encryptState(v, _sessionDEK) }]);
+      else if (!cifrar && v && v._enc) { const plano = await _decryptState(v._enc, _sessionDEK); if (plano) cambios.push([k, plano]); }
+    }
+    if (!cambios.length) return 0;
+    await new Promise((res, rej) => {
+      const tx = db.transaction(IDB_FACTURAS, 'readwrite');
+      const st = tx.objectStore(IDB_FACTURAS);
+      cambios.forEach(([k, v]) => st.put(v, k));
+      tx.oncomplete = res; tx.onerror = rej;
+    });
+    return cambios.length;
+  } catch (e) { console.warn('Convertir facturas:', e); return 0; }
 }
 
 async function _eliminarFactura(id) {
@@ -7643,7 +7703,7 @@ const cloudSync = {
       if (conContrasena && !passphrase) return { ok: false, error: 'Escribe la contraseña de la nube.' };
       const kek = conContrasena
         ? await this._kekDeContrasena(passphrase, data.pin_salt)
-        : await _deriveKEKFromPIN(pin, _b64DecodeArr(data.pin_salt));
+        : await _deriveKEKFromPIN(pin, _b64DecodeArr(data.pin_salt), PIN_KDF.legacy.kekIter);
 
       // 3) Descifrar la DEK con la KEK
       const dekEncrypted = _b64DecodeArr(data.dek_ciphertext);
@@ -7670,23 +7730,21 @@ const cloudSync = {
       //    a) Reemplazar la DEK en sesión y en localStorage
       _sessionDEK = dek;
       _sessionPIN = pin;
-      let saltBytes;
       if (conContrasena) {
         // La DEK local se envuelve con el PIN de este dispositivo (salt propio)
-        saltBytes = crypto.getRandomValues(new Uint8Array(16));
-        const { encrypted, iv } = await _encryptDEK(dek, await _deriveKEKFromPIN(pin, saltBytes));
-        _saveDEKToStorage(encrypted, iv);
-        localStorage.setItem('finanzas_pin_salt', _b64EncodeArr(saltBytes));
+        await _guardarPINv2(pin, crypto.getRandomValues(new Uint8Array(16)), dek);
         this._saveCloudKey(data.dek_ciphertext, data.dek_iv, data.pin_salt);
       } else {
-        saltBytes = _b64DecodeArr(data.pin_salt);
+        // Blob viejo: la DEK local queda con los parámetros legacy del PIN;
+        // el próximo desbloqueo la sube a v2
+        const saltBytes = _b64DecodeArr(data.pin_salt);
         _saveDEKToStorage(dekEncrypted, dekIv);
         localStorage.setItem('finanzas_pin_salt', data.pin_salt);
+        localStorage.removeItem('finanzas_pin_kdf');
+        const pinHash = await _hashPIN(pin, saltBytes, PIN_KDF.legacy);
+        localStorage.setItem('finanzas_pin_hash', pinHash);
+        appPIN = pinHash;
       }
-      // Hash del PIN local para que verificarPIN funcione
-      const pinHash = await _derivarHashPIN(pin, saltBytes);
-      localStorage.setItem('finanzas_pin_hash', pinHash);
-      appPIN = pinHash;
 
       //    b) Reemplazar state global y persistir cifrado en localStorage
       Object.keys(state).forEach(k => delete state[k]);
@@ -8464,13 +8522,20 @@ let _cloudDownloadConPass = false;
 /** Pide la contraseña de la nube en un modal. existe=true: escribir la que ya
     se creó; false: crear una nueva (se pide dos veces). Resuelve con la
     contraseña o null si se cancela. */
-function pedirContrasenaNube(existe) {
+function pedirContrasenaNube(existe, textos) {
+  const t = Object.assign({
+    titulo: '🔑 Contraseña de la nube',
+    intro: existe
+      ? 'Tus datos en la nube están protegidos con una contraseña. Escríbela para poder sincronizar este dispositivo.'
+      : 'Crea una contraseña para proteger tus datos en la nube. Es distinta de tu PIN y debe tener al menos ' + cloudSync.CLOUD_PASS_MIN + ' caracteres.',
+    nota: 'Guárdala en un lugar seguro: la necesitarás para bajar tus datos en otro dispositivo y no se puede recuperar.',
+  }, textos || {});
   return new Promise(resolve => {
     const p1 = document.getElementById('cloud-pass-1'), p2 = document.getElementById('cloud-pass-2');
     const err = document.getElementById('cloud-pass-error');
-    document.getElementById('cloud-pass-intro').textContent = existe
-      ? 'Tus datos en la nube están protegidos con una contraseña. Escríbela para poder sincronizar este dispositivo.'
-      : 'Crea una contraseña para proteger tus datos en la nube. Es distinta de tu PIN y debe tener al menos ' + cloudSync.CLOUD_PASS_MIN + ' caracteres.';
+    document.getElementById('cloud-pass-titulo').textContent = t.titulo;
+    document.getElementById('cloud-pass-nota').textContent = t.nota;
+    document.getElementById('cloud-pass-intro').textContent = t.intro;
     p1.value = ''; p2.value = ''; err.style.display = 'none';
     p1.placeholder = existe ? 'Contraseña de la nube' : 'Contraseña (mínimo ' + cloudSync.CLOUD_PASS_MIN + ' caracteres)';
     p1.autocomplete = existe ? 'current-password' : 'new-password';
@@ -8502,11 +8567,13 @@ async function confirmarBajarCloud() {
     return;
   }
   const btn = document.getElementById('btn-confirmar-bajar');
-  if (!/^\d{4,8}$/.test(pin)) {
+  // Con un blob viejo el PIN es el de antes (puede ser de 4); si no, es el
+  // PIN nuevo de este dispositivo y aplica el mínimo actual
+  if (!(_cloudDownloadConPass ? /^\d{6,8}$/ : /^\d{4,8}$/).test(pin)) {
     if (status) {
       status.style.display = 'block';
       status.style.color = 'var(--red)';
-      status.textContent = '⚠️ Ingresa tu PIN (4 a 8 dígitos)';
+      status.textContent = _cloudDownloadConPass ? '⚠️ Crea un PIN para este dispositivo (6 a 8 dígitos)' : '⚠️ Ingresa tu PIN (4 a 8 dígitos)';
     }
     return;
   }
