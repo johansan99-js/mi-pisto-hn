@@ -13,9 +13,9 @@ function renderLiquidez7Dias() {
     - state.transactions.filter(t=>t.type==='expense'&&!t.deletedAt&&!t.esTransferencia).reduce((a,b)=>a+b.amount,0);
   const pagosProximos = [];
   (state.pagosRecurrentes||[]).forEach(p => {
-    let fp = new Date(hoy.getFullYear(), hoy.getMonth(), p.dia);
-    if (fp < hoy) fp.setMonth(fp.getMonth()+1);
-    const dias = Math.ceil((fp-hoy)/86400000);
+    // Los ingresos fijos no son un pago que se aproxima
+    if (p.tipo === 'ingreso') return;
+    const dias = diasHastaPagoFijo(p, hoy);
     if (dias>=0 && dias<=7) pagosProximos.push({nombre:p.servicio, monto:p.monto, dias});
   });
   (state.prestamos||[]).forEach(p => {

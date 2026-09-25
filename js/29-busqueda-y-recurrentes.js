@@ -137,7 +137,12 @@ function aceptarSugerenciaRecurrente(clave) {
   if (!state.pagosRecurrentes) state.pagosRecurrentes = [];
   // Con la categoría y la cuenta o tarjeta del último pago: se anota solo desde el mes que viene (33-sin-esfuerzo.js)
   const ult = (state.transactions || []).filter(t => !t.deletedAt && t.type === 'expense' && _normCat(t.subcat || t.nota || t.cat) === clave).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-  const p = { id: uid(), servicio: s.nombre.slice(0, 60), monto: s.monto, dia: s.dia, pagado: 0, tipo: 'gasto', cat: s.cat || null, auto: true, autoDesde: new Date().toISOString() };
+  const hoy = new Date();
+  const pagadoEsteMes = ult && new Date(ult.date).getFullYear() === hoy.getFullYear() && new Date(ult.date).getMonth() === hoy.getMonth();
+  const p = { id: uid(), servicio: s.nombre.slice(0, 60), monto: s.monto, dia: s.dia, pagado: 0, tipo: 'gasto', cat: s.cat || null, auto: true,
+    // Si ya se pagó este mes, empieza el que viene
+    autoDesde: (pagadoEsteMes ? new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1) : hoy).toISOString() };
+  if (pagadoEsteMes) p.ultimoPago = ult.date;
   if (ult && ult.tarjetaId) p.tarjetaId = ult.tarjetaId; else p.cuenta = cuentaValida(ult && ult.cuenta);
   state.pagosRecurrentes.push(p);
   save(); renderAll();

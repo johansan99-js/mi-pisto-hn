@@ -25,17 +25,23 @@ function verificarPagosAutomaticos(ahora) {
     const desde = p.autoDesde ? new Date(p.autoDesde) : null;
     if (desde) desde.setHours(0, 0, 0, 0);
     const dias = diasPagoFijo(p);
-    dias.forEach(d => {
-      const dd = Math.min(d, _diasDelMes(y, m));
+    // La tarjeta se borró o la cuenta se archivó: no se anota en otro lado
+    if (!_destinoPagoFijoValido(p)) return;
+    // En un mes corto, el 30 y el 31 caen el mismo día: se anota una sola vez
+    const fechasMes = [...new Set(dias.map(d => Math.min(d, _diasDelMes(y, m))))];
+    fechasMes.forEach(dd => {
       const fecha = new Date(y, m, dd, 9, 0);
       if (fecha > hoy || (desde && fecha < desde)) return;
-      const clave = _claveAnotado(y, m, d);
+      const clave = _claveAnotado(y, m, dd);
       p.anotados = p.anotados || {};
       if (p.anotados[clave]) return;
       // Si ya se marcó pagado a mano este mes (un pago de un solo día), no se repite
-      if (dias.length === 1 && typeof _pagadoEsteMes === 'function' && _pagadoEsteMes(p)) { p.anotados[clave] = 'manual'; return; }
+      if (fechasMes.length === 1 && p.ultimoPago && new Date(p.ultimoPago).getFullYear() === y && new Date(p.ultimoPago).getMonth() === m) { p.anotados[clave] = 'manual'; return; }
       const tx = _txDePagoFijo(p, fecha);
       if (!tx) return;
+      // El mismo id en cualquier teléfono: si dos lo anotan antes de sincronizar, queda uno solo
+      tx.id = _idPagoFijo(p.id, clave);
+      if ((state.transactions || []).some(t => t.id === tx.id)) { p.anotados[clave] = tx.id; return; }
       state.transactions.push(tx);
       p.anotados[clave] = tx.id;
       p.ultimoPago = fecha.toISOString();
@@ -54,6 +60,40 @@ function verificarPagosAutomaticos(ahora) {
   return anotados;
 }
 
+// id corto y fijo para (pago, fecha): pf + 2 hashes FNV-1a en base 36 (cabe en los ids válidos)
+function _idPagoFijo(pid, clave) {
+  const h = (str, seed) => { let x = seed >>> 0; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x.toString(36); };
+  const k = pid + '|' + clave;
+  return ('pf' + h(k, 2166136261) + h(k, 3141592653)).slice(0, 20);
+}
+function _destinoPagoFijoValido(p) {
+  if (p.tarjetaId) return (state.tarjetas || []).some(t => String(t.id) === String(p.tarjetaId));
+  if (p.cuenta) return listaCuentas().some(c => c.id === p.cuenta);
+  return true;
+}
+/** Días que faltan para el próximo día de pago (con varios días al mes y meses cortos) */
+function diasHastaPagoFijo(p, ahora) {
+  const hoy = ahora ? new Date(ahora) : new Date();
+  const base = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  let min = Infinity;
+  [0, 1].forEach(sum => {
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() + sum, 1);
+    const y = inicio.getFullYear(), m = inicio.getMonth();
+    diasPagoFijo(p).forEach(d => {
+      const dif = Math.round((new Date(y, m, Math.min(d, _diasDelMes(y, m))) - base) / 864e5);
+      if (dif >= 0 && dif < min) min = dif;
+    });
+  });
+  return min === Infinity ? 0 : min;
+}
+/** "Marcar pagado" a mano con varios días al mes: cuenta por el próximo día que falta anotar */
+function marcarDiaPagadoAMano(p) {
+  if (!p || !p.auto) return;
+  const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
+  p.anotados = p.anotados || {};
+  const pendiente = [...new Set(diasPagoFijo(p).map(d => Math.min(d, _diasDelMes(y, m))))].sort((a, b) => a - b).find(dd => !p.anotados[_claveAnotado(y, m, dd)]);
+  if (pendiente) p.anotados[_claveAnotado(y, m, pendiente)] = 'manual';
+}
 function _txDePagoFijo(p, fecha) {
   const base = { id: uid(), amount: _c2(p.monto), pagoRecurrenteId: p.id, autoRegistrado: true, date: fecha.toISOString() };
   if (p.tipo === 'ingreso') {

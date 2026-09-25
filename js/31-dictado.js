@@ -206,7 +206,9 @@ function aplicarDictado(r) {
   let aviso = '';
   const esRemesa = r.remesa && r.tipo === 'ingreso';
   // Con una tarjeta en lempiras y dólares, el gasto queda en dólares (32-tarjetas-dolares.js)
-  const tcDolares = r.tipo === 'gasto' && r.tarjeta && esBimoneda((state.tarjetas || []).find(x => String(x.id) === String(r.tarjeta)));
+  // Sin cuenta en la frase se queda la tarjeta que ya estaba elegida
+  const tcEfectiva = r.tarjeta || (!r.cuenta && _reg.tipo === 'gasto' ? _reg.tarjeta : null);
+  const tcDolares = r.tipo === 'gasto' && tcEfectiva && esBimoneda((state.tarjetas || []).find(x => String(x.id) === String(tcEfectiva)));
   _reg.moneda = tcDolares && r.moneda === 'USD' ? 'USD' : 'HNL';
   if (monto && r.moneda === 'USD' && !esRemesa && !tcDolares) {
     // Solo las remesas guardan dólares desde el teclado; lo demás se pasa a lempiras
@@ -225,7 +227,8 @@ function aplicarDictado(r) {
     if (esRemesa) {
       if (r.remesa.de) _remReg.de = r.remesa.de;
       if (r.remesa.via) _remReg.via = r.remesa.via;
-      if (r.moneda === 'USD' || /\b(lempiras?|lps?)\b/.test(_normCat(r.frase))) _remReg.moneda = r.moneda;
+      // Sin decir la moneda va en lempiras: así un monto nunca se multiplica por la tasa sin querer
+      if (r.monto) _remReg.moneda = r.moneda === 'USD' ? 'USD' : 'HNL';
     }
   }
   const nota = document.getElementById('reg-nota');

@@ -360,6 +360,14 @@ function _regLlenarFormulario(monto) {
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
   if (t === 'gasto') {
     if (typeof resetGastoSplit === 'function') resetGastoSplit();
+    // Lo que quedó de una vez anterior en el formulario completo no se arrastra
+    const cuotas = document.getElementById('gasto-es-cuotas');
+    if (cuotas) { cuotas.checked = false; document.getElementById('gasto-cuotas-meses')?.classList.add('hidden'); }
+    set('gasto-cobrado', ''); set('gasto-banco', '');
+    const cobWrap = document.getElementById('gasto-cobrado-wrap'); if (cobWrap) cobWrap.style.display = 'none';
+    if (typeof clearEtiqueta === 'function') clearEtiqueta();
+    if (typeof _tempFacturaId !== 'undefined') _tempFacturaId = null;
+    window._tempFacturaDataURL = null;
     set('gasto-monto', monto ? _regNumTxt(monto) : '');
     set('gasto-moneda', typeof gastoEnDolares === 'function' && gastoEnDolares() ? 'USD' : 'HNL');
     set('gasto-cat', _reg.cat || '');
