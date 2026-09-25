@@ -26,7 +26,7 @@ function _validarSchemaBackup(obj) {
   }
   
   // ── Validar arrays esperados ──
-  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas'];
+  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos'];
   for (const k of arrays) {
     if (obj[k] !== undefined && !Array.isArray(obj[k])) return `${k} debe ser array`;
   }
@@ -114,6 +114,17 @@ function _validarSchemaBackup(obj) {
     }
   }
   
+  // ── Validar gastos compartidos ──
+  if (Array.isArray(obj.grupos)) {
+    for (const g of obj.grupos.slice(0, 50)) {
+      if (!esIdValido(g.id)) return `ID inválido en grupo: ${g.id}`;
+      if (!esStringSeguro(g.nombre, 60)) return 'nombre de grupo sospechoso';
+      if (!Array.isArray(g.miembros) || !Array.isArray(g.gastos) || !Array.isArray(g.pagos)) return 'grupo mal formado';
+      for (const m of g.miembros) if (!esIdValido(m.id) || !esStringSeguro(m.nombre, 60)) return 'miembro de grupo sospechoso';
+      for (const e of g.gastos) if (!esIdValido(e.id) || !esStringSeguro(e.desc, 60) || typeof e.monto !== 'number') return 'gasto de grupo sospechoso';
+    }
+  }
+
   // ── Validar préstamos ──
   if (Array.isArray(obj.prestamos)) {
     for (const p of obj.prestamos.slice(0, 50)) {
@@ -364,6 +375,7 @@ function switchView(v){
   if(v==='cobrar')renderCobrar();
   if(v==='pagar')renderPagar();
   if(v==='prestamos')renderPrestamos();
+  if(v==='grupos')renderGrupos();
   // Scroll to top on desktop
   const mainArea=document.getElementById('main-scroll-area');
   if(mainArea) mainArea.scrollTo({top:0,behavior:'smooth'});

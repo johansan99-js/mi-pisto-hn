@@ -112,7 +112,7 @@ const USD_HNL_VALID_RANGE = { min: 20, max: 35 };
 
 // ========== VARIABLES GLOBALES Y ESTADO ==========
 const LS_KEY='mifinanzashn_pro_v20_full';
-let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,eliminados:{},sellosV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
+let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,eliminados:{},sellosV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],grupos:[],budgetRules:{gastos:65,ahorro:20,extra:15}};
 
 // ────────────────────────────────────────────────────────────────────
 // CARGA INICIAL — detecta si el state está cifrado o en plano
@@ -286,7 +286,8 @@ window.addEventListener('DOMContentLoaded', () => {
     'pagarCuotaPrestamo', 'editarPrestamo', 'eliminarPrestamo',
     'pagarTarjeta', 'ajustarSaldoTarjeta', 'deleteTarjeta',
     'marcarPagoRecurrente', 'editarRecurrente', 'eliminarRecurrente',
-    'verFactura'
+    'verFactura',
+    'abrirGrupo', 'eliminarGrupo', 'abrirGastoGrupo', 'abrirPagoGrupo', 'eliminarMovGrupo', 'compartirGrupoWhatsApp'
   ];
   
   funcionesCriticas.forEach(nombre => {

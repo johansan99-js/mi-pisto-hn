@@ -952,3 +952,17 @@ body.modo-discreto canvas{filter:blur(10px)}
 .rates-bancos button strong{font-size:12px}
 .rates-bancos button small{font-size:10px;color:var(--text2)}
 .rates-bancos button.activa{border-color:#F5C800;background:rgba(245,200,0,.08)}
+
+/* Gastos compartidos */
+.grupo-fila{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;color:var(--text);font:inherit}
+.grupo-volver{background:none;border:none;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;padding:4px 0 10px}
+.grupo-titulo{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:16px 2px 8px}
+.grupo-saldo,.grupo-pago,.grupo-mov{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.grupo-saldo:first-child,.grupo-pago:first-child,.grupo-mov:first-child{border-top:none}
+.grupo-borrar{background:none;border:none;cursor:pointer;font-size:14px;padding:4px}
+.gg-parte{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:13px}
+.gg-parte label{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.gg-parte .gg-monto-parte{display:none;margin:0;width:110px;padding:8px}
+.gg-parte .gg-igual{color:var(--text2);font-size:12px}
+#gg-partes.exactos .gg-monto-parte{display:block}
+#gg-partes.exactos .gg-igual,#gg-partes.exactos input[type=checkbox]{display:none}

@@ -64,7 +64,7 @@ function migrarCuentasIniciales() {
 // guardado: si cambió, lo sella con la hora. Los ids que desaparecen
 // (borrados definitivos) se anotan en state.eliminados para que otro
 // dispositivo no los reviva al combinar.
-const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas'];
+const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos'];
 const ELIMINADOS_MAX_DIAS = 180;
 let _idsGuardados = null;
 
