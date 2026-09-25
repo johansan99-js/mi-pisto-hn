@@ -67,6 +67,10 @@
     </div>
     Análisis
   </div>
+  <div class="sidebar-item" id="sb-presupuestos" onclick="switchView('presupuestos');setSidebarActive('sb-presupuestos')">
+    <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">📅</div>
+    Presupuestos
+  </div>
   <div class="sidebar-item" id="sb-tarjetas" onclick="switchView('tarjetas');setSidebarActive('sb-tarjetas')">
     <div class="si-icon">
       <svg width="17" height="17" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="20" height="3.5" fill="currentColor" opacity=".7"/><rect x="5" y="15" width="5" height="2" rx="1" fill="currentColor" opacity=".8"/></svg>
@@ -199,6 +203,11 @@
 
     <!-- ── OPERACIONES DIARIAS ── -->
     <div class="more-section-label">Operaciones</div>
+
+    <div class="hamburger-item" onclick="switchView('tarjetas');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--red-rgb),.15)">💳</div>
+      <div><div>Tarjetas de crédito</div><div style="font-size:11px;color:var(--text2);font-weight:400">Saldo, corte, pago y beneficios</div></div>
+    </div>
 
     <div class="hamburger-item" onclick="switchView('cobrar');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--green-rgb),.15)">💰</div>
@@ -961,24 +970,23 @@
     <span class="nav-label">Análisis</span>
   </div>
   <button class="nav-fab" id="nav-fab-btn" onclick="toggleFabMenu()">+</button>
-  <div class="nav-tab" id="tab-tarjetas" onclick="switchView('tarjetas')">
+  <div class="nav-tab" id="tab-presupuestos" onclick="switchView('presupuestos')">
     <svg class="nav-svg" viewBox="0 0 24 24">
-      <rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.5" fill-opacity=".2"/>
-      <rect x="2" y="9" width="20" height="3.5" fill="currentColor" opacity=".7"/>
-      <rect x="5" y="15" width="5" height="2" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="4" y="2.5" width="16" height="19" rx="3" fill="currentColor" opacity=".22" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="7" y="5.5" width="10" height="4" rx="1.2" fill="currentColor" opacity=".9"/>
+      <circle cx="8.5" cy="13" r="1.3" fill="currentColor"/><circle cx="12" cy="13" r="1.3" fill="currentColor"/><circle cx="15.5" cy="13" r="1.3" fill="currentColor"/>
+      <circle cx="8.5" cy="17" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.3" fill="currentColor"/><circle cx="15.5" cy="17" r="1.3" fill="currentColor"/>
     </svg>
-    <span class="nav-label">TC</span>
+    <span class="nav-label">Presupuestos</span>
   </div>
-  <div class="nav-tab" id="tab-config" onclick="switchView('config')">
+  <div class="nav-tab" id="tab-cuentas" onclick="switchView('cuentas')">
     <svg class="nav-svg" viewBox="0 0 24 24">
-      <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="8" cy="6" r="2.5" fill="currentColor"/>
-      <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="16" cy="12" r="2.5" fill="currentColor"/>
-      <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="10" cy="18" r="2.5" fill="currentColor"/>
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H17v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <rect x="2.5" y="6.5" width="19" height="14" rx="3" fill="currentColor" opacity=".22" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="14" y="11" width="7.5" height="5" rx="2" fill="currentColor" opacity=".9"/>
+      <circle cx="16.8" cy="13.5" r="1" style="fill:var(--bg2)"/>
     </svg>
-    <span class="nav-label">Config</span>
+    <span class="nav-label">Cuentas</span>
   </div>
 </nav>
 

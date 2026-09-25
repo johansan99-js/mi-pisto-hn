@@ -347,11 +347,16 @@ async function reemplazarFactura(id) {
 // ========== NAVEGACIÓN Y MODALES (v2 — Bottom Nav) ==========
 
 // Mapa: vista → tab activo en la barra
+// Pestaña de la barra de abajo que se marca en cada pantalla (tarjetas,
+// préstamos y deudas se abren desde Cuentas)
 const NAV_TAB_MAP = {
-  dashboard: 'tab-dashboard',
-  historico: 'tab-historico',
-  tarjetas:  'tab-tarjetas',
-  config:    'tab-config',
+  dashboard:    'tab-dashboard',
+  historico:    'tab-historico',
+  presupuestos: 'tab-presupuestos',
+  cuentas:      'tab-cuentas',
+  tarjetas:     'tab-cuentas',
+  prestamos:    'tab-cuentas',
+  pagar:        'tab-cuentas',
 };
 
 function switchView(v){
