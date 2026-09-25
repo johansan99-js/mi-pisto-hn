@@ -1376,3 +1376,50 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .cuadre-fila .input-field,.cuadre-fila .btn{margin:0!important}
 .cuadre-fila .btn{width:auto;padding:0 18px}
 #modal-pago-recurrente .an-segmentos{margin-bottom:10px}
+/* Tu mes, en historias (js/34-informe-mes.js) */
+.inf-modal{padding:0!important;align-items:stretch!important;justify-content:center}
+.inf-hoja{position:relative;width:100%;max-width:480px;min-height:100%;display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));color:var(--text);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;background:var(--bg);transition:background .3s}
+@media (min-width:700px){.inf-modal{padding:24px!important;align-items:center!important}.inf-hoja{min-height:0;height:min(820px,calc(100vh - 48px));border-radius:24px}}
+.inf-p1{background:linear-gradient(160deg,rgba(var(--green-rgb),.28),transparent 62%),var(--bg)}
+.inf-p2{background:linear-gradient(160deg,rgba(var(--blue-rgb),.26),transparent 62%),var(--bg)}
+.inf-p3{background:linear-gradient(160deg,rgba(var(--aviso-rgb),.26),transparent 62%),var(--bg)}
+.inf-p4{background:linear-gradient(160deg,rgba(142,36,170,.24),transparent 62%),var(--bg)}
+.inf-p5{background:linear-gradient(160deg,rgba(var(--red-rgb),.22),transparent 62%),var(--bg)}
+.inf-p6{background:linear-gradient(160deg,rgba(0,172,193,.26),transparent 62%),var(--bg)}
+.inf-p7{background:linear-gradient(160deg,rgba(var(--green-rgb),.3),transparent 70%),var(--bg)}
+.inf-puntos{display:flex;gap:5px;margin-bottom:14px}
+.inf-puntos span{flex:1;height:4px;border-radius:4px;background:rgba(var(--tinta-rgb),.22)}
+.inf-puntos span.lleno{background:var(--amber)}
+.inf-cerrar{position:absolute;top:calc(30px + env(safe-area-inset-top));right:18px;background:var(--bg3);border:none;border-radius:50%;width:34px;height:34px;color:var(--text);font-size:15px;cursor:pointer}
+.inf-cuerpo{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding-bottom:10px}
+.inf-kicker{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--amber)}
+.inf-cuerpo h2{font-size:30px;line-height:1.15;margin:0}
+.inf-grande{display:flex;flex-direction:column;gap:2px;font-size:15px;font-weight:700}
+.inf-grande b{font-size:40px;letter-spacing:-.5px}
+.inf-grande.verde b{color:var(--green)}.inf-grande.rojo b{color:var(--red)}
+.inf-grande span{font-size:13px;color:var(--text2);font-weight:600}
+.inf-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inf-dos>div{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px}
+.inf-dos small{display:block;font-size:11px;color:var(--text2)}
+.inf-dos b{font-size:18px}
+.inf-nota{font-size:14px;margin:0;line-height:1.45}
+.inf-frase{font-size:18px;font-weight:700;line-height:1.4;margin:0}
+.inf-cats{display:flex;flex-direction:column;gap:12px}
+.inf-cat{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px}
+.inf-cat strong{display:block;font-size:15px}
+.inf-cat small{font-size:12px;color:var(--text2)}
+.inf-cat>b{font-size:20px;color:var(--amber)}
+.inf-barra{display:block;height:7px;border-radius:6px;background:var(--bg4);margin-top:6px;overflow:hidden}
+.inf-barra i{display:block;height:100%;background:var(--amber);border-radius:6px}
+.inf-anillo{--p:0;align-self:center;width:170px;height:170px;border-radius:50%;background:conic-gradient(var(--amber) calc(var(--p)*1%),var(--bg4) 0);display:grid;place-items:center;position:relative}
+.inf-anillo::before{content:'';position:absolute;inset:16px;border-radius:50%;background:var(--bg)}
+.inf-anillo b{position:relative;font-size:32px}
+.inf-lista{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.inf-meta{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.inf-meta small{font-size:11px;color:var(--text2)}
+.inf-acciones{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.inf-acciones .btn{margin:0}
+.inf-sig{text-align:center;font-size:12px;color:var(--text2)}
+.inf-aviso-btns{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:10px}
+.inf-aviso-btns .btn{margin:0}
+.inf-ver{margin:4px 0 10px}

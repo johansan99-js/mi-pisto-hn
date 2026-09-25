@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v71-revision';
+const VERSION = 'v72-informe-mes';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -101,6 +101,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/31-dictado.js',
   BASE_PATH + 'js/32-tarjetas-dolares.js',
   BASE_PATH + 'js/33-sin-esfuerzo.js',
+  BASE_PATH + 'js/34-informe-mes.js',
   BASE_PATH + 'css/app.css'
 ];
 
