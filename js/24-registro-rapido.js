@@ -45,6 +45,12 @@ function iconoCategoria(cat, tipo) {
   const n = _normCat(cat);
   if (n === 'transferencia') return { i: '⇄', c: '#607D8B' };
   if (n.startsWith('varios (')) return { i: '🧾', c: '#78909C' };
+  // Una categoría propia o una de fábrica con otro ícono o color (28-categorias.js)
+  const propia = typeof _catGuardada === 'function' ? (_catGuardada(cat, tipo === 'income' ? 'ingreso' : tipo === 'expense' ? 'gasto' : undefined)) : null;
+  if (propia && propia.icono) {
+    const base = (tipo === 'income' ? CATS_INGRESO : CATS_GASTO).find(c => _normCat(c.n) === n);
+    return { n: propia.nombre, i: propia.icono, c: propia.color, f: typeof propia.fijo === 'boolean' ? propia.fijo : !!(base && base.f), tipo: base && base.tipo, propia: true };
+  }
   const listas = tipo === 'income' ? [CATS_INGRESO, CATS_GASTO] : [CATS_GASTO, CATS_INGRESO];
   for (const l of listas) { const x = l.find(c => _normCat(c.n) === n); if (x) return x; }
   for (const l of listas) { const x = l.find(c => c.k.some(p => n.includes(p))); if (x) return x; }
@@ -56,21 +62,27 @@ const circuloCategoria = (cat, tipo, extra) => {
   return `<span class="cat-circulo${x.letra ? ' letra' : ''}${extra ? ' ' + extra : ''}" style="background:${x.c}" aria-hidden="true">${esc(x.i)}</span>`;
 };
 
-/** Las categorías para elegir: las de fábrica y, después, las propias más usadas */
-function categoriasParaElegir(tipo) {
-  const base = tipo === 'ingreso' ? CATS_INGRESO : CATS_GASTO;
-  const tt = tipo === 'ingreso' ? 'income' : 'expense';
+/** Las categorías para elegir: las que creaste, las de fábrica (sin las ocultas) y
+    las que solo existen en tus movimientos, de la más usada a la menos.
+    Con soloDeMovimientos, solo estas últimas (todas). */
+function categoriasParaElegir(tipo, soloDeMovimientos) {
+  const t = tipo === 'ingreso' ? 'ingreso' : 'gasto';
+  const base = t === 'ingreso' ? CATS_INGRESO : CATS_GASTO;
+  const tt = t === 'ingreso' ? 'income' : 'expense';
+  const creadas = (state.categorias || []).filter(c => c.tipo === t);
   const usos = {};
-  (state.transactions || []).forEach(t => {
-    if (t.deletedAt || t.type !== tt || t.esTransferencia || t.esConciliacion || t.esSaldoInicial || !t.cat) return;
-    if (_normCat(t.cat).startsWith('varios (')) return;
-    const nombre = String(t.cat).trim();
+  (state.transactions || []).forEach(x => {
+    if (x.deletedAt || x.type !== tt || x.esTransferencia || x.esConciliacion || x.esSaldoInicial || !x.cat) return;
+    if (_normCat(x.cat).startsWith('varios (')) return;
+    const nombre = String(x.cat).trim();
     usos[nombre] = (usos[nombre] || 0) + 1;
   });
-  const propias = Object.keys(usos)
-    .filter(nm => !base.some(c => _normCat(c.n) === _normCat(nm)))
-    .sort((a, b) => usos[b] - usos[a]).slice(0, 12);
-  return base.map(c => c.n).concat(propias);
+  const conocida = nm => base.some(c => _normCat(c.n) === _normCat(nm)) || creadas.some(c => _normCat(c.nombre) === _normCat(nm));
+  const deMovimientos = Object.keys(usos).filter(nm => !conocida(nm)).sort((a, b) => usos[b] - usos[a]);
+  if (soloDeMovimientos) return deMovimientos;
+  const oculta = nm => creadas.some(c => c.oculta && _normCat(c.nombre) === _normCat(nm));
+  return creadas.filter(c => !c.oculta && !base.some(b => _normCat(b.n) === _normCat(c.nombre))).map(c => c.nombre)
+    .concat(base.map(c => c.n).filter(nm => !oculta(nm)), deMovimientos.slice(0, 12));
 }
 
 // ═══ REGISTRO RÁPIDO CON TECLADO ══════════════════════════════════════════
@@ -222,7 +234,7 @@ function abrirSelectorRegistro(cual) {
     const tt = t === 'ingreso' ? 'income' : 'expense';
     opciones = categoriasParaElegir(t).map(nm => `<button type="button" class="reg-cat${_reg.cat === nm ? ' activa' : ''}" data-cat="${esc(nm)}" onclick="elegirCatRegistro(this.dataset.cat)">${circuloCategoria(nm, tt)}<span>${esc(nm)}</span></button>`).join('')
       + `<button type="button" class="reg-cat" onclick="nuevaCatRegistro()"><span class="cat-circulo letra" style="background:var(--bg4);color:var(--text)">＋</span><span>Otra</span></button>`;
-    hoja.innerHTML = `<div class="reg-sel-head"><strong>${titulo}</strong><button type="button" onclick="cerrarSelectorRegistro()" aria-label="Cerrar">✕</button></div><div class="reg-cats">${opciones}</div>`;
+    hoja.innerHTML = `<div class="reg-sel-head"><strong>${titulo}</strong><span><button type="button" class="reg-sel-editar" onclick="editarCategoriasRegistro()">✏️ Editar</button><button type="button" onclick="cerrarSelectorRegistro()" aria-label="Cerrar">✕</button></span></div><div class="reg-cats">${opciones}</div>`;
   } else {
     const destino = cual === 'b' ? 'hacia' : 'cuenta';
     titulo = t === 'transferencia' ? (cual === 'b' ? '¿A qué cuenta?' : '¿De qué cuenta sale?') : t === 'ingreso' ? '¿A qué cuenta entra?' : '¿Con qué pagaste?';
@@ -248,8 +260,12 @@ function elegirCatRegistro(nm) {
   renderRegistro();
 }
 function nuevaCatRegistro() {
-  const nm = (prompt('Nombre de la categoría nueva:') || '').trim().slice(0, 40);
-  if (nm) elegirCatRegistro(nm);
+  // El editor de categorías (ícono y color) se abre encima; al guardar queda elegida
+  abrirEditorCategoria(null, _reg.tipo === 'ingreso' ? 'ingreso' : 'gasto', nm => elegirCatRegistro(nm));
+}
+function editarCategoriasRegistro() {
+  cerrarRegistro();
+  switchView('categorias');
 }
 function elegirCuentaRegistro(destino, id) {
   if (!esCuentaLiquida(id)) return;
@@ -279,6 +295,8 @@ function fechaRegistro() {
 
 /** Tipo fijo/extra de un gasto según su categoría (o como la usaste antes) */
 function _tipoGastoDeCat(cat) {
+  const propia = typeof _catGuardada === 'function' ? _catGuardada(cat, 'gasto') : null;
+  if (propia && typeof propia.fijo === 'boolean') return propia.fijo ? 'fijo' : 'extra';
   const base = CATS_GASTO.find(c => _normCat(c.n) === _normCat(cat));
   if (base) return base.f ? 'fijo' : 'extra';
   const previos = (state.transactions || []).filter(t => !t.deletedAt && t.type === 'expense' && _normCat(t.cat) === _normCat(cat));

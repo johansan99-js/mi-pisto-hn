@@ -1265,3 +1265,26 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .cuenta-atajo>span:last-child{font-size:20px;color:var(--text2)}
 /* El menú ☰ termina arriba de la barra de abajo: Configuración (el último) queda a la vista */
 .hamburger-nav{padding-bottom:calc(var(--nav-h, 64px) + 16px + env(safe-area-inset-bottom))}
+
+/* ── CATEGORÍAS PROPIAS (js/28-categorias.js) ── */
+.cat-lista{margin-top:8px}
+.cat-fila{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 2px;font:inherit;color:var(--text);cursor:pointer;text-align:left}
+.cat-fila.oculta{opacity:.55}
+.cat-fila-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cat-fila-info strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-fila-info small{font-size:11px;color:var(--text2)}
+.cat-fila-ir{font-size:20px;color:var(--text2)}
+.cat-circulo.grande{width:56px;height:56px;font-size:28px}
+.ce-vista{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:16px}
+.ce-nota{font-size:11px;color:var(--text2);margin:-4px 0 10px;line-height:1.4}
+.ce-label{font-size:12px;font-weight:700;color:var(--text2);margin:6px 0 6px}
+.ce-iconos{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:164px;overflow-y:auto;padding:2px}
+.ce-icono{aspect-ratio:1;border:2px solid transparent;border-radius:10px;background:var(--bg3);font-size:19px;cursor:pointer;padding:0}
+.ce-icono.activo{border-color:var(--amber);background:rgba(var(--amber-rgb),.12)}
+.ce-colores{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:12px}
+.ce-color{aspect-ratio:1;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.ce-color.activo{border-color:var(--text);box-shadow:0 0 0 2px var(--bg2) inset}
+.ce-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;margin:-2px 0 10px;cursor:pointer;line-height:1.4}
+.ce-fijo{margin:4px 0 12px}
+.reg-sel-head span{display:flex;align-items:center;gap:8px}
+.reg-sel-editar{width:auto!important;height:auto!important;border-radius:16px!important;padding:6px 10px;font:inherit;font-size:12px;font-weight:700}

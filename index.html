@@ -261,6 +261,10 @@
       <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">📊</div>
       <div><div>Reglas de Presupuesto</div><div style="font-size:11px;color:var(--text2);font-weight:400">Distribución 65/20/15</div></div>
     </div>
+    <div class="hamburger-item" onclick="switchView('categorias');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🏷️</div>
+      <div><div>Categorías</div><div style="font-size:11px;color:var(--text2);font-weight:400">Crea las tuyas con ícono y color</div></div>
+    </div>
     <div class="hamburger-item" onclick="switchView('config');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.12)">⚙️</div>
       <div><div>Configuración</div><div style="font-size:11px;color:var(--text2);font-weight:400">PIN, respaldo y seguridad</div></div>
@@ -663,6 +667,11 @@
   <div id="metas-list"></div>
 </div>
 
+<div id="view-categorias" class="view">
+  <h2 style="margin-bottom:15px">🏷️ Categorías</h2>
+  <div id="categorias-contenido" class="card registros-card analisis-card"></div>
+</div>
+
 <div id="view-presupuestos" class="view">
   <h2 style="margin-bottom:15px">📅 Presupuestos</h2>
   <div id="presupuestos-vista" class="card registros-card analisis-card"></div>
@@ -949,6 +958,26 @@
       <button type="button" onclick="masOpcionesRegistro()">⚙️ Más opciones</button>
     </div>
     <div id="reg-selector" class="reg-selector"></div>
+  </div>
+</div>
+
+<!-- CREAR O EDITAR UNA CATEGORÍA (js/28-categorias.js) -->
+<div id="modal-categoria" class="modal" onclick="closeModalIfBg(event,'modal-categoria')">
+  <div class="modal-content">
+    <h3 id="ce-titulo" style="margin-bottom:12px">Nueva categoría</h3>
+    <div id="ce-vista" class="ce-vista"></div>
+    <input type="text" id="ce-nombre" class="input-field" maxlength="30" placeholder="Nombre (ej. Pupusas, Colegio de Ana)" autocomplete="off" oninput="_renderEditorCategoria()">
+    <p id="ce-nota-fabrica" class="ce-nota" style="display:none">Es una categoría de fábrica: puedes cambiarle el ícono y el color, u ocultarla.</p>
+    <label id="ce-renombrar-fila" class="ce-check" style="display:none"><input type="checkbox" id="ce-renombrar" checked> <span id="ce-renombrar-txt"></span></label>
+    <div class="ce-label">Ícono</div>
+    <div id="ce-iconos" class="ce-iconos"></div>
+    <div class="ce-label">Color</div>
+    <div id="ce-colores" class="ce-colores"></div>
+    <label id="ce-fijo-fila" class="switch-fila ce-fijo"><span class="switch-txt">Gasto necesario (fijo)<small>Cuenta en "Vital/Fijo" en vez de "Ocio/Extra".</small></span><span class="switch"><input type="checkbox" id="ce-fijo" role="switch" aria-label="Gasto necesario"><span class="pista"></span><span class="perilla"></span></span></label>
+    <button class="btn btn-primary" onclick="guardarCategoria()">💾 Guardar categoría</button>
+    <button class="btn btn-secondary" id="ce-ocultar" onclick="ocultarCategoria()">🙈 Ocultar al registrar</button>
+    <button class="btn btn-secondary" id="ce-borrar" onclick="borrarCategoria()" style="color:var(--red)">🗑️ Borrar categoría</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-categoria')">Cancelar</button>
   </div>
 </div>
 
@@ -1588,5 +1617,6 @@
 <script src="js/25-registros-del-mes.js"></script>
 <script src="js/26-analisis.js"></script>
 <script src="js/27-presupuestos-categoria.js"></script>
+<script src="js/28-categorias.js"></script>
 </body>
 </html>
