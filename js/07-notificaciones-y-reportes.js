@@ -551,6 +551,8 @@ function ideasDelResumen(r) {
     ideas.push('🏠 Tus gastos fijos fueron el ' + pct + '% de tus ingresos' + (pct > reglas.gastos ? ', arriba de tu meta de ' + reglas.gastos + '%.' : ' (tu meta: hasta ' + reglas.gastos + '%).'));
   }
   if (r.aMetas > 0) ideas.push('🎯 Guardaste ' + fL(r.aMetas) + ' en tus metas.');
+  const fondo = typeof fondoEmergencia === 'function' && fondoEmergencia();
+  if (fondo && !r.enCurso) ideas.push('🛟 Tu fondo de emergencia cubre ' + mesesCubiertos(fondo).toFixed(1) + ' de ' + (fondo.meses || 3) + ' meses de gastos.');
   const benef = resumenBeneficiosMes(r.year, r.month);
   if (benef.ganado >= 1) ideas.push('🎁 Tus tarjetas te devolvieron ~' + fL(benef.ganado) + (benef.perdido >= 20 ? '; con la mejor tarjeta en cada compra ganabas ' + fL(benef.perdido) + ' más.' : '.'));
   else if (benef.perdido >= 20) ideas.push('🎁 Pagando con la tarjeta adecuada en cada compra ganabas ~' + fL(benef.perdido) + '.');
