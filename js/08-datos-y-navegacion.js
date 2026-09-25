@@ -119,6 +119,7 @@ function _validarSchemaBackup(obj) {
     for (const c of obj.misCuentas.slice(0, 100)) {
       if (!esIdValido(c.id) || !esStringSeguro(c.nombre, 40) || !esStringSeguro(c.grupo, 40) || /[<>"']/.test((c.nombre || '') + (c.grupo || '') + (c.color || '') + (c.icono || ''))) return 'cuenta inválida';
       if (c.color !== undefined && !/^#[0-9a-f]{6}$/i.test(c.color)) return 'color de cuenta inválido';
+      if (c.moneda !== undefined && c.moneda !== 'USD' && c.moneda !== 'HNL') return 'moneda de cuenta inválida';
     }
   }
 

@@ -1449,7 +1449,8 @@
     <datalist id="lista-bancos-cuenta"></datalist>
     <input type="text" id="cuenta-nombre" class="input-field" placeholder="Nombre (ej. Nómina, Ahorro en dólares)" maxlength="30">
     <select id="cuenta-tipo" class="input-field"></select>
-    <div id="cuenta-saldo-wrap"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">¿Cuánto tiene hoy?</label>
+    <select id="cuenta-moneda" class="input-field"><option value="HNL">🇭🇳 En lempiras</option><option value="USD">🇺🇸 En dólares</option></select>
+    <div id="cuenta-saldo-wrap"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">¿Cuánto tiene hoy? (en su moneda)</label>
     <input type="text" inputmode="decimal" id="cuenta-saldo" class="input-field" placeholder="L 0.00"></div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Interés que te paga (% anual, opcional)</label>
     <input type="text" inputmode="decimal" id="cuenta-tasa" class="input-field" placeholder="Ej. 6.5 para un plazo fijo">

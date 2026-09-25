@@ -249,6 +249,7 @@ const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
 // SAVE — cifra el state con DEK antes de guardar en localStorage
 // ────────────────────────────────────────────────────────────────────
 function save() {
+  if (typeof sellarMontosUSD === 'function') sellarMontosUSD();
   // Si no hay DEK en sesión, significa que el usuario no ha desbloqueado
   // con PIN (ej. durante onboarding inicial). Guardar en plano temporalmente.
   // Devuelve una promesa que se cumple cuando localStorage e IndexedDB ya

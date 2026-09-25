@@ -163,6 +163,8 @@ function migrarDatosViejos() {
 }
 
 function getCuentaBalance(cuenta) {
+  // Cuentas en dólares: su saldo en USD a la tasa de compra de hoy (19-cuentas.js)
+  if (typeof esCuentaUSD === 'function' && esCuentaUSD(cuenta)) return _c2(saldoUSDCuenta(cuenta) * tasaUSD('bid'));
   // Migración invisible: si el usuario viene de versión vieja, copiar state.cuentas
   if (!state.cuentasIniciales) {
     state.cuentasIniciales = {

@@ -68,6 +68,32 @@ function pedirCuenta(pregunta, opciones) {
   return c ? c.id : null;
 }
 
+// ─── Cuentas en dólares ────────────────────────────────────────────────
+// Una cuenta con moneda 'USD' lleva su saldo en dólares: cada movimiento
+// guarda montoUSD (se sella al guardar). Un gasto o ingreso en dólares usa
+// su monto original; uno en lempiras se convierte como lo hace el banco:
+// cuando sale dinero de la cuenta el banco te compra dólares (tasa de
+// compra) y cuando entra te los vende (tasa de venta). El equivalente en
+// lempiras de la cuenta usa la tasa de compra de hoy.
+const esCuentaUSD = id => { const c = infoCuenta(id); return !!(c && c.moneda === 'USD'); };
+function tasaUSD(lado) {
+  const r = window.currencyManager && currencyManager.getRate('USD');
+  return (r && (lado === 'ask' ? r.ask : r.bid)) || 26.9;
+}
+function usdDeTx(t) {
+  if (typeof t.montoUSD === 'number') return t.montoUSD;
+  if (t.originalCurrency === 'USD' && t.originalAmount > 0) return t.originalAmount;
+  return _c2(t.amount / tasaUSD(t.type === 'income' ? 'ask' : 'bid'));
+}
+function saldoUSDCuenta(id) {
+  return _c2((state.transactions || []).filter(t => !t.deletedAt && t.cuenta === id && typeof t.amount === 'number')
+    .reduce((a, t) => a + (t.type === 'income' ? 1 : -1) * usdDeTx(t), 0));
+}
+function sellarMontosUSD() {
+  (state.transactions || []).forEach(t => { if (t.cuenta && typeof t.montoUSD !== 'number' && esCuentaUSD(t.cuenta) && typeof t.amount === 'number') t.montoUSD = usdDeTx(t); });
+}
+const fUSD = n => document.body && document.body.classList.contains('modo-discreto') ? '$ ••••' : (n < 0 ? '-$ ' : '$ ') + Math.abs(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 // ─── Totales y rendimiento ─────────────────────────────────────────────
 const totalEnCuentas = () => _c2(listaCuentas().reduce((a, c) => a + getCuentaBalance(c.id), 0));
 function rendimientoMensual(c) {
@@ -86,7 +112,8 @@ function _filaCuenta(c) {
       ${rend > 0 ? `<div style="font-size:11px;color:var(--green)">Gana ~${fL(rend)} al mes · <a href="#" onclick="registrarRendimiento('${id}');return false" style="color:var(--blue)">Anotar intereses</a></div>` : ''}
     </div>
     <div style="text-align:right">
-      <div style="font-weight:800;white-space:nowrap;color:${saldo < 0 ? 'var(--red)' : 'var(--text)'}">${fL(saldo)}</div>
+      <div style="font-weight:800;white-space:nowrap;color:${saldo < 0 ? 'var(--red)' : 'var(--text)'}">${c.moneda === 'USD' ? fUSD(saldoUSDCuenta(c.id)) : fL(saldo)}</div>
+      ${c.moneda === 'USD' ? `<div style="font-size:10px;color:var(--text2);white-space:nowrap">≈ ${fL(saldo)}</div>` : ''}
       <div class="cuenta-acciones">
         <button onclick="ajustarSaldoCuenta('${id}')" aria-label="Ajustar saldo" title="Ajustar saldo">⚖️</button>
         ${c.base ? '' : `<button onclick="abrirModalCuenta('${id}')" aria-label="Editar" title="Editar">✏️</button>`}
@@ -124,7 +151,7 @@ function renderTilesCuentas() {
   const extra = listaCuentas().filter(c => !c.base);
   cont.innerHTML = extra.map(c => `<div class="cuenta-tile" onclick="switchView('cuentas')" role="button" style="border-color:${esc(c.color)}55">
       <div class="cuenta-tile-nombre">${esc(c.icono)} ${esc(c.grupo || c.nombre).toUpperCase()}</div>${c.grupo ? `<div class="cuenta-tile-sub">${esc(c.nombre)}</div>` : ''}
-      <div class="cuenta-tile-saldo" style="color:${esc(c.color)}">${fL(getCuentaBalance(c.id))}</div></div>`).join('') +
+      <div class="cuenta-tile-saldo" style="color:${esc(c.color)}">${c.moneda === 'USD' ? fUSD(saldoUSDCuenta(c.id)) : fL(getCuentaBalance(c.id))}</div>${c.moneda === 'USD' ? `<div class="cuenta-tile-sub">≈ ${fL(getCuentaBalance(c.id))}</div>` : ''}</div>`).join('') +
     `<button class="cuenta-tile cuenta-tile-nueva" onclick="${extra.length ? "switchView('cuentas')" : 'abrirModalCuenta()'}">${extra.length ? '🏦 Ver mis cuentas' : '➕ Agregar cuenta (BAC, Tigo Money…)'}</button>`;
   sincronizarSelectsCuentas();
 }
@@ -141,6 +168,8 @@ function abrirModalCuenta(id) {
   document.getElementById('cuenta-tipo').innerHTML = Object.entries(TIPOS_CUENTA).map(([k, t]) => '<option value="' + k + '">' + t.icono + ' ' + t.nombre + '</option>').join('');
   document.getElementById('cuenta-tipo').value = c ? c.tipo : 'ahorro';
   document.getElementById('cuenta-saldo-wrap').style.display = c ? 'none' : '';
+  document.getElementById('cuenta-moneda').value = c && c.moneda === 'USD' ? 'USD' : 'HNL';
+  document.getElementById('cuenta-moneda').disabled = !!c;   // cambiarla después descuadraría el saldo
   document.getElementById('cuenta-saldo').value = '';
   document.getElementById('cuenta-tasa').value = c && c.tasaAnual ? c.tasaAnual : '';
   document.getElementById('cuenta-archivar').style.display = c ? '' : 'none';
@@ -169,9 +198,15 @@ function guardarCuenta() {
   if (c) Object.assign(c, { nombre, grupo, tipo, icono: TIPOS_CUENTA[tipo].icono, color: _colorCuenta, tasaAnual: _c2(tasa) });
   else {
     const saldo = leerMonto(document.getElementById('cuenta-saldo').value) || 0;
+    const usd = document.getElementById('cuenta-moneda').value === 'USD';
     c = { id: uid(), nombre, grupo, tipo, icono: TIPOS_CUENTA[tipo].icono, color: _colorCuenta, tasaAnual: _c2(tasa), creada: new Date().toISOString() };
+    if (usd) c.moneda = 'USD';
     state.misCuentas.push(c);
-    if (saldo) state.transactions.push({ id: uid(), type: saldo > 0 ? 'income' : 'expense', amount: _c2(Math.abs(saldo)), cat: 'Saldo inicial', subcat: 'Saldo inicial de ' + nombreCompletoCuenta(c), cuenta: c.id, tipo: 'fijo', esConciliacion: true, esSaldoInicial: true, date: new Date().toISOString() });
+    if (saldo) {
+      const t = { id: uid(), type: saldo > 0 ? 'income' : 'expense', amount: _c2(Math.abs(saldo) * (usd ? tasaUSD('bid') : 1)), cat: 'Saldo inicial', subcat: 'Saldo inicial de ' + nombreCompletoCuenta(c), cuenta: c.id, tipo: 'fijo', esConciliacion: true, esSaldoInicial: true, date: new Date().toISOString() };
+      if (usd) t.montoUSD = _c2(Math.abs(saldo));
+      state.transactions.push(t);
+    }
   }
   save(); closeModal('modal-cuenta'); renderAll(); renderMisCuentas();
 }
@@ -195,19 +230,24 @@ function desarchivarCuenta(id) {
 function ajustarSaldoCuenta(id) {
   const c = infoCuenta(id);
   if (!c) return;
-  const actual = getCuentaBalance(id);
-  const real = leerMonto(prompt('¿Cuánto tienes de verdad en ' + nombreCompletoCuenta(c) + '?\nLa app registra ' + fL(actual) + '.', actual.toFixed(2)));
+  const usd = c.moneda === 'USD', actual = usd ? saldoUSDCuenta(id) : getCuentaBalance(id);
+  const real = leerMonto(prompt('¿Cuánto tienes de verdad en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?\nLa app registra ' + (usd ? fUSD(actual) : fL(actual)) + '.', actual.toFixed(2)));
   if (real === null || isNaN(real)) return;
   const dif = _c2(real - actual);
   if (Math.abs(dif) < 0.01) return alert('✅ El saldo ya está correcto.');
-  state.transactions.push({ id: uid(), type: dif > 0 ? 'income' : 'expense', amount: Math.abs(dif), cat: 'Conciliación', subcat: 'Ajuste ' + nombreCompletoCuenta(c), cuenta: id, tipo: 'fijo', esConciliacion: true, date: new Date().toISOString() });
+  const t = { id: uid(), type: dif > 0 ? 'income' : 'expense', amount: _c2(Math.abs(dif) * (usd ? tasaUSD('bid') : 1)), cat: 'Conciliación', subcat: 'Ajuste ' + nombreCompletoCuenta(c), cuenta: id, tipo: 'fijo', esConciliacion: true, date: new Date().toISOString() };
+  if (usd) t.montoUSD = Math.abs(dif);
+  state.transactions.push(t);
   save(); renderAll(); renderMisCuentas();
 }
 function registrarRendimiento(id) {
   const c = infoCuenta(id);
   if (!c) return;
-  const m = leerMonto(prompt('¿Cuánto te pagaron de intereses en ' + nombreCompletoCuenta(c) + '?', rendimientoMensual(c).toFixed(2)));
+  const usd = c.moneda === 'USD';
+  const m = leerMonto(prompt('¿Cuánto te pagaron de intereses en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?', (usd ? rendimientoMensual(c) / tasaUSD('bid') : rendimientoMensual(c)).toFixed(2)));
   if (!(m > 0)) return;
-  state.transactions.push({ id: uid(), type: 'income', amount: _c2(m), cat: 'Intereses ganados', subcat: nombreCompletoCuenta(c), cuenta: id, tipo: 'extra', date: new Date().toISOString() });
+  const t = { id: uid(), type: 'income', amount: _c2(m * (usd ? tasaUSD('bid') : 1)), cat: 'Intereses ganados', subcat: nombreCompletoCuenta(c), cuenta: id, tipo: 'extra', date: new Date().toISOString() };
+  if (usd) Object.assign(t, { montoUSD: _c2(m), originalCurrency: 'USD', originalAmount: _c2(m), conversionRate: tasaUSD('bid') });
+  state.transactions.push(t);
   save(); renderAll(); renderMisCuentas();
 }
