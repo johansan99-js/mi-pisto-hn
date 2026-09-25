@@ -917,12 +917,13 @@ body.modo-discreto canvas{filter:blur(10px)}
       <div class="topbar-greeting-sub" id="dt-greeting-sub">Bienvenido a Mi Pisto HN</div>
       <div class="topbar-greeting-name" id="dt-greeting-name" style="background:linear-gradient(90deg,#FF4444,#F5C800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Cargando...</div>
     </div>
-    <div class="topbar-actions">
+    <div class="topbar-actions" style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger-btn btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="font-size:20px">👁️</button>
       <div id="dt-date" style="font-size:12px;color:var(--text2);text-align:right;line-height:1.5"></div>
     </div>
   </div>
 <div class="hamburger-menu">
-  <button class="hamburger-btn" id="btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="justify-self:start;font-size:20px">👁️</button>
+  <button class="hamburger-btn btn-modo-discreto" id="btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="justify-self:start;font-size:20px">👁️</button>
   <div class="hamburger-title" style="display:flex;align-items:center;justify-content:center;gap:7px;-webkit-text-fill-color:initial;background:none">
     <svg width="28" height="28" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(160,160,160,.5))">
       <defs>
@@ -2247,8 +2248,7 @@ const fL = n => {
 function toggleModoDiscreto() {
   const activo = document.body.classList.toggle('modo-discreto');
   try { localStorage.setItem('mph_modo_discreto', activo ? '1' : '0'); } catch (e) {}
-  const btn = document.getElementById('btn-modo-discreto');
-  if (btn) { btn.textContent = activo ? '🙈' : '👁️'; btn.title = activo ? 'Mostrar montos' : 'Ocultar montos'; }
+  _pintarBotonesDiscreto(activo);
   if (typeof renderAll === 'function' && state.setup) renderAll();
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -2256,10 +2256,15 @@ document.addEventListener('DOMContentLoaded', () => {
   try { activo = localStorage.getItem('mph_modo_discreto') === '1'; } catch (e) {}
   if (activo) {
     document.body.classList.add('modo-discreto');
-    const btn = document.getElementById('btn-modo-discreto');
-    if (btn) { btn.textContent = '🙈'; btn.title = 'Mostrar montos'; }
+    _pintarBotonesDiscreto(true);
   }
 });
+function _pintarBotonesDiscreto(activo) {
+  document.querySelectorAll('.btn-modo-discreto').forEach(btn => {
+    btn.textContent = activo ? '🙈' : '👁️';
+    btn.title = activo ? 'Mostrar montos' : 'Ocultar montos';
+  });
+}
 // P1-6: escape HTML para todos los campos del usuario insertados vía innerHTML.
 // Esto cierra la superficie XSS aunque alguien logre meter datos maliciosos
 // (por import, edición manual de localStorage, o un payload en una transacción).
@@ -4748,6 +4753,13 @@ function renderDashboard(){
     document.getElementById('total-income').textContent=fL(income);
     document.getElementById('total-expense').textContent=fL(expense);
     document.getElementById('total-extra').textContent=fL(extra);
+    // Hoy según la fecha local del teléfono (no UTC: en Honduras, UTC-6,
+    // lo registrado después de las 6 p. m. caería en "mañana")
+    const esHoy=d=>{const x=new Date(d),h=new Date();return x.getFullYear()===h.getFullYear()&&x.getMonth()===h.getMonth()&&x.getDate()===h.getDate();};
+    const hoyTx=realTx.filter(t=>esHoy(t.date));
+    const cobradoEl=document.getElementById('cobrado-hoy'),pagadoEl=document.getElementById('pagado-hoy');
+    if(cobradoEl)cobradoEl.textContent=fL(hoyTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0));
+    if(pagadoEl)pagadoEl.textContent=fL(hoyTx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0));
 
     // ── EMPTY STATE: sin movimientos ──
     const recent = state.transactions.filter(t => !t.deletedAt).slice().reverse().slice(0,5);
