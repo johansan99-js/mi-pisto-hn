@@ -470,6 +470,7 @@ const cloudSync = {
       if (!state.budgetRules) state.budgetRules = { gastos: 65, ahorro: 20, extra: 15 };
       if (!state.receivables) state.receivables = [];
       if (!state.payables) state.payables = [];
+      if (!state.grupos) state.grupos = [];
       if (!state.tarjetas) state.tarjetas = [];
       if (!state.goals) state.goals = [];
       if (!state.cuentas) state.cuentas = { efectivo: 0, ahorro: 0 };
@@ -681,7 +682,7 @@ const cloudSync = {
     merged.eliminados = eliminados;
     const sello = x => (x && x.updatedAt && Date.parse(x.updatedAt)) || 0;
     const LABELS = { transactions:'transacciones', goals:'metas de ahorro', receivables:'deudas a cobrar',
-      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas' };
+      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas', grupos:'gastos compartidos' };
     const anotar = (bucket, field, item) => { if (!diff[bucket][field]) diff[bucket][field] = []; diff[bucket][field].push(item); };
     for (const field of Object.keys(LABELS)) {
       const localArr  = Array.isArray(localState[field])  ? localState[field]  : [];
@@ -732,7 +733,7 @@ const cloudSync = {
   /** Genera HTML del diff para el modal de merge */
   buildDiffHtml(diff, localDeviceName, remoteDeviceName, remoteDate) {
     const LABELS = { transactions:'transacciones', goals:'metas de ahorro', receivables:'deudas a cobrar',
-      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas' };
+      payables:'deudas a pagar', prestamos:'préstamos', tarjetas:'tarjetas', pagosRecurrentes:'pagos recurrentes', transferenciasProgramadas:'transferencias programadas', grupos:'gastos compartidos' };
     let html = '';
     const renderSection = (title, color, entries) => {
       html += '<div style="margin-bottom:10px"><div style="font-weight:700;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">' + title + '</div>';
@@ -798,7 +799,7 @@ const cloudSync = {
             // Aplicar merged sin disparar otro auto-sync
             Object.keys(state).forEach(k => delete state[k]);
             Object.assign(state, merged);
-            ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
+            ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas','grupos'].forEach(f => { if (!state[f]) state[f] = []; });
             _tomarBaseSync();
             // Persistir localmente sin trigger
             try {
@@ -1180,7 +1181,7 @@ async function confirmarEstrategiaMerge(strategy) {
     const { merged } = _pendingMerge;
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, merged);
-    ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas'].forEach(f => { if (!state[f]) state[f] = []; });
+    ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas','grupos'].forEach(f => { if (!state[f]) state[f] = []; });
     _tomarBaseSync();
     // Persistir localmente
     try {

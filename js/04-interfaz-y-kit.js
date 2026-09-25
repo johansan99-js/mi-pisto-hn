@@ -385,6 +385,7 @@ async function finishOnboarding(){
     tarjetas:[],
     pagosRecurrentes:[],
     transferenciasProgramadas:[],
+    grupos:[],
     budgetRules:{gastos:65,ahorro:20,extra:15}
   };
 

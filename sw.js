@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v46-deudas-bancos';
+const VERSION = 'v47-compartidos';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -83,6 +83,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/14-ux.js',
   BASE_PATH + 'js/15-plan-deudas.js',
   BASE_PATH + 'js/16-fondo-emergencia.js',
+  BASE_PATH + 'js/17-compartidos.js',
   BASE_PATH + 'css/app.css'
 ];
 
