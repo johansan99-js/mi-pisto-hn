@@ -54,6 +54,7 @@ async function _completarCargaApp() {
     if (!state.payables) state.payables = [];
     if (!state.grupos) state.grupos = [];
     if (!state.presupuestos) state.presupuestos = [];
+    if (!state.misCuentas) state.misCuentas = [];
     if (!state.tarjetas) state.tarjetas = [];
     if (!state.goals) state.goals = [];
     console.log('✅ Estado restaurado desde IndexedDB (post-PIN)');
@@ -101,7 +102,7 @@ window.onload = async function() {
       cuentas: { efectivo: 0, ahorro: 0 },
       cuentasIniciales: null, cuentasInicialesV: 0, eliminados: {}, sellosV: 0,
       transactions: [], goals: [], receivables: [], payables: [],
-      prestamos: [], tarjetas: [], pagosRecurrentes: [], transferenciasProgramadas: [], grupos: [], presupuestos: [],
+      prestamos: [], tarjetas: [], pagosRecurrentes: [], transferenciasProgramadas: [], grupos: [], presupuestos: [], misCuentas: [],
       budgetRules: { gastos: 65, ahorro: 20, extra: 15 }
     };
     // Mostrar modal de PIN (o biometría si está disponible)
@@ -129,6 +130,7 @@ window.onload = async function() {
     if (!state.payables) state.payables = [];
     if (!state.grupos) state.grupos = [];
     if (!state.presupuestos) state.presupuestos = [];
+    if (!state.misCuentas) state.misCuentas = [];
     if (!state.tarjetas) state.tarjetas = [];
     if (!state.goals) state.goals = [];
     console.log('✅ Estado restaurado desde IndexedDB');

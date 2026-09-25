@@ -26,7 +26,7 @@ function _validarSchemaBackup(obj) {
   }
   
   // ── Validar arrays esperados ──
-  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos'];
+  const arrays = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos','misCuentas'];
   for (const k of arrays) {
     if (obj[k] !== undefined && !Array.isArray(obj[k])) return `${k} debe ser array`;
   }
@@ -114,6 +114,14 @@ function _validarSchemaBackup(obj) {
     }
   }
   
+  // ── Validar mis cuentas ──
+  if (Array.isArray(obj.misCuentas)) {
+    for (const c of obj.misCuentas.slice(0, 100)) {
+      if (!esIdValido(c.id) || !esStringSeguro(c.nombre, 40) || !esStringSeguro(c.grupo, 40) || /[<>"']/.test((c.nombre || '') + (c.grupo || '') + (c.color || '') + (c.icono || ''))) return 'cuenta inválida';
+      if (c.color !== undefined && !/^#[0-9a-f]{6}$/i.test(c.color)) return 'color de cuenta inválido';
+    }
+  }
+
   // ── Validar presupuestos ──
   if (Array.isArray(obj.presupuestos)) {
     for (const p of obj.presupuestos.slice(0, 100)) {
@@ -384,6 +392,7 @@ function switchView(v){
   if(v==='pagar')renderPagar();
   if(v==='prestamos')renderPrestamos();
   if(v==='grupos')renderGrupos();
+  if(v==='cuentas')renderMisCuentas();
   // Scroll to top on desktop
   const mainArea=document.getElementById('main-scroll-area');
   if(mainArea) mainArea.scrollTo({top:0,behavior:'smooth'});
@@ -446,6 +455,7 @@ function renderAll(){
     if (typeof renderAccesoPlanDeudas === 'function') renderAccesoPlanDeudas();
     if (typeof renderFondoEmergencia === 'function') renderFondoEmergencia();
     if (typeof renderPresupuestos === 'function') renderPresupuestos();
+    if (typeof renderTilesCuentas === 'function') renderTilesCuentas();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

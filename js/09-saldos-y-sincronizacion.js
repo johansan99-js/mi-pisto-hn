@@ -64,7 +64,7 @@ function migrarCuentasIniciales() {
 // guardado: si cambió, lo sella con la hora. Los ids que desaparecen
 // (borrados definitivos) se anotan en state.eliminados para que otro
 // dispositivo no los reviva al combinar.
-const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos'];
+const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos','tarjetas','pagosRecurrentes','transferenciasProgramadas','grupos','presupuestos','misCuentas'];
 const ELIMINADOS_MAX_DIAS = 180;
 let _idsGuardados = null;
 
@@ -308,8 +308,8 @@ function updateTransferPreview(){
   if(fromBal)fromBal.textContent=fL(saldoFrom);
   if(toBal)toBal.textContent=fL(saldoTo);
   if(preview&&monto>0){
-    if(monto>saldoFrom)preview.innerHTML=`<span style="color:var(--red)">⚠️ Saldo insuficiente en ${from==='efectivo'?'Efectivo':'Ahorro'}</span>`;
-    else preview.innerHTML=`Después: <strong>${from==='efectivo'?'Efectivo':'Ahorro'}</strong> ${fL(saldoFrom-monto)} → <strong>${to==='efectivo'?'Efectivo':'Ahorro'}</strong> ${fL(saldoTo+monto)}`;
+    if(monto>saldoFrom)preview.innerHTML=`<span style="color:var(--red)">⚠️ Saldo insuficiente en ${nombreCompletoCuenta(infoCuenta(from))}</span>`;
+    else preview.innerHTML=`Después: <strong>${nombreCompletoCuenta(infoCuenta(from))}</strong> ${fL(saldoFrom-monto)} → <strong>${nombreCompletoCuenta(infoCuenta(to))}</strong> ${fL(saldoTo+monto)}`;
   }
 }
 function ejecutarTransferencia(){
@@ -320,9 +320,9 @@ function ejecutarTransferencia(){
   if(from===to)return alert('Las cuentas deben ser diferentes');
   // P0-4: validación con saldo derivado
   const saldoDisponible=getCuentaBalance(from);
-  if(monto>saldoDisponible)return alert('Saldo insuficiente en '+(from==='efectivo'?'Efectivo':'Ahorro'));
-  const fromNom=from==='efectivo'?'Efectivo':'Ahorro';
-  const toNom=to==='efectivo'?'Efectivo':'Ahorro';
+  if(monto>saldoDisponible)return alert('Saldo insuficiente en '+nombreCompletoCuenta(infoCuenta(from)));
+  const fromNom=from==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(from));
+  const toNom=to==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(to));
   // Registrar como par de transacciones internas — el saldo se recalcula automáticamente
   state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Transferencia',subcat:`Salida de ${fromNom}`,cuenta:from,tipo:'fijo',date:new Date().toISOString(),esTransferencia:true});
   state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:new Date().toISOString(),esTransferencia:true});
@@ -367,7 +367,7 @@ function renderTransferenciasProgramadas(){
     </div>`;
     return;
   }
-  const nombreCuenta = c => c === 'efectivo' ? '💵 Efectivo' : '🏦 Ahorro';
+  const nombreCuenta = c => c === 'ahorro' ? '🏦 Ahorro' : etiquetaCuenta(c);
   const hoy = new Date();
   c.innerHTML = lista.map(t => {
     let prox = new Date(hoy.getFullYear(), hoy.getMonth(), t.dia);
@@ -414,8 +414,8 @@ function eliminarTransferenciaProgramada(id){
 /** Ejecuta una transferencia (programada o manual desde el botón "Ejecutar ahora")
     y registra el par de transacciones, igual que ejecutarTransferencia(). */
 function _ejecutarTransferenciaInterna(desde, hasta, monto, nombre, transferenciaProgramadaId){
-  const fromNom = desde === 'efectivo' ? 'Efectivo' : 'Ahorro';
-  const toNom = hasta === 'efectivo' ? 'Efectivo' : 'Ahorro';
+  const fromNom = desde === 'ahorro' ? 'Ahorro' : nombreCompletoCuenta(infoCuenta(desde));
+  const toNom = hasta === 'ahorro' ? 'Ahorro' : nombreCompletoCuenta(infoCuenta(hasta));
   const meta = transferenciaProgramadaId ? { transferenciaProgramadaId } : {};
   state.transactions.push({id:uid(), type:'expense', amount:monto, cat:'Transferencia', subcat:`${nombre} · Salida de ${fromNom}`, cuenta:desde, tipo:'fijo', date:new Date().toISOString(), esTransferencia:true, ...meta});
   state.transactions.push({id:uid(), type:'income', amount:monto, cat:'Transferencia', subcat:`${nombre} · Entrada a ${toNom}`, cuenta:hasta, date:new Date().toISOString(), esTransferencia:true, ...meta});
@@ -425,7 +425,7 @@ function ejecutarTransferenciaProgramadaAhora(id){
   const t = (state.transferenciasProgramadas||[]).find(x => x.id === id);
   if (!t) return;
   const saldoDisponible = getCuentaBalance(t.desde);
-  if (t.monto > saldoDisponible) return alert(`Saldo insuficiente en ${t.desde==='efectivo'?'Efectivo':'Ahorro'} para ejecutar "${t.nombre}".`);
+  if (t.monto > saldoDisponible) return alert(`Saldo insuficiente en ${nombreCompletoCuenta(infoCuenta(t.desde))} para ejecutar "${t.nombre}".`);
   const hoy = new Date();
   _ejecutarTransferenciaInterna(t.desde, t.hasta, t.monto, t.nombre, t.id);
   t.ultimaEjecucion = `${hoy.getFullYear()}-${hoy.getMonth()}`;

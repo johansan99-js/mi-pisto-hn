@@ -136,7 +136,8 @@ function marcarPagoRecurrente(id){
   if(_pagadoEsteMes(p)&&!confirm(`Ya registraste el pago de "${p.servicio}" este mes. ¿Registrar otro pago?`))return;
   let monto=p.monto;
   if(!(monto>0)){monto=parseMonto(prompt(`¿Cuánto pagaste de "${p.servicio}"?`));if(!(monto>0))return;}
-  const cuenta=confirm(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+  const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
+  if(!cuenta)return;
   state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
   p.pagado=(p.pagado||0)+monto;p.ultimoPago=new Date().toISOString();
   save();renderAll();
@@ -171,7 +172,7 @@ function previewConciliacion(){
 function reconcileBalance(){
   // P0-4: leer saldo derivado, no mutamos state.cuentas
   const cuentaSel=document.getElementById('reconcile-cuenta')?.value||'efectivo';
-  const cuentaNombre=cuentaSel==='ahorro'?'Cuenta de Ahorro':'Efectivo';
+  const cuentaNombre=cuentaSel==='ahorro'?'Cuenta de Ahorro':cuentaSel==='efectivo'?'Efectivo':nombreCompletoCuenta(infoCuenta(cuentaSel));
   const saldoActual=getCuentaBalance(cuentaSel);
   const saldoReal=parseMonto(document.getElementById('reconcile-balance')?.value);
   if(saldoReal===null)return alert('Ingresa el saldo real de tu '+cuentaNombre);
