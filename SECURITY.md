@@ -1,6 +1,31 @@
 # Seguridad — Mi Pisto HN
 
-Última auditoría: **2026-09-22**. Este documento resume qué se probó, qué se encontró, qué se corrigió, y qué hacer si en el futuro sospechas un incidente.
+Última auditoría: **2026-09-25** (ver "Actualización"; la anterior fue el 2026-09-22). Este documento resume qué se probó, qué se encontró, qué se corrigió, y qué hacer si en el futuro sospechas un incidente.
+
+## Actualización 2026-09-25
+
+Revisión después de las funciones nuevas (Premium, búsqueda, remesas, dictado por voz, tarjetas en dólares, pagos fijos automáticos, informe del mes):
+
+| Revisión | Resultado |
+|---|---|
+| Texto del usuario en pantalla (remesas de/por, dictado, notas, categorías, nombres de tarjetas) | 🟢 Todo pasa por `esc()` o atributos `data-*`. Sin XSS encontrado. |
+| Nombres globales repetidos entre los 34 scripts | 🟢 Ninguno (804 declaraciones revisadas). |
+| Librerías externas | 🟢 Chart.js, SheetJS, Supabase y Tesseract cargan con SRI. 🟡 El *worker* y el *core* de Tesseract (unpkg) no pueden llevar SRI; solo se descargan si se usa el lector de recibos. |
+| Dictado por voz | 🟡 El audio lo procesa el reconocimiento de voz de Google del teléfono (no la app). Declarado en `privacidad.html` y en "Seguridad de los datos" (`play-store/README.md`). La app no guarda audio. |
+| Imagen para compartir "Tu mes" | 🟢 Se crea en el teléfono y no lleva montos, solo porcentajes. |
+| Premium | 🟡 La prueba de 30 días y el estado de la compra viven en el `state` (cifrado); alguien con DevTools puede activarse Premium. No expone datos: es un riesgo de ingresos, no de privacidad. La compra real se valida con Google Play al abrir la app. |
+| Pagos fijos anotados solos | 🟢 Id fijo por pago y fecha: dos teléfonos no los duplican al sincronizar. |
+| KDF del PIN | 🟢 Los PIN nuevos usan el esquema `v2` (600,000 iteraciones PBKDF2, hash y llave separados); los de antes siguen en `legacy` (100k/250k) hasta que se cambie el PIN. Mínimo 6 dígitos. |
+
+### Lo que depende de las cuentas del desarrollador (lo más importante hoy)
+
+El código ya está bien protegido; el riesgo real está en quién controla las cuentas:
+
+1. **GitHub** (`johansan99-js`): la app se publica desde este repositorio con GitHub Pages. Quien entre a la cuenta puede cambiar la app de todos los usuarios. Tener **2FA** activado y no compartir tokens.
+2. **Google Play Console** y **mipistohn@gmail.com**: **2FA** activado.
+3. **Llave de firma de Android** (el `.keystore` que da PWABuilder y sus contraseñas): guardarla en dos lugares seguros. Sin ella no se puede volver a actualizar la app en Play Store.
+4. **Supabase**: el proyecto gratis se pausa tras días sin uso; si la sincronización falla, reactivarlo desde el panel (los datos no se pierden). Revisar de vez en cuando que RLS siga activo (ver abajo).
+5. **Soporte**: quien olvida el PIN pierde sus datos por diseño. Recomendar el kit de recuperación (Primeros pasos) y los respaldos cifrados.
 
 ## Modelo de amenaza
 
@@ -18,7 +43,7 @@ Mi Pisto HN es una PWA sin backend propio (solo Supabase para sync opcional). El
 | INSERT en `encrypted_states` sin sesión, suplantando otro `user_id` | 🟢 Bloqueado por RLS (401, "row-level security policy"). |
 | UPDATE masivo en `encrypted_states` sin sesión | 🟢 0 filas afectadas (RLS filtra por `auth.uid() = user_id`, que es NULL sin sesión). |
 | Forzar `sessionStorage.pinVerificado='true'` sin el PIN real | 🟡 Oculta la pantalla de bloqueo pero **no expone datos reales** — la DEK nunca se deriva sin pasar por `verificarPIN()`, así que el dashboard se ve vacío. No es una fuga de datos, pero es un candado cosmético — ver nota abajo. |
-| Fuerza bruta offline del PIN (con el hash+salt reales) | 🔴 **Hallazgo crítico → corregido.** Un PIN de 4 dígitos completo (10,000 combinaciones) se prueba en ~162 segundos en una laptop normal. Ahora se permiten PINs de 4 a 8 dígitos (recomendado 6+). |
+| Fuerza bruta offline del PIN (con el hash+salt reales) | 🔴 **Hallazgo crítico → corregido.** Un PIN de 4 dígitos completo (10,000 combinaciones) se prueba en ~162 segundos en una laptop normal. Ahora se piden PINs de 6 a 8 dígitos. |
 | Bloqueo de PIN tras 5 intentos fallidos (`localStorage`) | 🟡 Funciona para el flujo normal de la app, pero es evadible borrando la clave `pin_bloqueo_hasta` desde la consola del navegador — inherente a cualquier protección 100% del lado del cliente sin servidor. Ver "Riesgos aceptados". |
 
 ## Riesgos aceptados (documentados, no corregidos)
@@ -27,7 +52,7 @@ Estos son reales pero requieren reescrituras grandes o no tienen arreglo posible
 
 - **`unsafe-inline` en el CSP** (`script-src`/`style-src`): la app usa `onclick=""` inline en cientos de lugares. Quitarlo requiere migrar todo a `addEventListener`.
 - **Bloqueo de PIN evadible con acceso a DevTools**: cualquier rate-limit puramente client-side se puede desactivar si el atacante ya tiene ese nivel de acceso al dispositivo. Sin servidor propio no hay forma de cerrarlo del todo.
-- **PBKDF2 en 100k/250k iteraciones**: por debajo del estándar 2026, pero subirlo rompería el acceso a datos ya cifrados de usuarios existentes. El PIN más largo (ya corregido arriba) es la mitigación real; las iteraciones son secundarias frente a un keyspace tan chico.
+- **PBKDF2 legacy en 100k/250k iteraciones** para PIN creados antes del esquema `v2` (600k): se actualizan al cambiar el PIN. El PIN de 6+ dígitos es la mitigación real; las iteraciones son secundarias frente a un keyspace tan chico.
 - **Sin módulos ni build system:** el código está repartido por tema en `js/`, pero comparte el ámbito global; aislar módulos de verdad requiere un build system.
 
 ## Qué hacer si sospechas un incidente futuro
