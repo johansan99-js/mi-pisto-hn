@@ -79,7 +79,7 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
 **Nombre (30):** `Mi Pisto HN: Finanzas y Gastos`
 
-**Descripción breve (74 de 80):** `Controla tus lempiras: presupuesto por quincena, tarjetas, deudas y dólar.`
+**Descripción breve (72 de 80):** `Anota tus gastos en segundos y controla tus lempiras, tarjetas y deudas.`
 
 **Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
 
@@ -87,9 +87,9 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 - **Ícono:** `../icon-512.png` (512×512).
 - **Gráfico destacado:** `grafico-destacado.png` (1024×500). Alternativa: `grafico-destacado-quincenas.png`, con un anillo de 365 días que marca en dorado las 24 quincenas. La idea detrás del diseño está en `filosofia-diseno.md`.
 - **Capturas de teléfono:** `capturas-ficha/` (1080×1920, en orden). Cada una tiene un título arriba y la pantalla real de la app debajo, con datos de ejemplo:
-  1. Presupuesto por quincena · 2. Mis cuentas · 3. El dólar de tu banco · 4. Tarjetas (el verdadero costo) · 5. Plan para salir de deudas · 6. Gastos compartidos · 7. Resumen del mes · 8. Privado (modo discreto).
-  Para rehacerlas después de cambiar la app: `node play-store/generar-capturas.js`. Usa el navegador de las pruebas y la fuente Outfit de `fuentes/`, con licencia OFL.
-  Las capturas anteriores siguen en `capturas/`, porque las usa `manifest.json`.
+  1. Tu mes, día por día · 2. Anota en 3 toques (el teclado) · 3. Análisis con la dona · 4. Presupuesto por quincena · 5. Cuentas y tarjetas · 6. El dólar de tu banco · 7. Plan para salir de deudas · 8. Claro u oscuro.
+  Van en tema claro y oscuro, alternados, con la guacamaya arriba. Para rehacerlas después de cambiar la app: `node play-store/generar-capturas.js`. Usa el navegador de las pruebas y la fuente Outfit de `fuentes/`, con licencia OFL.
+  `manifest.json` usa estas mismas capturas para la pantalla de instalación de la app. Las del diseño anterior siguen en `capturas/`.
 
 ## 6. Formularios de Contenido de la app
 
