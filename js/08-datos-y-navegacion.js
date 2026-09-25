@@ -457,6 +457,8 @@ function renderAll(){
     if (typeof renderPresupuestos === 'function') renderPresupuestos();
     if (typeof renderTilesCuentas === 'function') renderTilesCuentas();
     if (typeof renderConfigTarjetaAlPagar === 'function') renderConfigTarjetaAlPagar();
+    if (typeof renderConfigTema === 'function') { renderConfigTema(); aplicarTema(temaActual()); }
+    if (typeof renderAvisoCuadre === 'function') renderAvisoCuadre();
     if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();

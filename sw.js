@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v50-tarjeta-al-pagar';
+const VERSION = 'v51-oled-pdf-cuadre';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -86,6 +86,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/17-compartidos.js',
   BASE_PATH + 'js/18-presupuestos.js',
   BASE_PATH + 'js/19-cuentas.js',
+  BASE_PATH + 'js/20-extras.js',
   BASE_PATH + 'css/app.css'
 ];
 

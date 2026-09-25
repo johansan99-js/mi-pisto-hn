@@ -998,3 +998,32 @@ body.modo-discreto canvas{filter:blur(10px)}
 .cuenta-colores{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .cuenta-colores button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
 .cuenta-colores button.activa{border-color:var(--text);box-shadow:0 0 0 2px var(--bg2) inset}
+
+/* Modo OLED: negro puro */
+html.oled{--bg:#000;--bg2:#0B0B0B;--bg3:#151515;--bg4:#202020;--border:#262626;--text2:#A8A8A8}
+html.oled body{background:#000}
+
+/* Reporte del mes para imprimir o guardar en PDF */
+#reporte-imprimible{display:none}
+@media print{
+  body.imprimiendo{background:#fff!important;color:#111!important;max-width:none!important;width:auto!important;padding:0!important;margin:0!important;display:block!important}
+  body.imprimiendo #reporte-imprimible{width:auto!important;max-width:none!important}
+  body.imprimiendo>*:not(#reporte-imprimible){display:none!important}
+  body.imprimiendo #reporte-imprimible{display:block;font:12px/1.45 system-ui,sans-serif;color:#111;padding:8mm}
+  #reporte-imprimible h3{font-size:13px;margin:14px 0 6px;border-bottom:2px solid #F5C800;padding-bottom:3px}
+  #reporte-imprimible table{width:100%;border-collapse:collapse}
+  #reporte-imprimible td,#reporte-imprimible th{padding:3px 4px;border-bottom:1px solid #ddd;text-align:left}
+  #reporte-imprimible .n{text-align:right;white-space:nowrap}
+  #reporte-imprimible .mas{color:#1b7f35}
+  .rep-cabecera{display:flex;justify-content:space-between;border-bottom:3px solid #C62828;padding-bottom:6px}
+  .rep-cabecera strong{font-size:18px;color:#C62828;display:block}
+  .rep-cabecera span{display:block;font-size:11px;color:#555}
+  .rep-cabecera>div:last-child{text-align:right}
+  .rep-cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+  .rep-cifras div{border:1px solid #ddd;border-radius:6px;padding:6px 8px}
+  .rep-cifras small{display:block;color:#555}
+  .rep-cifras strong{font-size:15px}
+  .rep-dos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .rep-movs tr{page-break-inside:avoid}
+  .rep-pie{font-size:10px;color:#666;margin-top:10px}
+}
