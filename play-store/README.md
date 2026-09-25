@@ -85,7 +85,7 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
 **Imágenes (en esta carpeta):**
 - **Ícono:** `../icon-512.png` (512×512).
-- **Gráfico destacado:** `grafico-destacado.png` (1024×500). Alternativa: `grafico-destacado-quincenas.png`, con un anillo de 365 días que marca en dorado las 24 quincenas. La idea detrás del diseño está en `filosofia-diseno.md`.
+- **Gráfico destacado:** `grafico-destacado.png` (1024×500), en el verde de la app con la guacamaya y la pantalla de Análisis. Se rehace con `node play-store/generar-grafico-destacado.js`. `grafico-destacado-quincenas.png` es del diseño anterior (vino y dorado); la idea detrás de ese diseño está en `filosofia-diseno.md`.
 - **Capturas de teléfono:** `capturas-ficha/` (1080×1920, en orden). Cada una tiene un título arriba y la pantalla real de la app debajo, con datos de ejemplo:
   1. Tu mes, día por día · 2. Anota en 3 toques (el teclado) · 3. Análisis con la dona · 4. Presupuesto por quincena · 5. Cuentas y tarjetas · 6. El dólar de tu banco · 7. Plan para salir de deudas · 8. Claro u oscuro.
   Van en tema claro y oscuro, alternados, con la guacamaya arriba. Para rehacerlas después de cambiar la app: `node play-store/generar-capturas.js`. Usa el navegador de las pruebas y la fuente Outfit de `fuentes/`, con licencia OFL.
