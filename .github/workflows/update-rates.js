@@ -52,6 +52,20 @@ async function tryFetchBCHOfficial() {
       console.warn('  ❌ HTML del BCH sin etiquetas compra/venta');
       return null;
     }
+    // Primero, el número pegado a "compra" y a "venta" en el texto visible.
+    // Antes se tomaba cualquier número en rango de todo el HTML y salía uno
+    // viejo (25.20 cuando la tasa del día era ~26.9).
+    const texto = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+    const ctx = [...texto.matchAll(/.{0,80}(compra|venta).{0,80}/gi)].slice(0, 6).map(m => m[0].trim());
+    console.log('  🔎 Contexto BCH:\n    ' + ctx.join('\n    '));
+    const par = texto.match(/compra\D{0,40}(\d{2}\.\d{2,4})\D{0,80}?venta\D{0,40}(\d{2}\.\d{2,4})/i);
+    if (par) {
+      const bid = parseFloat(par[1]), ask = parseFloat(par[2]);
+      if (bid >= USD_HNL_RANGE.min && ask <= USD_HNL_RANGE.max && ask >= bid && ask - bid < 1) {
+        console.log('  ✅ BCH oficial (compra/venta juntas): USD bid=' + bid + ', ask=' + ask);
+        return { bid: bid, ask: ask, mid: (bid + ask) / 2 };
+      }
+    }
     const numRegex = /(\d{2}\.\d{2,4})/g;
     const matches = [...html.matchAll(numRegex)]
       .map(m => parseFloat(m[1]))

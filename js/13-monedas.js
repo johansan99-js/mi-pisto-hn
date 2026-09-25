@@ -117,6 +117,7 @@
         }
         this.ratesLastUpdate = cfg.ratesLastUpdate ? new Date(cfg.ratesLastUpdate) : null;
         this.ratesSource = cfg.ratesSource || 'default';
+        this.ratesOrigin = cfg.ratesOrigin || null;
         this._formatVersion = cfg._formatVersion || 1;
       } catch (e) { console.warn('Currency config load fail:', e); }
     }
@@ -165,6 +166,7 @@
           rates: this.rates,
           ratesLastUpdate: this.ratesLastUpdate ? this.ratesLastUpdate.toISOString() : null,
           ratesSource: this.ratesSource,
+          ratesOrigin: this.ratesOrigin || null,
           _formatVersion: 3
         }));
       } catch (e) { console.warn('Currency config save fail:', e); }
@@ -254,6 +256,7 @@
           this.rates = filtered;
           this.ratesLastUpdate = data.updated_at ? new Date(data.updated_at) : new Date();
           this.ratesSource = 'json';
+          this.ratesOrigin = /BCH/i.test(data.source || '') ? 'bch' : 'mercado';
           this.saveToStorage();
           console.log('✅ [Nivel 1] Tasas cargadas de tasas.json (formato v' + (data.format_version || 1) + '):', filtered);
           return true;
@@ -326,6 +329,12 @@
 
     /** Carga inicial: intenta Nivel 1, después Nivel 2. */
     async initialLoad() {
+      // Las tasas que el usuario escribió (las de su banco) mandan hasta que
+      // toque "Auto"; antes, la siguiente carga las reemplazaba sin avisar
+      if (this.ratesSource === 'manual') {
+        console.log('ℹ️ Usando las tasas manuales del usuario');
+        return;
+      }
       // Si las tasas son recientes (< 24h) y vienen de json/api, no tocar
       if (!this.areRatesStale() && (this.ratesSource === 'json' || this.ratesSource === 'api')) {
         console.log('ℹ️ Tasas en caché aún frescas (' + this.ratesSource + ')');
@@ -419,10 +428,10 @@
     /** Etiqueta humana para la fuente actual de las tasas */
     getSourceLabel() {
       switch (this.ratesSource) {
-        case 'json':   return 'GitHub Actions (auto-diario)';
-        case 'api':    return 'API en línea';
-        case 'manual': return 'manual';
-        default:       return 'predeterminadas';
+        case 'json':   return this.ratesOrigin === 'bch' ? 'Banco Central de Honduras (se actualiza cada día)' : 'referencia del mercado internacional (se actualiza cada día)';
+        case 'api':    return 'referencia del mercado internacional (en línea)';
+        case 'manual': return 'las tasas de tu banco, escritas por ti';
+        default:       return 'predeterminadas (sin conexión)';
       }
     }
   }
@@ -530,11 +539,7 @@
             <strong style="color:var(--amber)">¿Cuántos lempiras vale 1 unidad de cada moneda?</strong>
             Ej: si <strong>1 USD = L 26.73</strong>, escribe <strong>26.73</strong> en USD.
           </p>
-          <div style="background:var(--bg3);border-left:3px solid var(--blue);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:11px;color:var(--text2)">
-            💡 Tu app actualiza tasas <strong>automáticamente cada día</strong> vía
-            <span style="color:var(--amber);font-weight:700">GitHub Actions</span>.
-            Solo edita aquí si quieres tasas custom.
-          </div>
+          <div id="rates-fuente" style="background:var(--bg3);border-left:3px solid var(--blue);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.5"></div>
           <div id="rates-form-container"></div>
           <div style="display:flex;gap:8px;margin-top:14px">
             <button class="btn btn-secondary" onclick="updateRatesFromAPI()" style="flex:1">🌐 Auto</button>
@@ -549,6 +554,14 @@
   function renderRatesForm() {
     const container = document.getElementById('rates-form-container');
     if (!container) return;
+    const fuente = document.getElementById('rates-fuente');
+    if (fuente) {
+      const fecha = cm.ratesLastUpdate ? ' · ' + cm.ratesLastUpdate.toLocaleDateString('es-HN') : '';
+      fuente.innerHTML = '📍 <strong>Fuente:</strong> ' + cm.getSourceLabel() + fecha + '<br>' +
+        (cm.ratesSource === 'manual'
+          ? 'Se mantienen hasta que toques <strong>🌐 Auto</strong>.'
+          : '<strong>Cada banco cobra distinto</strong> (Promerica, BAC, Ficohsa…). Si quieres que la app use las de tu banco, escríbelas y toca <strong>💾 Guardar</strong>: se mantienen hasta que toques 🌐 Auto.');
+    }
     const currencies = cm.getAvailableCurrencies().filter(c => c.code !== 'HNL');
     container.innerHTML = `
       <div style="background:var(--bg3);border-left:3px solid var(--amber);padding:12px;border-radius:8px;margin-bottom:14px;font-size:11px;color:var(--text2);line-height:1.5">
