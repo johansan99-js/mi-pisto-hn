@@ -29,6 +29,36 @@ describe('Pegar SMS del banco y recordatorio diario', () => {
     assert.equal((await leer(page, 'Compra con tarjeta de débito por L.100 en FARMACIA KIELSA')).debito, true);
   });
 
+  it('lee los formatos de los bancos de Honduras y descarta lo que no es un gasto', async () => {
+    const page = await env.pagina();
+    await sembrar(page, estadoBase());
+    // [mensaje, monto, moneda, comercio, últimos 4, banco, tipo, débito]
+    const casos = [
+      ['Ficohsa: Su tarjeta de credito terminada en 1234 realizo una compra por L 350.00 en PIZZA HUT el 25/09/26 13:45', 350, 'HNL', 'PIZZA HUT', '1234', 'Ficohsa', 'gasto', false],
+      ['BANPAIS: Compra en DESPENSA FAMILIAR por L.456.78 Tarj.*9012', 456.78, 'HNL', 'DESPENSA FAMILIAR', '9012', 'Banpaís', 'gasto', false],
+      ['Banco Atlantida le informa: Consumo con TC ****5678 por LPS 250.00 en ESPRESSO AMERICANO, 25/09/2026', 250, 'HNL', 'ESPRESSO AMERICANO', '5678', 'Atlántida', 'gasto', false],
+      ['BAC Credomatic: Transaccion aprobada en SUPERMERCADOS LA COLONIA por HNL 1,234.56 con tarjeta VISA ***1234 el 25/09/2026 14:03. Autorizacion 123456', 1234.56, 'HNL', 'SUPERMERCADOS LA COLONIA', '1234', 'BAC', 'gasto', false],
+      ['Occidente: Compra TD XXXX-4321 monto 120.50 comercio FARMACIA KIELSA', 120.5, 'HNL', 'FARMACIA KIELSA', '4321', 'Occidente', 'gasto', true],
+      ['Davivienda: Compra por $ 15.99 en NETFLIX.COM tarjeta terminacion 7777', 15.99, 'USD', 'NETFLIX.COM', '7777', 'Davivienda', 'gasto', false],
+      ['Compra aprobada en PIZZA HUT 25/09/2026 por L. 199.00', 199, 'HNL', 'PIZZA HUT', '', '', 'gasto', false],
+      ['BAC: Transaccion RECHAZADA por HNL 500.00 en AMAZON tarjeta ***1234 fondos insuficientes', 500, 'HNL', 'AMAZON', '1234', 'BAC', 'rechazada', false],
+      ['Ficohsa: Se aplico un pago a su tarjeta ***1234 por L 5,000.00. Gracias', 5000, 'HNL', '', '1234', 'Ficohsa', 'pagoTarjeta', false],
+      ['Transferencia enviada por L 1,000.00 a JUAN PEREZ desde cuenta ***4444', 1000, 'HNL', '', '4444', '', 'transferencia', false],
+    ];
+    for (const [msg, ...esperado] of casos) {
+      const r = await leer(page, msg);
+      assert.deepEqual(r && [r.monto, r.moneda, r.comercio, r.ultimos4, r.banco, r.tipo, r.debito], esperado, msg);
+    }
+    assert.equal(await leer(page, 'Aprovecha hasta L 5,000 de descuento en tus compras con tu tarjeta BAC'), null, 'una promoción no es un gasto');
+    // Solo un gasto se puede usar en el formulario
+    await page.evaluate(() => abrirModalSMS('BAC: Transaccion RECHAZADA por HNL 500.00 en AMAZON'));
+    assert.equal(await page.isDisabled('#btn-sms-usar'), true);
+    assert.match(await page.textContent('#sms-resultado'), /rechazada/);
+    // Al mandarnos un formato, los números largos van tapados
+    assert.equal(await page.evaluate(() => _smsAnonimizado('Tarjeta ***1234 cuenta 200012345 por L 350.00 aut 998877')),
+      'Tarjeta ***#### cuenta ######### por L 350.00 aut ######');
+  });
+
   it('elige la tarjeta por los últimos 4 o por el banco, y llena el formulario', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase({ tarjetas }));
