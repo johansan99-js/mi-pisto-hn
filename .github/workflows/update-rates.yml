@@ -21,6 +21,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Sonda bancos (temporal)
+        run: node .github/workflows/probe-bancos.js || true
+
       - name: Ejecutar updater de tasas
         run: node .github/workflows/update-rates.js
 
