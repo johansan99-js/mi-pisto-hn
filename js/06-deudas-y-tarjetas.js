@@ -31,7 +31,8 @@ function abonarCobrar(id){
   const m=leerMonto(prompt(`¿Cuánto te pagó ${r.persona}?\nPendiente: ${fL(pendiente)}`));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
-  const cuenta=confirm(`¿Dónde recibiste los ${fL(abono)}?\n\n[Aceptar] = Cuenta de Ahorro (transferencia)\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+  const cuenta=pedirCuenta(`¿Dónde recibiste los ${fL(abono)}?`,'[Aceptar] = Cuenta de Ahorro (transferencia)\n[Cancelar] = Efectivo');
+  if(!cuenta)return;
   r.pagado=(r.pagado||0)+abono;
   state.transactions.push({id:uid(),type:'income',amount:abono,cat:'Cobro Deuda',subcat:`Cobro a ${r.persona}`,cuenta,date:new Date().toISOString()});
   if(r.pagado>=r.monto){if(confirm(`✅ Cobro saldado. ¿Eliminar el registro de "${r.persona}"?`)){state.receivables=state.receivables.filter(x=>x.id!==id);}}
@@ -49,7 +50,7 @@ function abonarCobrar(id){
 const BANCOS_HN = ['BAC Credomatic', 'Banco Atlántida', 'Ficohsa', 'Banpaís', 'Promerica', 'Davivienda', 'Banco de Occidente', 'LAFISE', 'Banrural', 'Banco Azteca', 'Cuscatlán', 'Ficensa', 'Banco Popular', 'Cooperativa'];
 const pendienteDeuda = p => Math.max(0, Math.round(((p.monto || 0) - (p.pagado || 0)) * 100) / 100);
 const deudaActiva = p => !p.liquidadaEn && pendienteDeuda(p) > 0.005;
-const _nombreCuentaDeuda = c => c === 'efectivo' ? 'efectivo' : 'cuenta de ahorro';
+const _nombreCuentaDeuda = c => nombreCuentaTexto(c);
 const _fechaDeInput = f => f && f !== new Date().toISOString().slice(0, 10) ? new Date(f + 'T12:00:00').toISOString() : new Date().toISOString();
 let _tipoDeuda = 'banco';
 function elegirTipoDeuda(t) {
@@ -134,7 +135,7 @@ function _renderAbonoDeuda() {
 function guardarAbonoDeuda() {
   const p = state.payables.find(x => x.id === document.getElementById('abono-deuda-id').value);
   if (!p) return;
-  const cuenta = document.getElementById('abono-deuda-cuenta').value === 'efectivo' ? 'efectivo' : 'ahorro';
+  const cuenta = cuentaValida(document.getElementById('abono-deuda-cuenta').value, 'ahorro');
   const pendiente = pendienteDeuda(p);
   let abono = leerMonto(document.getElementById('abono-deuda-monto').value) || 0;
   const interes = leerMonto(document.getElementById('abono-deuda-interes').value) || 0;
@@ -190,7 +191,7 @@ function _htmlDeuda(p) {
       <button onclick="editarPagar('${id}')" aria-label="Editar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(245,200,0,.4);background:rgba(245,200,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_EDITAR}</button>
       <button onclick="eliminarPagar('${id}')" aria-label="Eliminar" style="width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);cursor:pointer;display:flex;align-items:center;justify-content:center">${_ICONO_BORRAR}</button>
     </div>
-    ${movs.length ? `<details class="deuda-movs"><summary>Movimientos (${movs.length})</summary>${movs.map(t => `<div class="deuda-mov"><span>${new Date(t.date).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · ${esc(t.cat === 'Préstamo recibido' ? 'Te prestaron' : t.cat === 'Intereses' ? 'Intereses y cargos' : 'Abono')} · ${t.cuenta === 'efectivo' ? '💵' : '🏦'}</span><strong style="color:${t.type === 'income' ? 'var(--green)' : 'var(--text)'}">${t.type === 'income' ? '+' : '-'}${fL(t.amount)}</strong></div>`).join('')}</details>` : ''}
+    ${movs.length ? `<details class="deuda-movs"><summary>Movimientos (${movs.length})</summary>${movs.map(t => `<div class="deuda-mov"><span>${new Date(t.date).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · ${esc(t.cat === 'Préstamo recibido' ? 'Te prestaron' : t.cat === 'Intereses' ? 'Intereses y cargos' : 'Abono')} · ${iconoCuenta(t.cuenta)}</span><strong style="color:${t.type === 'income' ? 'var(--green)' : 'var(--text)'}">${t.type === 'income' ? '+' : '-'}${fL(t.amount)}</strong></div>`).join('')}</details>` : ''}
   </div>`;
 }
 function renderPagar() {
@@ -271,8 +272,8 @@ function pagarCuotaPrestamo(id){
   const prestamo=state.prestamos.find(p=>p.id===id);
   if(!prestamo)return;
   if((prestamo.cuotasPagadas||0)>=(prestamo.cuotasTotal||99))return alert('🎉 ¡Felicidades! Ya terminaste de pagar este préstamo.');
-  const cuentaOpc=confirm(`¿Pagar cuota de ${fL(prestamo.cuota)}?\n\n[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo`);
-  const cuenta=cuentaOpc?'ahorro':'efectivo';
+  const cuenta=pedirCuenta(`¿Pagar cuota de ${fL(prestamo.cuota)}?`,'[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo');
+  if(!cuenta)return;
   prestamo.cuotasPagadas=(prestamo.cuotasPagadas||0)+1;
   state.transactions.push({id:uid(),type:'expense',amount:Math.round(prestamo.cuota*100)/100,cat:'Préstamo',subcat:`Cuota ${prestamo.entidad}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
   const restantes=(prestamo.cuotasTotal||0)-(prestamo.cuotasPagadas||0);
@@ -650,7 +651,8 @@ function pagarCuotaTasaCero(tarjetaId, planId) {
   if (!c || !planActivo(c)) return;
   const monto = montoCuota(c);
   if (_mismoMes(c.ultimoPago) && !confirm('Ya pagaste una cuota de esta compra este mes. ¿Registrar otra (adelantar)?')) return;
-  const cuenta = confirm(`¿De dónde sale la cuota ${c.cuotasPagadas + 1}/${c.meses} de ${fL(monto)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`) ? 'ahorro' : 'efectivo';
+  const cuenta = pedirCuenta(`¿De dónde sale la cuota ${c.cuotasPagadas + 1}/${c.meses} de ${fL(monto)}?`);
+  if (!cuenta) return;
   c.cuotasPagadas++;
   c.ultimoPago = new Date().toISOString();
   // La compra ya se registró como gasto: la cuota solo mueve dinero a la tarjeta
@@ -675,7 +677,8 @@ function pagarTarjeta(id){
     const montoStr=prompt(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
     if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
-    const cuenta=confirm(`¿De dónde sale el pago de ${fL(monto)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+    const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)}?`);
+    if(!cuenta)return;
     // La compra con tarjeta ya se registró como gasto: el pago solo mueve
     // dinero de la cuenta a la tarjeta (baja la cuenta, no es un gasto nuevo).
     state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Pago Tarjeta',subcat:`Pago a ${tarjeta.nombre}`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:tarjeta.id,date:new Date().toISOString(),notas:`Abono a tarjeta ${tarjeta.nombre}`});
@@ -702,7 +705,8 @@ function ajustarSaldoTarjeta(id){
       registrado=true;
     }
   }else if(confirm(`El estado de cuenta dice ${fL(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`)){
-    const cuenta=confirm(`¿De dónde salió ese pago de ${fL(-dif)}?\n\n[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo`)?'ahorro':'efectivo';
+    const cuenta=pedirCuenta(`¿De dónde salió ese pago de ${fL(-dif)}?`);
+    if(!cuenta)return;
     state.transactions.push({id:uid(),type:'expense',amount:-dif,cat:'Pago Tarjeta',subcat:`Pago a ${t.nombre} (conciliación)`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:t.id,date:new Date().toISOString()});
     registrado=true;
   }

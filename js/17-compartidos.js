@@ -240,7 +240,7 @@ function guardarGastoGrupo() {
   const desc = _limpiarNombre(document.getElementById('gg-desc').value) || document.getElementById('gg-cat').value;
   const cat = CATS_COMPARTIDO.includes(document.getElementById('gg-cat').value) ? document.getElementById('gg-cat').value : 'Otros';
   const pagadoPor = document.getElementById('gg-pago').value;
-  const cuenta = document.getElementById('gg-cuenta').value === 'ahorro' ? 'ahorro' : 'efectivo';
+  const cuenta = cuentaValida(document.getElementById('gg-cuenta').value);
   const { monto, partes, n } = _partesDelForm();
   if (!(monto > 0)) return alert('Escribe cuánto fue el gasto.');
   if (!idsMiembros(g).includes(pagadoPor)) return alert('Elige quién pagó.');
@@ -250,7 +250,7 @@ function guardarGastoGrupo() {
   const mia = partes[YO] || 0, ahora = new Date().toISOString(), e = { id: uid(), desc, cat, monto: _c2(monto), pagadoPor, partes, fecha: ahora, txIds: [] };
   if (pagadoPor === YO) {
     const saldo = getCuentaBalance(cuenta);
-    if (monto > saldo + 0.005 && !confirm('Tu ' + (cuenta === 'efectivo' ? 'efectivo' : 'cuenta de ahorro') + ' tiene ' + fL(saldo) + ': con este gasto quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = guardar de todos modos')) return;
+    if (monto > saldo + 0.005 && !confirm('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este gasto quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = guardar de todos modos')) return;
     if (mia > 0) { const t = { id: uid(), type: 'expense', amount: mia, cat, subcat: desc + ' · ' + g.nombre, cuenta, pago: cuenta, tipo: 'extra', grupoId: g.id, date: ahora }; state.transactions.push(t); e.txIds.push(t.id); }
     const adelanto = _c2(monto - mia);
     if (adelanto > 0) { const t = { id: uid(), type: 'expense', amount: adelanto, cat: 'Gasto compartido', subcat: 'Adelantaste en ' + g.nombre + ': ' + desc, cuenta, pago: cuenta, tipo: 'extra', esTransferencia: true, grupoId: g.id, date: ahora }; state.transactions.push(t); e.txIds.push(t.id); }
@@ -285,11 +285,11 @@ function guardarPagoGrupo() {
   const monto = _c2(leerMonto(document.getElementById('pg-monto').value) || 0);
   if (!(monto > 0)) return alert('Escribe el monto del pago.');
   if (monto > x.max + 0.005) return alert('Para quedar a mano el pago es de ' + fL(x.max) + '.');
-  const cuenta = document.getElementById('pg-cuenta').value === 'ahorro' ? 'ahorro' : 'efectivo', ahora = new Date().toISOString();
+  const cuenta = cuentaValida(document.getElementById('pg-cuenta').value), ahora = new Date().toISOString();
   const p = { id: uid(), de: x.de, a: x.a, monto, fecha: ahora, txIds: [] };
   if (x.de === YO) {
     const saldo = getCuentaBalance(cuenta);
-    if (monto > saldo + 0.005 && !confirm('Tu ' + (cuenta === 'efectivo' ? 'efectivo' : 'cuenta de ahorro') + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = pagar de todos modos')) return;
+    if (monto > saldo + 0.005 && !confirm('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = pagar de todos modos')) return;
     const t = { id: uid(), type: 'expense', amount: monto, cat: 'Gasto compartido', subcat: 'Pago a ' + nombreMiembro(g, x.a) + ' (' + g.nombre + ')', cuenta, pago: cuenta, tipo: 'extra', esTransferencia: true, grupoId: g.id, date: ahora };
     state.transactions.push(t); p.txIds.push(t.id);
   } else if (x.a === YO) {

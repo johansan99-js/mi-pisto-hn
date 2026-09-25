@@ -249,13 +249,13 @@ function saveGasto(){
     //   'credito' impacta el saldo de la tarjeta, no toca cuentas líquidas → cuenta=null.
     //   Cualquier otro valor heredado (debito, transferencia, etc.) se imputa a 'efectivo'.
     let cuentaImputacion = null;
-    if (pago === 'efectivo' || pago === 'ahorro') cuentaImputacion = pago;
+    if (esCuentaLiquida(pago)) cuentaImputacion = pago;
     else if (pago === 'credito') cuentaImputacion = null;
     else cuentaImputacion = 'efectivo';
     // Una cuenta en negativo casi siempre es un ingreso sin anotar: se avisa, no se bloquea
     if (cuentaImputacion) {
         const saldo = getCuentaBalance(cuentaImputacion);
-        if (monto > saldo + 0.005 && !confirm(`Tu ${cuentaImputacion === 'efectivo' ? 'efectivo' : 'cuenta de ahorro'} tiene ${fL(saldo)}: con este gasto quedaría en ${fL(saldo - monto)}.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = guardar el gasto de todos modos`)) return;
+        if (monto > saldo + 0.005 && !confirm(`Tu ${nombreCuentaTexto(cuentaImputacion)} tiene ${fL(saldo)}: con este gasto quedaría en ${fL(saldo - monto)}.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = guardar el gasto de todos modos`)) return;
     }
 
     const transaction = {
@@ -414,7 +414,7 @@ function saveIngreso(){
   const moneda = document.getElementById('ingreso-moneda')?.value || 'HNL';
   // P0-4: capturar la cuenta de destino y la nota — antes ambos campos se ignoraban
   const cuentaSel=document.getElementById('ingreso-cuenta')?.value||'efectivo';
-  const cuenta=(cuentaSel==='efectivo'||cuentaSel==='ahorro')?cuentaSel:'efectivo';
+  const cuenta=cuentaValida(cuentaSel);
   const tipoSel=document.getElementById('ingreso-tipo').value;
   const nota=(document.getElementById('ingreso-nota')?.value||'').trim();
   
@@ -565,7 +565,7 @@ function actualizarSaldoAbono(){
   if(!sel||!info)return;
   const cuenta=sel.value;
   const saldo=getCuentaBalance(cuenta);
-  const nombre=cuenta==='efectivo'?'💵 Efectivo':'🏦 Cuenta de Ahorro';
+  const nombre=etiquetaCuenta(cuenta);
   const color=saldo<=0?'var(--red)':(saldo<100?'var(--amber)':'var(--green)');
   info.innerHTML=`Saldo disponible en ${nombre}: <strong style="color:${color}">${fL(saldo)}</strong>`;
 }
@@ -579,7 +579,7 @@ function saveAbono(){
   // Validar saldo disponible en la cuenta seleccionada
   const saldoCuenta=getCuentaBalance(cuenta);
   if(monto>saldoCuenta){
-    const nomCuenta=cuenta==='efectivo'?'efectivo':'cuenta de ahorro';
+    const nomCuenta=nombreCuentaTexto(cuenta);
     return alert(`⚠️ Saldo insuficiente en ${nomCuenta}.\n\nDisponible: ${fL(saldoCuenta)}\nQuieres abonar: ${fL(monto)}`);
   }
   // Aplicar abono a la meta

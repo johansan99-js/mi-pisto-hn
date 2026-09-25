@@ -387,6 +387,7 @@ async function finishOnboarding(){
     transferenciasProgramadas:[],
     grupos:[],
     presupuestos:[],
+    misCuentas:[],
     budgetRules:{gastos:65,ahorro:20,extra:15}
   };
 
