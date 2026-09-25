@@ -96,6 +96,9 @@ function renderRegistrosMes() {
   if (!el) return;
   if (!state.setup) { el.style.display = 'none'; return; }
   el.style.display = 'block';
+  // Con algo escrito en el buscador, la tarjeta muestra los resultados (29-busqueda-y-recurrentes.js)
+  if (typeof renderBusquedaMovimientos === 'function' && renderBusquedaMovimientos()) return;
+  const cuerpo = document.getElementById('registros-mes-cuerpo') || el;
   const v = _mesActualVista(), hoy = new Date();
   const esMesActual = v.y === hoy.getFullYear() && v.m === hoy.getMonth();
   const r = movimientosDelMes(v.y, v.m);
@@ -113,7 +116,7 @@ function renderRegistrosMes() {
 
   if (!r.txs.length) {
     const nuevo = !(state.transactions || []).some(t => !t.deletedAt && !t.esSaldoInicial);
-    el.innerHTML = cabeza + `<div class="rm-vacio">
+    cuerpo.innerHTML = cabeza + `<div class="rm-vacio">
       <div class="rm-vacio-ico">📝</div>
       <p>${nuevo ? '¡Bienvenido! Anota tu primer gasto o ingreso: toca el botón y escribe el monto.' : esMesActual ? 'Todavía no hay movimientos este mes.' : 'No hubo movimientos en ' + _MESES_LARGOS[v.m] + '.'}</p>
       ${esMesActual ? '<button type="button" class="btn btn-primary" onclick="abrirRegistro(\'gasto\')">➕ Registrar movimiento</button>' : ''}
@@ -136,5 +139,5 @@ function renderRegistrosMes() {
     mostradas += filas.length;
   });
   if (ocultas) html += `<button type="button" class="btn btn-secondary rm-ver-todo" onclick="verTodoMesVista()">Ver todo el mes (${ocultas} más)</button>`;
-  el.innerHTML = cabeza + html;
+  cuerpo.innerHTML = cabeza + html;
 }
