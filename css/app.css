@@ -1341,3 +1341,15 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .rem-fila strong{display:block;font-size:14px}
 .rem-fila small{font-size:11px;color:var(--text2)}
 #view-remesas .btn-primary{margin-top:16px}
+/* Dictar un movimiento (js/31-dictado.js) */
+.reg-extras button.dic-btn{border-color:rgba(var(--amber-rgb),.6);color:var(--amber);font-weight:700}
+.dic-caja{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.dic-caja .input-field{margin:0!important}
+.dic-mic{align-self:center;width:88px;height:88px;border-radius:50%;border:none;background:var(--amber);color:var(--acento-txt);font-size:38px;cursor:pointer;box-shadow:0 6px 20px rgba(var(--amber-rgb),.35);position:relative}
+.dic-mic.escuchando::before,.dic-mic.escuchando::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:3px solid rgba(var(--amber-rgb),.55);animation:dicOnda 1.4s ease-out infinite}
+.dic-mic.escuchando::after{animation-delay:.7s}
+@keyframes dicOnda{from{transform:scale(.9);opacity:1}to{transform:scale(1.35);opacity:0}}
+.dic-estado{text-align:center;font-size:13px;color:var(--text2);margin:0;min-height:18px;line-height:1.45}
+.dic-ejemplos{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2);background:var(--bg3);border-radius:12px;padding:10px 12px}
+.dic-ejemplos small{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+@media (prefers-reduced-motion:reduce){.dic-mic.escuchando::before,.dic-mic.escuchando::after{animation:none}}
