@@ -2,12 +2,14 @@
 
 La app es una PWA. Para Play Store se empaqueta como **TWA** (Trusted Web Activity): una app Android que abre la PWA en Chrome sin barra de navegador. No hay que reescribir nada; lo que cambie en `main` llega a la app de Play al publicarse en GitHub Pages.
 
+Requisitos de Google revisados el 26 de septiembre de 2026.
+
 ## Lista de pendientes
 
 - [x] **Correo de contacto:** `mipistohn@gmail.com` (ya está en `privacidad.html`; úsalo también en la ficha de Play).
-- [ ] **Paquete Android:** generarlo con PWABuilder (paso 2).
-- [ ] **Cuenta de desarrollador:** crearla en Play Console (pago único de US$25).
-- [ ] **Digital Asset Links:** publicar `assetlinks.json` en `johansan99-js.github.io` (paso 4). Sin esto, la app muestra la barra de direcciones de Chrome.
+- [ ] **Cuenta de desarrollador:** crearla en Play Console y pagar los US$25 (paso 0). Va primero porque Google tarda unos días en verificar la identidad.
+- [ ] **Paquete Android:** generarlo con PWABuilder, con API 36 (paso 2).
+- [ ] **Digital Asset Links:** poner el paquete y las huellas definitivas en `johansan99-js.github.io/.well-known/assetlinks.json` (paso 4). Ese archivo y `.nojekyll` ya existen, pero con `io.github.johansan99_js.twa`, el paquete de una prueba del 17 de septiembre. Sin las huellas correctas, la app muestra la barra de direcciones de Chrome.
 - [ ] **Prueba cerrada:** 12 testers durante 14 días (obligatoria para cuentas personales nuevas).
 - [ ] **Ficha, formularios y solicitud de producción** (pasos 5 y 6).
 
@@ -17,10 +19,34 @@ Ya está listo en el repositorio:
 - Íconos `maskable`, `id` y capturas en `manifest.json`.
 - Las imágenes de la ficha, en esta carpeta.
 
+## 0. Crear la cuenta de desarrollador (US$25, una sola vez)
+
+**Ten a mano:**
+- **La cuenta de Google que será dueña de la app.** Usa `mipistohn@gmail.com` con la verificación en 2 pasos activada. No uses un correo del trabajo: la app queda ligada a esa cuenta para siempre.
+- **Tu DNI o pasaporte vigente.** El nombre legal que escribas tiene que ser igual al del documento.
+- **Una tarjeta de crédito o débito a tu nombre.** No aceptan tarjetas prepago. Si tu banco bloquea las compras internacionales en línea, actívalas antes de pagar.
+- **Un teléfono y un correo de contacto** que puedas verificar con un código.
+- **Un teléfono Android físico** con Android 10 o más y sin root, para la verificación del dispositivo.
+
+**Pasos:**
+1. Entra a <https://play.google.com/console/signup> con la cuenta de Google que elegiste.
+2. **Tipo de cuenta: Personal.** La de organización pide número D-U-N-S y una empresa registrada a nombre de la app. Con la personal hay que hacer la prueba cerrada de 14 días (paso 7); con la de organización no.
+3. Llena el perfil:
+   - **Nombre de desarrollador** (el que ve la gente en Play): `Mi Pisto HN`.
+   - **Nombre legal y dirección:** los de tu DNI.
+   - **Correo y teléfono de contacto:** `mipistohn@gmail.com` y tu número.
+   - Responde las preguntas sobre tu experiencia y la app.
+4. Paga los **US$25** con la tarjeta. Es un pago único y no se devuelve. Te llega un correo de confirmación.
+5. **Verifica tu identidad:** sube la foto del DNI o del pasaporte (a veces piden una selfie) y escribe los códigos que llegan al teléfono y al correo de contacto.
+6. **Verifica el dispositivo:** instala la app **Google Play Console** en tu Android, entra con la misma cuenta y toca **Verificar** en la tarea "Verifica que tienes acceso a un dispositivo móvil Android".
+
+Mientras Google revisa la identidad, puedes ir generando el paquete (paso 2). La verificación de desarrolladores de Android que empezó en 2026 no pide nada extra: la app queda registrada sola al crearla en Play Console.
+
 ## 1. Antes de empaquetar
 
 1. Confirma que `https://johansan99-js.github.io/mi-pisto-hn/` carga la última versión y que `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html` abre.
 2. Ten a mano el correo de contacto y un nombre de paquete definitivo, por ejemplo `hn.mipisto.app`. **El nombre de paquete no se puede cambiar después de publicar.**
+   El `assetlinks.json` de hoy usa `io.github.johansan99_js.twa`, el nombre que PWABuilder pone solo. Como la app no está publicada, todavía puedes elegir. Si te quedas con ese nombre, usa la misma llave `.keystore` de esa vez; si no la tienes, genera todo nuevo con `hn.mipisto.app`.
 
 ## 2. Generar el paquete con PWABuilder
 
@@ -28,7 +54,7 @@ Ya está listo en el repositorio:
 2. **Package for stores → Android → Generate Package**. En las opciones:
    - **Package ID:** `hn.mipisto.app` (o el que elegiste).
    - **App name:** `Mi Pisto HN` · **Launcher name:** `Mi Pisto HN`.
-   - **Display mode:** Standalone · **Status bar color / Nav bar color:** `#130507`.
+   - **Display mode:** Standalone · **Status bar color / Nav bar color:** `#000000` (el mismo `theme_color` de `manifest.json`).
    - **Signing key:** *Create new*. Llena los datos (nombre, organización `Mi Pisto HN`, país `HN`).
 3. Descarga el ZIP. Contiene:
    - el `.aab` que se sube a Play;
@@ -37,10 +63,17 @@ Ya está listo en el repositorio:
 
 > ⚠️ **Guarda el `.keystore` y sus contraseñas fuera del teléfono y fuera del repositorio** (por ejemplo, en un gestor de contraseñas). Sin ellos no puedes publicar actualizaciones de la app.
 
+**API 36:** desde el 31 de agosto de 2026, Google Play solo acepta apps nuevas que apunten a Android 16 (API 36). PWABuilder arma el paquete con Bubblewrap, que pasó a API 36 en su versión 1.25.0, pero PWABuilder puede tardar en usar la versión nueva. El paquete de la prueba del 17 de septiembre pudo salir con API 35: lo más seguro es generar uno nuevo. Si al subir el `.aab` Play Console dice que apunta a una API menor, vuelve a generarlo. Si PWABuilder sigue dando API 35, usa Bubblewrap 1.25.0 o más nuevo en la compu, con JDK 17:
+
+```bash
+npx @bubblewrap/cli init --manifest=https://johansan99-js.github.io/mi-pisto-hn/manifest.json
+npx @bubblewrap/cli build
+```
+
 ## 3. Crear la app en Play Console
 
 1. <https://play.google.com/console> → **Crear app**:
-   - **Nombre:** `Mi Pisto HN: Finanzas Honduras`.
+   - **Nombre:** `Mi Pisto HN: Finanzas y Gastos` (el mismo de la ficha).
    - **Idioma:** Español (Latinoamérica).
    - **Tipo:** App · **Gratis**.
 2. **Probar y publicar → Prueba cerrada → Crear versión:** sube el `.aab`. Acepta **Firma de apps de Play**.
@@ -55,7 +88,7 @@ Android verifica que la app y el sitio son del mismo dueño leyendo `https://joh
 .nojekyll          ← archivo vacío; sin él GitHub Pages ignora las carpetas que empiezan con punto
 ```
 
-Contenido de `assetlinks.json`, con las dos huellas del paso 3:
+Los dos archivos ya están en ese repositorio desde el 17 de septiembre. Solo hay que reemplazar el contenido de `assetlinks.json`, que hoy tiene el paquete de prueba `io.github.johansan99_js.twa` y una sola huella, por este, con las dos huellas del paso 3:
 
 ```json
 [{
@@ -113,6 +146,7 @@ Notas para el formulario:
 **Otras secciones:**
 - **Acceso a la app:** "Todas las funciones están disponibles sin cuenta. Al abrir, crea un PIN de 6 dígitos cualquiera. La sincronización con Google es opcional."
 - **Anuncios:** No contiene anuncios.
+- **ID de publicidad:** No. La app no tiene anuncios ni analítica.
 - **Público objetivo:** 18 años o más. Evita las reglas de apps para niños; es una app de finanzas.
 - **Clasificación de contenido:** responde el cuestionario (sin violencia, apuestas ni contenido de usuarios compartido).
 - **Funciones financieras:** declara que es una herramienta de gestión de finanzas personales y presupuesto. No ofrece préstamos, pagos, transferencias de dinero, inversiones ni criptomonedas.
