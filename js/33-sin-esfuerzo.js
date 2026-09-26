@@ -220,5 +220,5 @@ function cuadrarEfectivo() {
 
 // Al volver a la app otro día (queda abierta en segundo plano), se revisa de nuevo
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state && state.setup) { try { verificarPagosAutomaticos(); } catch (e) { console.error(e); } }
+  if (document.visibilityState === 'visible' && state && state.setup && !(typeof _tienePIN === 'function' && _tienePIN() && !_sessionDEK)) { try { verificarPagosAutomaticos(); } catch (e) { console.error(e); } }
 });

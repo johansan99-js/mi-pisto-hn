@@ -528,6 +528,7 @@ async function _eliminarFactura(id) {
 async function saveStateToDB(stateObj) {
   // Con PIN desbloqueado, la copia de IDB también va cifrada con la DEK
   // (antes quedaba en plano y el PIN no protegía nada en reposo).
+  if (!_sessionDEK && typeof _tienePIN === 'function' && _tienePIN()) return false;
   const meta = { _version: '1.0.0', _lastSave: new Date().toISOString() };
   const toSave = _sessionDEK
     ? Object.assign({ _enc: await _encryptState(stateObj, _sessionDEK) }, meta)

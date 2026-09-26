@@ -148,8 +148,15 @@ async function configurarPIN({ soloCambiar = false } = {}) {
   const esPrimerPIN = !localStorage.getItem('finanzas_pin_hash');
   const esActualizacion = !esPrimerPIN && _sessionDEK; // Tiene PIN + DEK en sesión
   
-  const nuevoPIN = prompt('Crea un PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar ? '' : '\n(Deja en blanco para eliminar)'));
-  if (nuevoPIN === null || (soloCambiar && nuevoPIN === '')) return;
+  // Para cambiar o quitar un PIN hay que saber el actual: así nadie lo cambia
+  // con el teléfono desbloqueado en la mano
+  if (!esPrimerPIN && _sessionPIN) {
+    const actual = prompt('🔐 Escribe tu PIN actual:');
+    if (actual === null) return;
+    if (String(actual).trim() !== _sessionPIN) { alert('❌ Ese no es tu PIN actual. No se cambió nada.'); return; }
+  }
+  const nuevoPIN = prompt((esPrimerPIN ? 'Crea' : 'Escribe tu nuevo') + ' PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar || esPrimerPIN ? '' : '\n\n(Déjalo en blanco solo si quieres QUITAR el PIN)'));
+  if (nuevoPIN === null || ((soloCambiar || esPrimerPIN) && nuevoPIN === '')) return;
   
   if (nuevoPIN === '') {
     // ⚠️ Eliminar PIN cuando hay datos cifrados es DESTRUCTIVO
@@ -168,8 +175,9 @@ async function configurarPIN({ soloCambiar = false } = {}) {
     _borrarKitRecuperacion();
     _sessionDEK = null;
     _sessionPIN = null;
-    if (state.setup) await save();
+    // Primero se quita el PIN: con el PIN todavía guardado, save() no escribe en claro
     localStorage.removeItem('finanzas_pin_hash');
+    if (state.setup) await save();
     localStorage.removeItem('finanzas_pin_salt');
     localStorage.removeItem('finanzas_pin_kdf');
     localStorage.removeItem('finanzas_dek_encrypted');
@@ -186,6 +194,10 @@ async function configurarPIN({ soloCambiar = false } = {}) {
   // fuerza bruta offline en minutos si alguien roba el localStorage. Se
   // permite hasta 8 dígitos — mientras más largo, más seguro.
   if (!/^\d{6,8}$/.test(nuevoPIN)) { alert('❌ Debe tener entre 6 y 8 números'); return; }
+  // Repetirlo: un error de dedo en un PIN nuevo te deja fuera de tus datos
+  const repetido = prompt('Repite el PIN para confirmarlo:');
+  if (repetido === null) return;
+  if (repetido !== nuevoPIN) { alert('❌ Los PIN no coinciden. No se cambió nada; vuelve a intentarlo.'); return; }
 
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
@@ -222,7 +234,7 @@ async function configurarPIN({ soloCambiar = false } = {}) {
     await _guardarPINv2(nuevoPIN, salt, _sessionDEK);
     _sessionPIN = nuevoPIN;
     
-    alert('✅ PIN actualizado. Tu DEK se re-cifró con el nuevo PIN.');
+    alert('✅ PIN cambiado. Usa el nuevo la próxima vez que abras la app.');
     return;
   }
   
@@ -368,7 +380,7 @@ async function finishOnboarding(){
   // ────────────────────────────────────────────────────────────
   // Crear state inicial
   // ────────────────────────────────────────────────────────────
-  state={
+  state=Object.assign(estadoInicial(),{
     setup:true,
     nombre,
     saldoInicial,
@@ -389,7 +401,7 @@ async function finishOnboarding(){
     presupuestos:[],
     misCuentas:[],
     budgetRules:{gastos:65,ahorro:20,extra:15}
-  };
+  });
 
   // save() ahora cifra automáticamente (porque _sessionDEK está cargado)
   save();

@@ -686,6 +686,7 @@ verificarPIN = async function() {
         // No había LS cifrado → cargar desde IDB (usuario que solo tenía IDB)
         if (typeof _completarCargaApp === 'function') {
           await _completarCargaApp();
+          _bloquearVista(false);
           document.getElementById('modal-pin').style.display='none';
           document.getElementById('pin-input').value='';
           document.getElementById('pin-error').style.display='none';
@@ -695,6 +696,9 @@ verificarPIN = async function() {
         return;
       }
       
+      // Si la copia de IndexedDB es más nueva (localStorage lleno, recarga a
+      // medio guardar), manda ella
+      try { const idb = await loadStateFromDB(); if (idb && _copiaMasNueva(state, idb) === idb) _aplicarEstado(idb); } catch (e) { console.warn('Comparar copia de IDB:', e); }
       // FIX SEGURIDAD: re-sincronizar IDB con el state descifrado.
       // (Antes IDB tenía una copia plana que se cargaba sin PIN; ahora la
       //  sobreescribimos con los datos descifrados y autoritativos.)
@@ -726,6 +730,7 @@ verificarPIN = async function() {
       catch (e) { console.warn('No se pudo actualizar el PIN a v2:', e); }
     }
     
+    _bloquearVista(false);
     document.getElementById('modal-pin').style.display='none';
     document.getElementById('pin-input').value='';
     document.getElementById('pin-error').style.display='none';

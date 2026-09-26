@@ -8,7 +8,7 @@ const conDatos = () => estadoBase({ nombre: 'Ana', transactions: [
 ], receivables: [{ id: 'cobro1', persona: 'Luis', monto: 500, pagado: 0 }] });
 
 async function crearPIN(page, pin) {
-  page.respuestas = [pin, true];
+  page.respuestas = [pin, pin, true];
   await page.evaluate(() => configurarPIN());
   await page.waitForFunction(() => !!_sessionDEK, null, { timeout: 15000 });
 }

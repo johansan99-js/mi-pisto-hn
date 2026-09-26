@@ -40,13 +40,21 @@ async function migrarPINLegadoSiNecesario() {
 // inicio sin importar el PIN — los datos quedaban en memoria aunque no
 // hubieras ingresado el PIN, lo que invalidaba todo el cifrado AES-256.
 // ═══════════════════════════════════════════════════════════════════════
+/** Copia al state las claves conocidas de otra copia (IndexedDB, descifrado…) */
+function _aplicarEstado(obj) {
+  Object.keys(state).forEach(key => {
+    if (obj[key] === undefined) return;
+    state[key] = Array.isArray(state[key]) && !Array.isArray(obj[key]) ? [] : obj[key];
+  });
+}
+/** La copia de IndexedDB manda solo si es más nueva que la que ya está cargada (o si no hay otra) */
+const _usarIDB = idbState => !!idbState && (!state.setup || _copiaMasNueva(state, idbState) === idbState);
+
 async function _completarCargaApp() {
   // Cargar state desde IndexedDB (ya pasamos la verificación de PIN)
   const idbState = await loadStateFromDB();
-  if (idbState) {
-    Object.keys(state).forEach(key => {
-      if (idbState[key] !== undefined) state[key] = idbState[key];
-    });
+  if (_usarIDB(idbState)) {
+    _aplicarEstado(idbState);
     if (!state.pagosRecurrentes) state.pagosRecurrentes = [];
     if (!state.prestamos) state.prestamos = [];
     if (!state.budgetRules) state.budgetRules = { gastos: 65, ahorro: 20, extra: 15 };
@@ -97,14 +105,7 @@ window.onload = async function() {
     // El state queda con valores por defecto (vacío) hasta el desbloqueo.
     console.log('🔒 PIN detectado — esperando verificación antes de cargar datos');
     // Resetear el state a vacío por si localStorage cargó algo en plano (legacy)
-    state = {
-      setup: false, nombre: '', saldoInicial: 0,
-      cuentas: { efectivo: 0, ahorro: 0 },
-      cuentasIniciales: null, cuentasInicialesV: 0, eliminados: {}, sellosV: 0,
-      transactions: [], goals: [], receivables: [], payables: [],
-      prestamos: [], tarjetas: [], pagosRecurrentes: [], transferenciasProgramadas: [], grupos: [], presupuestos: [], misCuentas: [],
-      budgetRules: { gastos: 65, ahorro: 20, extra: 15 }
-    };
+    state = estadoInicial();
     // Mostrar modal de PIN (o biometría si está disponible)
     verificarPINmejorado();
     renderBiometriaConfig();
@@ -117,12 +118,11 @@ window.onload = async function() {
     return;
   }
 
-  // 3. Sin PIN: flujo normal (primera vez o usuario sin cifrado)
+  // 3. Sin PIN: flujo normal (primera vez o usuario sin cifrado).
+  // localStorage ya se cargó; IndexedDB manda solo si es más nueva.
   const idbState = await loadStateFromDB();
-  if (idbState) {
-    Object.keys(state).forEach(key => {
-      if (idbState[key] !== undefined) state[key] = idbState[key];
-    });
+  if (_usarIDB(idbState)) {
+    _aplicarEstado(idbState);
     if (!state.pagosRecurrentes) state.pagosRecurrentes = [];
     if (!state.prestamos) state.prestamos = [];
     if (!state.budgetRules) state.budgetRules = { gastos: 65, ahorro: 20, extra: 15 };

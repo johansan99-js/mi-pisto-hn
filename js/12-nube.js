@@ -1008,14 +1008,15 @@ window.cerrarSesionCloud = cerrarSesionCloud;
 // SEGURIDAD: backup pre-merge + overlay de solo-lectura
 // ═══════════════════════════════════════════════════════════════════
 
-/** Guarda una snapshot del state actual en sessionStorage antes de
-    sobrescribirlo con datos de la nube. Válido por 5 minutos.
-    (sessionStorage se borra al cerrar la pestaña — perfect scope) */
+/** Guarda una snapshot del state actual antes de sobrescribirlo con datos
+    de la nube. Válido por 5 minutos. Solo en memoria (antes iba en claro a
+    sessionStorage): se borra al bloquear la app y al cerrar la pestaña. */
+window._preMergeBackup = null;
 function _createPreMergeBackup() {
   try {
     const snapshot = JSON.stringify(state);
-    sessionStorage.setItem('mph_premerge_backup', snapshot);
-    sessionStorage.setItem('mph_premerge_backup_time', Date.now().toString());
+    window._preMergeBackup = { snapshot, time: Date.now() };
+    try { sessionStorage.removeItem('mph_premerge_backup'); sessionStorage.removeItem('mph_premerge_backup_time'); } catch (e) {}
     console.log('☁️ Backup pre-merge creado (' + (snapshot.length/1024).toFixed(1) + ' KB)');
     return true;
   } catch(e) {
@@ -1028,15 +1029,10 @@ function _createPreMergeBackup() {
     Retorna true si restauró, false si no había backup válido. */
 async function _restorePreMergeBackup() {
   try {
-    const snapshot = sessionStorage.getItem('mph_premerge_backup');
-    const timeStr  = sessionStorage.getItem('mph_premerge_backup_time');
-    if (!snapshot || !timeStr) return false;
-    const age = Date.now() - parseInt(timeStr);
-    if (age > 5 * 60 * 1000) {
-      sessionStorage.removeItem('mph_premerge_backup');
-      sessionStorage.removeItem('mph_premerge_backup_time');
-      return false;
-    }
+    const copia = window._preMergeBackup;
+    if (!copia) return false;
+    const snapshot = copia.snapshot;
+    if (Date.now() - copia.time > 5 * 60 * 1000) { window._preMergeBackup = null; return false; }
     const parsed = JSON.parse(snapshot);
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, parsed);
@@ -1046,8 +1042,7 @@ async function _restorePreMergeBackup() {
       localStorage.setItem(LS_KEY, enc);
       saveStateToDB(state).catch(()=>{});
     }
-    sessionStorage.removeItem('mph_premerge_backup');
-    sessionStorage.removeItem('mph_premerge_backup_time');
+    window._preMergeBackup = null;
     if (typeof renderAll === 'function') renderAll();
     return true;
   } catch(e) {
@@ -1078,9 +1073,9 @@ function _hideMergeOverlay() {
 
 /** Muestra el botón "↩️ Deshacer merge" por 5 minutos si hay backup disponible */
 function _mostrarBotonDeshacer() {
-  const timeStr = sessionStorage.getItem('mph_premerge_backup_time');
-  if (!timeStr) return;
-  const age = Date.now() - parseInt(timeStr);
+  const copia = window._preMergeBackup;
+  if (!copia) return;
+  const age = Date.now() - copia.time;
   if (age > 5 * 60 * 1000) return; // Ya expiró
 
   const existing = document.getElementById('cloud-undo-merge-btn');
