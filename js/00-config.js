@@ -1,5 +1,12 @@
 // Mi Pisto HN · 00-config.js
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
+// En la app publicada la consola (F12) queda callada: nada de mensajes internos
+// sobre el PIN, el cifrado o la sesión. Para depurar: localStorage.mph_debug = '1'.
+try {
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem('mph_debug') !== '1') {
+    console.log = console.info = console.debug = function () {};
+  }
+} catch (e) {}
 window.TESSERACT_CONFIG = {
   workerPath: 'https://unpkg.com/tesseract.js@4.0.2/dist/worker.min.js',
   langPath: 'https://tessdata.projectnaptha.com/4.0.0',
