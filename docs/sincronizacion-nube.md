@@ -33,12 +33,16 @@ No importa cuál se usa primero, el teléfono o la computadora: el proceso es el
 
 **Si ese dispositivo ya tenía sus propios datos:** al conectarlo, la app ofrece **juntarlos** con los de la nube. No se pierde nada de ningún lado, y desde ahí los dos usan la misma clave.
 
-### 3. En el día a día
+### 3. En el día a día: en tiempo real
 
-- Cada cambio **se sube solo** unos 3 segundos después, mientras la app esté abierta y con internet.
-- **🔄 Actualizar** trae al instante lo que anotaste en el otro dispositivo. Está en la barra de arriba en la computadora y en el menú ☰ en el teléfono. Sirve, por ejemplo, para anotar en el teléfono durante el día y en la noche **exportar a Excel** desde la compu.
-- Si una misma cosa cambió en los dos dispositivos, gana el cambio más reciente.
-- En iPhone, la subida automática solo funciona con la app abierta. Antes de cambiar de dispositivo, toca **🔄 Actualizar**.
+- **En el dispositivo donde anotas:** cada cambio **se sube solo** unos 1,5 segundos después. Si cierras o minimizas la app antes, **se sube en ese momento**.
+- **En el otro dispositivo, si está abierto:** **Supabase Realtime** le avisa al instante que tu fila cambió. La app baja el bloque cifrado, lo descifra ahí mismo y lo **junta solo**, con un aviso corto como "☁️ 1 cambio nuevo desde Android". En total tarda **unos 2 a 5 segundos**, sin tocar nada.
+- **Al volver a la app o a la pestaña**, revisa si hay algo nuevo, por si el aviso en tiempo real se perdió (sin internet, teléfono dormido).
+- **El Excel** siempre trae lo último de tu cuenta antes de armarse.
+- **🔄 Actualizar** sigue disponible para forzarlo a mano. Está en la barra de arriba en la computadora y en el menú ☰ en el teléfono.
+- **Si una misma cosa cambió en los dos dispositivos,** gana el cambio más reciente.
+- **En iPhone,** la app solo sube mientras está abierta. Al minimizarla sube lo pendiente.
+- **Privacidad:** el aviso en tiempo real respeta las reglas de acceso (RLS), así que cada cuenta solo recibe los avisos de su propia fila. Lo que viaja sigue cifrado.
 
 ## Huella y Face ID
 
@@ -101,9 +105,11 @@ Hay tres claves distintas:
   - Subida automática: `_scheduleAutoSync()` → `_autoMergeAndUpload()`. Primero baja y combina, después sube. Si no pudo leer la versión más nueva, no sube.
 - **`js/41-acceso-y-nube.js`:**
   - huella con PRF: `registrarBiometria`, `_desbloquearConHuella`, `_olvidarHuella`;
-  - `ofrecerNubeAlEmpezar`, `actualizarDesdeNube`, `abrirEnLaComputadora` (QR con `js/vendor/qrcode.js`, licencia MIT).
+  - `ofrecerNubeAlEmpezar`, `actualizarDesdeNube`, `abrirEnLaComputadora` (QR con `js/vendor/qrcode.js`, licencia MIT);
+  - tiempo real: `_escucharNube()` se suscribe a `postgres_changes` de `encrypted_states` filtrado por `user_id`, y `traerDeLaNube()` baja, junta y avisa. También trae lo nuevo al volver a la app y antes de exportar a Excel, y sube lo pendiente al salir.
+- **Base de datos:** `supabase/migraciones/2026-09-26_tiempo_real_encrypted_states.sql` agrega la tabla a la publicación `supabase_realtime`.
 - **`js/09-saldos-y-sincronizacion.js`:** `_continuarDesbloqueo()` es el camino común después de tener la DEK, sea por PIN o por huella.
 - **Pruebas:**
-  - `tests/sincronizacion.test.js`, `tests/nube-compu.test.js` y `tests/huella-y-nube.test.js`;
+  - `tests/sincronizacion.test.js`, `tests/nube-compu.test.js`, `tests/huella-y-nube.test.js` y `tests/tiempo-real.test.js`;
   - Supabase simulado: `conectarNube` en `tests/helpers.js`;
   - lector de huellas simulado con PRF.

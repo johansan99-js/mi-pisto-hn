@@ -256,3 +256,107 @@ async function compartirDireccionApp() {
   }
   copiarDireccionApp();
 }
+
+// ── Tiempo real: lo que anotas en el teléfono aparece solo en la compu ──
+// Supabase Realtime avisa cuando cambia la fila de tu cuenta (respeta RLS:
+// solo llegan los cambios de tu propia fila). El aviso no trae nada legible:
+// al recibirlo se baja el bloque cifrado, se descifra aquí y se junta.
+let _canalNube = null, _traerTimer = null, _ultimoTraer = 0;
+
+/** Baja lo nuevo de la nube y lo junta en silencio. Devuelve cuántos elementos llegaron (o null si no se pudo). */
+async function traerDeLaNube() {
+  if (typeof cloudSync === 'undefined' || !cloudSync.user || !_sessionDEK || !cloudSync.hasCloudKey()) return null;
+  if (cloudSync._isSyncing) return 0; // la sincronización en curso ya junta lo remoto
+  _ultimoTraer = Date.now();
+  let info;
+  try { info = await cloudSync.getRemoteInfo({ strict: true }); } catch (e) { return null; }
+  if (!info || info.version <= cloudSync.getLocalSyncVersion()) return 0;
+  cloudSync._isSyncing = true;
+  try {
+    const dl = await cloudSync._downloadAndDecrypt();
+    if (!dl.ok) return null;
+    const { merged, diff } = cloudSync.mergeStates(state, dl.data);
+    const cambios = diff.totalRemoteNew + diff.totalConflicts + diff.totalRemovidos;
+    if (cambios || diff.totalLocalNew) {
+      Object.keys(state).forEach(k => delete state[k]);
+      Object.assign(state, merged);
+      ['pagosRecurrentes', 'prestamos', 'goals', 'tarjetas', 'receivables', 'payables', 'transferenciasProgramadas', 'grupos', 'presupuestos', 'misCuentas', 'categorias'].forEach(f => { if (!state[f]) state[f] = []; });
+      _tomarBaseSync();
+      try { localStorage.setItem(LS_KEY, await _encryptState(state, _sessionDEK)); saveStateToDB(state).catch(() => {}); } catch (e) {}
+    }
+    cloudSync.setLocalSyncVersion(dl.version);
+    if (cambios) {
+      renderAll();
+      const n = diff.totalRemoteNew;
+      if (typeof avisoRapido === 'function') avisoRapido('☁️ ' + (n ? n + (n === 1 ? ' cambio nuevo' : ' cambios nuevos') : 'Datos al día') + ' desde ' + (dl.deviceName || 'tu otro dispositivo'), 3500);
+    }
+    // Lo que este dispositivo tenía y la nube no, se sube
+    if (diff.totalLocalNew || diff.totalConflicts) setTimeout(() => cloudSync._scheduleAutoSync(), 0);
+    return diff.totalRemoteNew;
+  } finally {
+    cloudSync._isSyncing = false;
+    if (cloudSync._resyncPendiente) { cloudSync._resyncPendiente = false; cloudSync._scheduleAutoSync(); }
+  }
+}
+
+function _escucharNube() {
+  if (typeof cloudSync === 'undefined' || !cloudSync.client || typeof cloudSync.client.channel !== 'function') return;
+  const uid = cloudSync.user && cloudSync.user.id;
+  if (!uid) { _dejarDeEscucharNube(); return; }
+  if (_canalNube && _canalNube.__uid === uid) return;
+  _dejarDeEscucharNube();
+  _canalNube = cloudSync.client.channel('estado-' + uid)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'encrypted_states', filter: 'user_id=eq.' + uid }, p => {
+      const fila = (p && p.new) || {};
+      if (fila.device_id && fila.device_id === cloudSync.getDeviceId()) return; // el cambio lo hice yo
+      clearTimeout(_traerTimer);
+      _traerTimer = setTimeout(traerDeLaNube, 600);
+    })
+    .subscribe();
+  _canalNube.__uid = uid;
+}
+function _dejarDeEscucharNube() {
+  if (_canalNube && cloudSync.client && typeof cloudSync.client.removeChannel === 'function') { try { cloudSync.client.removeChannel(_canalNube); } catch (e) {} }
+  _canalNube = null;
+}
+
+// Se engancha cada vez que cambia el estado de la sesión (entrar, salir, abrir la app)
+const _renderCloudSyncUIConCanal = renderCloudSyncUI;
+renderCloudSyncUI = window.renderCloudSyncUI = async function () {
+  const r = await _renderCloudSyncUIConCanal.apply(this, arguments);
+  _escucharNube();
+  return r;
+};
+
+// Al abrir la app: en vez del aviso "Datos nuevos · Combinar", se junta solo
+if (typeof cloudSync !== 'undefined') {
+  const _checkBase = cloudSync.checkForNewerVersion.bind(cloudSync);
+  cloudSync.checkForNewerVersion = async function () {
+    if (_sessionDEK && this.hasCloudKey()) { if (await traerDeLaNube() !== null) return; }
+    return _checkBase();
+  };
+}
+
+// Al volver a la app o a la pestaña: por si el aviso en tiempo real se perdió.
+// Al salir: lo que quedó pendiente se sube ya, sin esperar.
+document.addEventListener('visibilitychange', () => {
+  if (typeof cloudSync === 'undefined' || !cloudSync.user) return;
+  if (document.visibilityState === 'visible') {
+    if (Date.now() - _ultimoTraer > 5000) traerDeLaNube();
+  } else if (cloudSync._autoSyncTimer) {
+    clearTimeout(cloudSync._autoSyncTimer);
+    cloudSync._autoSyncTimer = null;
+    cloudSync._autoMergeAndUpload().then(r => { if (r && r.ok) cloudSync.setLocalSyncVersion(r.version); });
+  }
+});
+
+// El Excel siempre sale con lo último de tu cuenta
+if (typeof exportToExcelPro === 'function') {
+  const _excelBase = exportToExcelPro;
+  exportToExcelPro = async function () {
+    if (typeof cloudSync !== 'undefined' && cloudSync.user && _sessionDEK) {
+      await Promise.race([traerDeLaNube(), new Promise(r => setTimeout(r, 5000))]);
+    }
+    return _excelBase.apply(this, arguments);
+  };
+}
