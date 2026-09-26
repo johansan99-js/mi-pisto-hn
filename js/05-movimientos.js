@@ -486,7 +486,7 @@ function softDeleteTx(id) {
   const label = t.type === 'income' ? `+${fL(t.amount)}` : `-${fL(t.amount)}`;
   _showUndoToast(
     `${t.cat || 'Movimiento'} eliminado`,
-    label,
+    `${label} · queda en la Papelera (menú ☰)`,
     () => { _undoDelete(id); }
   );
 }

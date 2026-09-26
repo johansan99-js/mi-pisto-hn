@@ -283,7 +283,8 @@ function pagarCuotaPrestamo(id){
 
 // ========== TARJETAS (MEJORADO) ==========
 function saveTarjeta(){
-    const nombre=document.getElementById('tc-nombre').value.trim(),corte=parseInt(document.getElementById('tc-corte').value)||1,pago=parseInt(document.getElementById('tc-pago').value)||15,limite=leerMonto(document.getElementById('tc-limite').value)||0,saldo=leerMonto(document.getElementById('tc-saldo').value)||0,tasa=leerMonto(document.getElementById('tc-tasa').value)||48,calcMinimo=document.getElementById('tc-calcular-minimo').checked;
+    const nombre=document.getElementById('tc-nombre').value.trim(),corte=parseInt(document.getElementById('tc-corte').value)||1,pago=parseInt(document.getElementById('tc-pago').value)||15,limite=leerMonto(document.getElementById('tc-limite').value)||0,saldo=leerMonto(document.getElementById('tc-saldo').value)||0,tasa=leerMonto(String(document.getElementById('tc-tasa').value).replace('%',''))||48,calcMinimo=document.getElementById('tc-calcular-minimo').checked;
+    if(tasa>200)return alert('La tasa de interés anual debe ser un porcentaje entre 1 y 200 (en Honduras las tarjetas cobran cerca de 48%).');
     if(!nombre)return alert('Nombre requerido');
     const ultimos4=(document.getElementById('tc-ultimos4')?.value||'').trim();
     if(ultimos4&&!/^\d{4}$/.test(ultimos4))return alert('Los últimos dígitos deben ser 4 números.');

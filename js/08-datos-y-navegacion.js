@@ -510,3 +510,38 @@ function renderAll(){
     if (typeof notificarInformeMes === 'function') notificarInformeMes();
     if (!window.__revisionesIniciadas) { iniciarRevisionesPeriodicas(); procesarAccionDeURL(); }
 }
+
+// ========== BOTÓN ATRÁS (Android) ==========
+// Antes el botón atrás cerraba la app aunque hubiera una ventana abierta.
+// Ahora cierra lo que está encima (selector, ventana, menú), luego vuelve al
+// Inicio, y en el Inicio pide tocar atrás otra vez para salir.
+let _atrasSalir = 0;
+function _armarAtras() { try { history.pushState({ miPisto: 1 }, ''); } catch (e) {} }
+function _modalAbiertoArriba() {
+  const abiertos = [...document.querySelectorAll('.modal')].filter(m => m.id !== 'modal-pin' && getComputedStyle(m).display !== 'none');
+  return abiertos.sort((a, b) => (parseInt(getComputedStyle(a).zIndex) || 0) - (parseInt(getComputedStyle(b).zIndex) || 0)).pop() || null;
+}
+function manejarAtras() {
+  // Con la app bloqueada no se navega
+  const pin = document.getElementById('modal-pin');
+  if (pin && getComputedStyle(pin).display !== 'none') return true;
+  const hoja = document.getElementById('reg-selector');
+  if (hoja && hoja.classList.contains('abierto')) { typeof cerrarDictado === 'function' ? cerrarDictado() : cerrarSelectorRegistro(); return true; }
+  const modal = _modalAbiertoArriba();
+  if (modal) {
+    if (modal.id === 'modal-registro' && typeof cerrarRegistro === 'function') cerrarRegistro();
+    else closeModal(modal.id);
+    return true;
+  }
+  if (document.getElementById('hamburgerPanel')?.classList.contains('active')) { toggleHamburger(); return true; }
+  if (_fabOpen) { closeFabMenu(); return true; }
+  const vista = document.querySelector('.view.active');
+  if (vista && vista.id !== 'view-dashboard') { switchView('dashboard'); return true; }
+  // En el Inicio: no se vuelve a armar por 2 segundos, así el segundo toque sí sale
+  if (typeof avisoRapido === 'function') avisoRapido('Toca atrás otra vez para salir', 2000);
+  clearTimeout(_atrasSalir);
+  _atrasSalir = setTimeout(_armarAtras, 2000);
+  return false;
+}
+window.addEventListener('popstate', () => { if (manejarAtras()) _armarAtras(); });
+_armarAtras();

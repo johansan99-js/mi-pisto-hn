@@ -35,10 +35,10 @@ describe('Tutorial, primeros pasos y comentarios', () => {
     await page.click('#tour-siguiente');
     assert.equal(await page.isVisible('#modal-tour'), false);
 
-    // El botón del tutorial lleva directo a registrar el gasto
+    // El botón del tutorial lleva directo a registrar el gasto (con el teclado rápido, no el formulario viejo)
     await page.evaluate(() => abrirTour(1));
     await page.click('#modal-tour .tour-paso[data-paso="1"] .btn-primary');
-    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById('modal-tour')).display, getComputedStyle(document.getElementById('modal-gasto')).display]), ['none', 'flex']);
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById('modal-tour')).display, getComputedStyle(document.getElementById('modal-registro')).display]), ['none', 'flex']);
   });
 
   it('"Ver tutorial nuevamente" ya no abre la configuración inicial ni borra datos', async () => {

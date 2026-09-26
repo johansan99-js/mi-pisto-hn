@@ -97,7 +97,7 @@ const _reg = { tipo: 'gasto', expr: '', cuenta: 'efectivo', tarjeta: null, cat: 
 const _REG_ULTIMA = 'mph_registro_ultima';
 
 function _regRecordar() {
-  try { localStorage.setItem(_REG_ULTIMA, JSON.stringify({ cuenta: _reg.cuenta, tarjeta: _reg.tarjeta, hacia: _reg.hacia })); } catch (e) {}
+  try { localStorage.setItem(_REG_ULTIMA, JSON.stringify({ cuenta: _reg.cuenta, tarjeta: _reg.tarjeta, hacia: _reg.hacia, en: Date.now() })); } catch (e) {}
 }
 function _regUltima() {
   try { return JSON.parse(localStorage.getItem(_REG_ULTIMA) || '{}') || {}; } catch (e) { return {}; }
@@ -111,7 +111,10 @@ function abrirRegistro(tipo) {
   _reg.cat = null;
   _reg.moneda = 'HNL';
   _reg.cuenta = cuentaValida(u.cuenta, 'efectivo');
-  _reg.tarjeta = u.tarjeta && (state.tarjetas || []).some(t => String(t.id) === String(u.tarjeta)) ? u.tarjeta : null;
+  // La tarjeta se recuerda solo un rato: si no, el siguiente gasto en efectivo
+  // se iba a la tarjeta sin darse cuenta
+  const reciente = u.en && Date.now() - u.en < 3 * 3600e3;
+  _reg.tarjeta = reciente && u.tarjeta && (state.tarjetas || []).some(t => String(t.id) === String(u.tarjeta)) ? u.tarjeta : null;
   _reg.hacia = cuentaValida(u.hacia, 'ahorro');
   const nota = document.getElementById('reg-nota'); if (nota) nota.value = '';
   const hoy = fechaLocal();

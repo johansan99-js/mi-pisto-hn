@@ -237,7 +237,7 @@ function renderGastos(){
           <div class="es-icon">📭</div>
           <div class="es-title">Sin gastos registrados</div>
           <div class="es-sub">Registra tu primer gasto tocando el botón ➕ o escaneando un recibo.</div>
-          <button class="btn-empty-secondary" onclick="openModal('modal-gasto')">📝 Registrar gasto</button>
+          <button class="btn-empty-secondary" onclick="abrirRegistro('gasto')">📝 Registrar gasto</button>
         </div>`; return; }
     if (gastosFiltrados.length === 0) {
         container.innerHTML = `<div class="empty-state-simple">
@@ -295,7 +295,7 @@ function renderIngresos(){
           <div class="es-icon">💵</div>
           <div class="es-title">Sin ingresos registrados</div>
           <div class="es-sub">Registra tu salario u otro ingreso tocando el botón ➕.</div>
-          <button class="btn-empty-secondary" onclick="openModal('modal-ingreso')">💰 Registrar ingreso</button>
+          <button class="btn-empty-secondary" onclick="abrirRegistro('ingreso')">💰 Registrar ingreso</button>
         </div>`; return; }
     if (ingresosFiltrados.length === 0) {
         container.innerHTML = `<div class="empty-state-simple">
@@ -319,6 +319,13 @@ function renderIngresos(){
         </div>`).join('');
 }
 
+function totalLoQueDebes(){
+    const deudas=(state.payables||[]).filter(p=>typeof deudaActiva!=='function'||deudaActiva(p)).reduce((a,p)=>a+pendienteDeuda(p),0);
+    const tarjetas=(state.tarjetas||[]).reduce((a,t)=>a+Math.max(0,typeof deudaTarjetaL==='function'?deudaTarjetaL(t):(t.saldo||0)),0);
+    const prestamos=(state.prestamos||[]).reduce((a,p)=>a+(typeof saldoPrestamo==='function'?saldoPrestamo(p):0),0);
+    return Math.round((deudas+tarjetas+prestamos)*100)/100;
+}
+
 function renderDashboard(){
     // P0-2: KPIs reales — excluyen transferencias internas Y conciliaciones (no son ingresos/gastos genuinos del mes)
     const realTx=state.transactions.filter(t=>!t.deletedAt && !t.esTransferencia && !t.esConciliacion);
@@ -339,7 +346,10 @@ function renderDashboard(){
     if(efEl)efEl.textContent=fL(getCuentaBalance('efectivo'));
     if(ahEl)ahEl.textContent=fL(getCuentaBalance('ahorro'));
     if(typeof renderTileDeudas==='function')renderTileDeudas();
-    document.getElementById('balance-status').textContent=income>0?'Basado en tus movimientos':'Esperando movimientos';
+    // El patrimonio de verdad resta lo que debes (tarjetas, préstamos y deudas)
+    const debes=totalLoQueDebes();
+    document.getElementById('balance-status').textContent=debes>0?`Debes ${fL(debes)} · Patrimonio neto ${fL(balance-debes)}`:(income>0?'Basado en tus movimientos':'Esperando movimientos');
+    document.getElementById('balance-status').style.color=debes>0&&balance-debes<0?'var(--red)':'var(--green)';
     document.getElementById('total-income').textContent=fL(income);
     document.getElementById('total-expense').textContent=fL(expense);
     document.getElementById('total-extra').textContent=fL(extra);

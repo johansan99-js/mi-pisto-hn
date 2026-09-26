@@ -814,9 +814,18 @@ function vaciarPapelera() {
   }
 }
 
+function abrirPapelera() {
+  switchView('config');
+  inyectarElementosNuevos();
+  renderPapelera();
+  setTimeout(function() { var el = document.getElementById('trash-section-wrapper'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+}
+
 function renderPapelera() {
   var deleted = state.transactions.filter(function(t) { return t.deletedAt; })
     .sort(function(a, b) { return new Date(b.deletedAt) - new Date(a.deletedAt); });
+  var cuenta = document.getElementById('papelera-cuenta');
+  if (cuenta) cuenta.textContent = deleted.length ? '(' + deleted.length + ')' : '';
   var trashList = document.getElementById('trash-list');
   if (!trashList) return;
   if (deleted.length === 0) {
@@ -829,7 +838,7 @@ function renderPapelera() {
   for (var i = 0; i < deleted.length; i++) {
     var t = deleted[i];
     html += '<div class="trash-item">';
-    html += '<div><strong>' + esc(t.cat || 'Sin categoria') + '</strong> - L.' + t.amount.toFixed(2);
+    html += '<div><strong>' + esc(t.cat || 'Sin categoría') + '</strong> · ' + (t.type === 'income' ? '+' : '-') + fL(t.amount);
     html += '<br/><small>' + new Date(t.date).toLocaleDateString() + '</small></div>';
     html += '<button class="btn btn-restore" onclick="restaurarGastoDePapelera(\'' + esc(t.id) + '\')">Restaurar</button>';
     html += '</div>';
@@ -1148,7 +1157,7 @@ async function tourCrearKit() {
 }
 function tourRegistrarGasto() {
   cerrarTour();
-  openModal('modal-gasto');
+  abrirRegistro('gasto');
 }
 async function tourActivarRecordatorio() {
   document.getElementById('recordatorio-activo').checked = true;
@@ -1167,7 +1176,7 @@ async function tourActivarRecordatorio() {
 function pasosPendientes() {
   return [
     { id: 'kit', texto: 'Crea tu kit de recuperación del PIN', hecho: tieneKitRecuperacion(), accion: 'generarKitRecuperacion().then(renderPrimerosPasos)' },
-    { id: 'gasto', texto: 'Registra tu primer gasto', hecho: (state.transactions || []).some(t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.esConciliacion), accion: "openModal('modal-gasto')" },
+    { id: 'gasto', texto: 'Registra tu primer gasto', hecho: (state.transactions || []).some(t => !t.deletedAt && t.type === 'expense' && !t.esTransferencia && !t.esConciliacion), accion: "abrirRegistro('gasto')" },
     { id: 'recordatorio', texto: 'Activa el recordatorio diario', hecho: leerRecordatorio().activo, accion: 'abrirTour(2)' },
   ];
 }
@@ -1241,7 +1250,7 @@ function inyectarElementosNuevos() {
     var trashDiv = document.createElement('div');
     trashDiv.id = 'trash-section-wrapper';
     trashDiv.className = 'trash-section';
-    trashDiv.innerHTML = '<h4 style="margin-bottom:10px">🗑️ Papelera de Gastos</h4><div id="trash-list"></div><button id="empty-trash-btn" class="btn btn-danger" onclick="vaciarPapelera()" style="margin-top:10px;display:none">Vaciar Papelera</button>';
+    trashDiv.innerHTML = '<h4 style="margin-bottom:10px">🗑️ Papelera</h4><div id="trash-list"></div><button id="empty-trash-btn" class="btn btn-danger" onclick="vaciarPapelera()" style="margin-top:10px;display:none">Vaciar Papelera</button>';
     configView.appendChild(trashDiv);
   }
 }
