@@ -516,7 +516,7 @@
 
   
   <div id="bloque-metas" class="bloque-inicio">
-  <h3 style="margin:20px 0 10px;font-size:14px">🎯 Metas de Ahorro</h3>
+  <h3 style="margin:20px 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center">🎯 Metas de Ahorro <a href="#" id="inicio-nueva-meta" style="font-size:12px;font-weight:600;color:var(--green);text-decoration:none" onclick="event.preventDefault();openModal('modal-meta')">➕ Nueva meta</a></h3>
   <div id="dashboard-goals"></div>
   </div>
   <div id="bloque-alertas-tc" class="bloque-inicio">
@@ -634,7 +634,7 @@
 </div>
 
 <div id="view-metas" class="view">
-  <h2 style="margin-bottom:15px">🎯 Metas de Ahorro</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px"><h2 style="margin:0">🎯 Metas de Ahorro</h2><button type="button" id="btn-nueva-meta" class="btn btn-primary" style="width:auto;margin:0;padding:8px 14px;font-size:13px" onclick="openModal('modal-meta')">➕ Nueva meta</button></div>
   <div id="metas-list"></div>
 </div>
 
