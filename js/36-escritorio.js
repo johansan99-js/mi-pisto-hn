@@ -9,7 +9,7 @@
 
 const _escAncho = window.matchMedia ? matchMedia('(min-width: 1024px)') : { matches: false };
 const _escMuyAncho = window.matchMedia ? matchMedia('(min-width: 1600px)') : { matches: false };
-const _ESC_PRINCIPAL = ['duplicates-alert', 'primeros-pasos', 'aviso-resumen', 'auto-anotados', 'sugerencia-recurrente', 'registros-mes'];
+const _ESC_PRINCIPAL = ['duplicates-alert', 'primeros-pasos', 'aviso-resumen', 'auto-anotados', 'consejo-inicio', 'sugerencia-recurrente', 'registros-mes'];
 const _ESC_COLUMNAS = {
   2: [_ESC_PRINCIPAL,
     ['balance-card', 'aviso-cuadre', 'racha-card', 'liquidez-7dias', 'presupuestos-card', 'bloque-metas', 'fondo-emergencia-card', 'cashflow-projection', 'bloque-alertas-tc', 'bloque-proximos-cobros', 'bloque-proximos-pagos']],

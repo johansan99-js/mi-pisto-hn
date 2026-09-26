@@ -61,6 +61,10 @@
     </div>
     Análisis
   </div>
+  <div class="sidebar-item" id="sb-consejero" onclick="switchView('consejero');setSidebarActive('sb-consejero')">
+    <div class="si-icon">💡</div>
+    Consejero
+  </div>
   <div class="sidebar-item" id="sb-presupuestos" onclick="switchView('presupuestos');setSidebarActive('sb-presupuestos')">
     <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">📅</div>
     Presupuestos
@@ -213,6 +217,11 @@
 
     <!-- ── OPERACIONES DIARIAS ── -->
     <div class="more-section-label">Operaciones</div>
+
+    <div class="hamburger-item" onclick="switchView('consejero');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">💡</div>
+      <div><div>Consejero</div><div style="font-size:11px;color:var(--text2);font-weight:400">Soluciones con tus números</div></div>
+    </div>
 
     <div class="hamburger-item" onclick="switchView('tarjetas');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--red-rgb),.15)">💳</div>
@@ -435,6 +444,7 @@
   <div id="fondo-emergencia-card" class="card" style="display:none"></div>
   <div id="auto-anotados" class="card auto-anotados" style="display:none"></div>
   <div id="aviso-cuadre" class="card" style="display:none;border-color:rgba(var(--blue-rgb),.45)"></div>
+  <div id="consejo-inicio" class="card consejo-inicio" style="display:none"></div>
   <div id="racha-card" class="card" style="display:none"></div>
   <div class="balance-card" id="balance-card">
     <div>
@@ -624,6 +634,12 @@
 <div id="view-presupuestos" class="view">
   <h2 style="margin-bottom:15px">📅 Presupuestos</h2>
   <div id="presupuestos-vista" class="card registros-card analisis-card"></div>
+</div>
+
+<div id="view-consejero" class="view">
+  <h2 style="margin-bottom:6px">💡 Consejero</h2>
+  <p style="color:var(--text2);font-size:13px;margin-bottom:15px">Soluciones con tus propios números, de la más a la menos importante. Se calculan en tu teléfono: nada sale de aquí.</p>
+  <div id="consejero-lista"></div>
 </div>
 
 <div id="view-historico" class="view">
@@ -1607,5 +1623,6 @@
 <script src="js/34-informe-mes.js"></script>
 <script src="js/35-dialogos.js"></script>
 <script src="js/36-escritorio.js"></script>
+<script src="js/37-consejero.js"></script>
 </body>
 </html>

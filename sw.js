@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v80-consola-callada';
+const VERSION = 'v81-consejero';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -104,6 +104,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/34-informe-mes.js',
   BASE_PATH + 'js/35-dialogos.js',
   BASE_PATH + 'js/36-escritorio.js',
+  BASE_PATH + 'js/37-consejero.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];

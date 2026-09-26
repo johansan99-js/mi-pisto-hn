@@ -1452,7 +1452,7 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
   #modal-registro .reg-fecha { grid-area: fecha; }
   #modal-registro .reg-extras { grid-area: extras; align-self: start; }
   /* Análisis: los gráficos y el resumen del mes lado a lado */
-  #view-historico { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  #view-historico.active { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
   #view-historico > h2 { grid-column: 1 / -1; margin-bottom: 0 !important; }
   #view-historico > #analisis { grid-row: span 3; }
   #view-historico > .card, #view-historico > .btn { margin: 0 !important; }
@@ -1464,3 +1464,19 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 @media (min-width: 1600px) {
   #esc-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); }
 }
+
+/* ── Consejero (37-consejero.js) ── */
+.consejo{display:flex;gap:12px;padding:14px;margin-bottom:12px;background:var(--bg2);border:1px solid var(--border);border-left:4px solid var(--amber);border-radius:14px}
+.consejo-rojo{border-left-color:var(--red)}
+.consejo-ico{font-size:24px;line-height:1.1;flex-shrink:0}
+.consejo-cuerpo{flex:1;min-width:0}
+.consejo-titulo{font-weight:700;font-size:15px;margin-bottom:4px}
+.consejo-texto{font-size:13px;line-height:1.5;color:var(--text2)}
+.consejo-texto strong{color:var(--text)}
+.consejo-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.consejo-btn{width:auto!important;margin:0!important;padding:9px 14px!important;font-size:13px!important;min-height:40px}
+.consejo-link{background:none;border:0;padding:6px 0;color:var(--text2);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline}
+.consejo-inicio{padding:14px}
+.consejo-inicio .consejo{margin:0;padding:0;border:0;background:none}
+.consejo-cabeza{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--amber);margin-bottom:10px}
+@media (min-width:1024px){#consejero-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;align-items:start}#consejero-lista .consejo{margin:0}}
