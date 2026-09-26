@@ -77,6 +77,8 @@ const cloudSync = {
       console.log('☁️ Supabase SDK no disponible (¿offline?). Sync deshabilitado.');
       return false;
     }
+    const _u = new URL(window.location.href);
+    const volvioDeLogin = _u.searchParams.has('code') || window.location.hash.includes('access_token');
     try {
       this.client = window.supabase.createClient(
         CLOUD_SYNC_CONFIG.url,
@@ -96,6 +98,9 @@ const cloudSync = {
         this.user = session.user;
         console.log('☁️ Sesión restaurada');
         this._logDevice().catch(e => console.warn('device_log:', e.message));
+        // El SIGNED_IN del regreso de Google puede dispararse antes de que
+        // exista el listener: el paso siguiente se hace desde aquí también
+        if (volvioDeLogin) this._alVolverDelLogin();
         // FASE 3: Mostrar indicador y chequear si hay versión nueva en nube
         setTimeout(() => {
           this._updateIndicator('synced');
@@ -109,41 +114,9 @@ const cloudSync = {
         if (event === 'SIGNED_IN') {
           this._logDevice().catch(()=>{});
           renderCloudSyncUI();
-          // Si veníamos del magic link, mostrar feedback
           const url = new URL(window.location.href);
-          if (url.searchParams.has('code') || window.location.hash.includes('access_token')) {
-            history.replaceState({}, document.title, window.location.pathname);
-            setTimeout(async () => {
-              const isNewDevice = !state.setup || !state.transactions || state.transactions.length === 0;
-              if (isNewDevice) {
-                // FASE 3: dispositivo nuevo — ofrecer restaurar de la nube
-                const remInfo = await this.getRemoteInfo();
-                if (remInfo) {
-                  const ok = (await confirmar(
-                    '☁️ Sesión iniciada como ' + this.user.email + '\n\n' +
-                    '¡Bienvenido a un dispositivo nuevo!\n\n' +
-                    'Encontramos datos en la nube:\n' +
-                    '• Versión #' + remInfo.version + '\n' +
-                    '• Subidos: ' + new Date(remInfo.updated_at).toLocaleString('es-HN') + '\n' +
-                    '• Desde: ' + (remInfo.device_name || 'otro dispositivo') + '\n\n' +
-                    '¿Querés restaurar tus datos aquí?\n' +
-                    '(Vas a necesitar tu PIN)'
-                  ));
-                  if (ok) {
-                    if (typeof switchView === 'function') switchView('config');
-                    setTimeout(() => { if (typeof abrirModalBajarCloud === 'function') abrirModalBajarCloud(); }, 300);
-                  } else {
-                    alert('✅ Sesión iniciada. Podés descargar tus datos en cualquier momento desde Configuración → Sincronización.');
-                  }
-                } else {
-                  alert('✅ Sesión iniciada como ' + this.user.email + '\n\nLa sincronización de datos está activa. Subí tus datos desde Configuración → Sincronización.');
-                }
-              } else {
-                // Dispositivo que ya tenía datos — solo avisamos y chequeamos versiones
-                alert('✅ Sesión iniciada como ' + this.user.email);
-                setTimeout(() => this.checkForNewerVersion(), 1000);
-              }
-            }, 100);
+          if (volvioDeLogin || url.searchParams.has('code') || window.location.hash.includes('access_token')) {
+            this._alVolverDelLogin();
           } else {
             // Login en segundo plano (refresh de token) — solo chequear versiones
             setTimeout(() => this.checkForNewerVersion(), 2000);
@@ -162,6 +135,37 @@ const cloudSync = {
       console.error('☁️ Error inicializando Supabase:', e);
       return false;
     }
+  },
+
+  /** Lo que pasa al volver de Google. En un dispositivo nuevo (la compu) va
+      directo a bajar los datos: nada de llenar el perfil ni buscar en Configuración. */
+  async _alVolverDelLogin() {
+    if (this._postLoginHecho) return;
+    this._postLoginHecho = true;
+    try { history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
+    // Esperar a que la app termine de cargar el state local
+    if (document.readyState !== 'complete') await new Promise(r => window.addEventListener('load', r, { once: true }));
+    await new Promise(r => setTimeout(r, 400));
+    // Con PIN, el state real aparece después de desbloquear
+    while (localStorage.getItem('finanzas_pin_hash') && !_sessionDEK) await new Promise(r => setTimeout(r, 500));
+    const pidioTraer = localStorage.getItem('mph_nube_traer') === '1';
+    localStorage.removeItem('mph_nube_traer');
+    const email = (this.user && this.user.email) || '';
+    const vacio = !state.setup || !(state.transactions || []).length;
+    if (!pidioTraer && !vacio) {
+      avisar('✅ Sesión iniciada como ' + email);
+      setTimeout(() => this.checkForNewerVersion(), 1000);
+      return;
+    }
+    const info = await this.getRemoteInfo();
+    if (!info) {
+      if (pidioTraer || !state.setup) return _sinDatosEnLaNube(email);
+      return avisar('✅ Sesión iniciada como ' + email + '\n\nSube tus datos desde Configuración → Sincronización → "⬆️ Subir ahora".');
+    }
+    if (!pidioTraer && state.setup && !(await confirmar('☁️ Sesión iniciada como ' + email + '\n\nEncontramos tus datos en la nube, subidos desde ' + (info.device_name || 'otro dispositivo') + ' el ' + new Date(info.updated_at).toLocaleString('es-HN', { dateStyle: 'medium', timeStyle: 'short' }) + '.\n\n[Aceptar] = Traerlos a este dispositivo\n[Cancelar] = Ahora no'))) return;
+    const ob = document.getElementById('onboarding');
+    if (ob) ob.style.display = 'none';
+    abrirModalBajarCloud(info);
   },
 
   /** Inicia sesión con Google (OAuth vía Supabase, flujo PKCE).
@@ -301,7 +305,7 @@ const cloudSync = {
     const dek = await _decryptDEK(_b64DecodeArr(data.dek_ciphertext), _b64DecodeArr(data.dek_iv), kek);
     if (!dek) return { ok: false, error: 'Contraseña de la nube incorrecta.' };
     if (_b64EncodeArr(dek) !== _b64EncodeArr(_sessionDEK)) {
-      return { ok: false, error: 'Los datos de la nube se cifraron en otro dispositivo con otra clave. Usa "⬇️ Bajar de la nube" en este dispositivo primero.' };
+      return { ok: false, otraClave: true, error: 'Los datos de la nube se cifraron en otro dispositivo con otra clave. Usa "⬇️ Bajar de la nube" en este dispositivo primero.' };
     }
     this._saveCloudKey(data.dek_ciphertext, data.dek_iv, data.pin_salt);
     return { ok: true };
@@ -317,6 +321,21 @@ const cloudSync = {
     if (!pass) return false;
     if (!existe) { await this.crearClaveNube(pass); return true; }
     const r = await this.adoptarClaveNube(pass);
+    if (r.otraClave) {
+      // La nube tiene datos de otro dispositivo que empezó por su cuenta (p. ej.
+      // la compu con la app vacía). Hay que elegir cuáles son los buenos.
+      const n = (state.transactions || []).filter(t => !t.deletedAt).length;
+      const desde = (info && info.device_name) || 'otro dispositivo';
+      if (await confirmar('☁️ La nube tiene otros datos, subidos desde ' + desde + '. No se pueden combinar con los de este dispositivo porque cada uno empezó por separado.\n\n¿Cuáles son tus datos buenos?\n\n[Aceptar] = Los de la nube (bajarlos aquí)\n[Cancelar] = Los de este dispositivo')) {
+        abrirModalBajarCloud(info);
+        return false;
+      }
+      if (!(await confirmar('⚠️ Se reemplazará lo que hay en la nube (desde ' + desde + ') por los ' + n + ' movimientos de este dispositivo. Tus otros dispositivos tendrán que volver a bajar los datos.\n\n[Aceptar] = Reemplazar la nube\n[Cancelar] = No hacer nada'))) return false;
+      await this.crearClaveNube(pass);
+      // Ya no hay que bajar la versión de la nube antes de subir: se reemplaza
+      if (info && info.version) this.setLocalSyncVersion(info.version);
+      return true;
+    }
     if (!r.ok) alert('❌ ' + r.error);
     return r.ok;
   },
@@ -920,6 +939,7 @@ async function renderCloudSyncUI() {
           '<div style="flex:1">' +
             '<div style="font-weight:700;font-size:13px">Conectado</div>' +
             '<div style="font-size:11px;color:var(--text2);word-break:break-all">' + esc(cloudSync.user.email || '') + '</div>' +
+            '<div style="font-size:11px;color:var(--text2);margin-top:4px">En tu otro dispositivo entra con esta misma cuenta.</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1128,6 +1148,14 @@ async function subirDatosCloud() {
     alert('⚠️ Para subir tus datos a la nube necesitás:\n\n1. Tener un PIN configurado\n2. Haber desbloqueado la app con tu PIN en esta sesión');
     return;
   }
+  if (!(state.transactions || []).length) {
+    let info = null;
+    try { info = await cloudSync.getRemoteInfo({ strict: true }); } catch (e) {}
+    if (info && info.device_id !== cloudSync.getDeviceId()) {
+      if (await confirmar('⚠️ Este dispositivo no tiene movimientos, pero la nube ya tiene datos subidos desde ' + (info.device_name || 'otro dispositivo') + '.\n\nSi subes ahora, podrías reemplazarlos por una app vacía. Lo normal en un dispositivo nuevo es BAJAR.\n\n[Aceptar] = Bajar mis datos\n[Cancelar] = No hacer nada')) abrirModalBajarCloud(info);
+      return;
+    }
+  }
   if (!await cloudSync.asegurarClaveNube()) return;
   // Verificar si hay versión más nueva en la nube
   let remoteInfo;
@@ -1224,18 +1252,16 @@ window._onCloudBannerDownload = function() {
   setTimeout(() => { if (typeof subirDatosCloud === 'function') subirDatosCloud(); }, 300);
 };
 
-function abrirModalBajarCloud() {
+function abrirModalBajarCloud(infoYa) {
   // Verificar que hay datos en la nube antes de pedir PIN
-  cloudSync.getRemoteInfo().then(info => {
-    if (!info) {
-      alert('☁️ No hay datos sincronizados en la nube todavía.\n\nDesde otro dispositivo, primero usá "⬆️ Subir ahora" para crear el primer respaldo. Luego podés bajarlo en este dispositivo.');
-      return;
-    }
+  (infoYa ? Promise.resolve(infoYa) : cloudSync.getRemoteInfo()).then(info => {
+    if (!info) return _sinDatosEnLaNube((cloudSync.user && cloudSync.user.email) || '');
     // Mostrar el modal con info del blob remoto
     const fecha = new Date(info.updated_at).toLocaleString('es-HN', { dateStyle: 'medium', timeStyle: 'short' });
     const sizeKB = (info.size_bytes / 1024).toFixed(1);
     document.getElementById('cloud-download-info').innerHTML =
       '📦 <strong>Datos disponibles en la nube:</strong><br>' +
+      '• Cuenta: ' + esc((cloudSync.user && cloudSync.user.email) || '?') + '<br>' +
       '• Subido: ' + fecha + '<br>' +
       '• Desde: ' + esc(info.device_name || '?') + '<br>' +
       '• Tamaño: ' + sizeKB + ' KB · Versión #' + info.version;
@@ -1246,11 +1272,54 @@ function abrirModalBajarCloud() {
     const status = document.getElementById('cloud-download-status');
     if (status) status.style.display = 'none';
     const btn = document.getElementById('btn-confirmar-bajar');
-    if (btn) { btn.disabled = false; btn.textContent = '⬇️ Sí, sobrescribir con datos de la nube'; }
+    if (btn) { btn.disabled = false; btn.textContent = state.setup ? '⬇️ Sí, sobrescribir con datos de la nube' : '⬇️ Traer mis datos'; }
+    const aviso = document.getElementById('cloud-download-aviso');
+    if (aviso) aviso.style.display = state.setup ? '' : 'none';
+    // El modal vive dentro de Configuración: fuera de ella no se vería
+    const modal = document.getElementById('modal-cloud-download');
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
     openModal('modal-cloud-download');
     setTimeout(() => document.getElementById(_cloudDownloadConPass ? 'cloud-download-pass' : 'cloud-download-pin')?.focus(), 100);
   });
 }
+/** Cerrar la bajada: en un dispositivo sin perfil se vuelve a la bienvenida */
+function cancelarBajarCloud() {
+  closeModal('modal-cloud-download');
+  if (!state.setup) { const ob = document.getElementById('onboarding'); if (ob) ob.style.display = 'flex'; }
+}
+window.cancelarBajarCloud = cancelarBajarCloud;
+/** La cuenta con la que se entró no tiene datos: casi siempre es otra cuenta de Google o falta subir */
+function _sinDatosEnLaNube(email) {
+  if (!state.setup) { const ob = document.getElementById('onboarding'); if (ob) ob.style.display = 'flex'; }
+  return avisar('☁️ La cuenta ' + email + ' todavía no tiene datos en la nube.\n\n' +
+    'En el dispositivo donde ya usas Mi Pisto:\n' +
+    '1. Configuración → Sincronización → "Activar", entrando con ESTA MISMA cuenta de Google.\n' +
+    '2. Toca "⬆️ Subir ahora" y crea la contraseña de la nube.\n\n' +
+    'Luego vuelve aquí y toca otra vez "📲 Ya uso Mi Pisto en otro dispositivo".\n\n' +
+    'Si usaste otra cuenta de Google, cierra la sesión y entra con la correcta.');
+}
+/** Botón de la bienvenida: traer los datos de otro dispositivo en vez de empezar de cero */
+async function traerDatosDeOtroDispositivo() {
+  const st = document.getElementById('ob-traer-estado');
+  const decir = t => { if (st) { st.style.display = 'block'; st.textContent = t; } };
+  if (!cloudSync.sdkAvailable()) return decir('⚠️ Sin conexión con el servidor. Revisa tu internet y recarga la página.');
+  await cloudSync.init();
+  if (cloudSync.user) {
+    decir('Buscando tus datos…');
+    let info;
+    try { info = await cloudSync.getRemoteInfo({ strict: true }); }
+    catch (e) { return decir('❌ No se pudo consultar la nube: ' + e.message); }
+    if (st) st.style.display = 'none';
+    if (!info) return _sinDatosEnLaNube(cloudSync.user.email || '');
+    document.getElementById('onboarding').style.display = 'none';
+    return abrirModalBajarCloud(info);
+  }
+  localStorage.setItem('mph_nube_traer', '1');
+  decir('Abriendo Google… entra con la misma cuenta que usas en tu otro dispositivo.');
+  const r = await cloudSync.signInWithGoogle();
+  if (!r.ok) { localStorage.removeItem('mph_nube_traer'); decir('❌ ' + (r.error || 'No se pudo conectar')); }
+}
+window.traerDatosDeOtroDispositivo = traerDatosDeOtroDispositivo;
 let _cloudDownloadConPass = false;
 
 /** Pide la contraseña de la nube en un modal. existe=true: escribir la que ya
