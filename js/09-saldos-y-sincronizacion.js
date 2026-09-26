@@ -248,7 +248,7 @@ function renderWelcome(){
     const now=new Date();
     const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    dtDate.innerHTML=`<strong style="color:var(--text)">${dias[now.getDay()]}</strong><br>${now.getDate()} de ${meses[now.getMonth()]}`;
+    dtDate.textContent=`${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]}`;
   }
   
   // ── Avatar sidebar ──
@@ -829,6 +829,8 @@ function renderPapelera() {
     .sort(function(a, b) { return new Date(b.deletedAt) - new Date(a.deletedAt); });
   var cuenta = document.getElementById('papelera-cuenta');
   if (cuenta) cuenta.textContent = deleted.length ? '(' + deleted.length + ')' : '';
+  var cuentaSb = document.getElementById('sb-papelera-cuenta');
+  if (cuentaSb) cuentaSb.textContent = deleted.length ? String(deleted.length) : '';
   var trashList = document.getElementById('trash-list');
   if (!trashList) return;
   if (deleted.length === 0) {
