@@ -429,7 +429,7 @@ const cloudSync = {
       }
 
       // 5) Validación básica: el state debe verse como un state real
-      if (typeof decryptedState !== 'object' || decryptedState === null) {
+      if (typeof decryptedState !== 'object' || decryptedState === null || _revisionProfunda(decryptedState)) {
         return { ok: false, error: 'Formato del state descifrado inválido.' };
       }
 
@@ -516,6 +516,7 @@ const cloudSync = {
       if (!data || !data.ciphertext) return { ok: false, noData: true };
       const decrypted = await _decryptState(data.ciphertext, _sessionDEK);
       if (!decrypted) return { ok: false, error: 'No se pudo descifrar el blob remoto' };
+      if (typeof decrypted !== 'object' || _revisionProfunda(decrypted)) return { ok: false, error: 'Los datos de la nube vienen dañados' };
       return { ok: true, state: decrypted, version: data.version,
                updatedAt: data.updated_at, deviceName: data.device_name };
     } catch (e) {
@@ -661,6 +662,7 @@ const cloudSync = {
       if (!data || !data.ciphertext) return { ok: false, noRemote: true };
       const decrypted = await _decryptState(data.ciphertext, _sessionDEK);
       if (!decrypted) return { ok: false, error: 'Error descifrando (¿PIN cambiado en otro dispositivo?)' };
+      if (typeof decrypted !== 'object' || _revisionProfunda(decrypted)) return { ok: false, error: 'Los datos de la nube vienen dañados' };
       return { ok: true, data: decrypted, version: data.version, updatedAt: data.updated_at, deviceName: data.device_name };
     } catch (e) { return { ok: false, error: e.message }; }
   },
@@ -672,9 +674,15 @@ const cloudSync = {
   mergeStates(localState, remoteState) {
     const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0, totalRemovidos:0 };
     const merged = {};
-    // Escalares: remoto gana
+    // Ajustes: gana el que se cambió de último; sin sellos, el remoto (regla anterior)
+    const sL = localState.sellosAjustes || {}, sR = remoteState.sellosAjustes || {};
+    const hora = v => (v && Date.parse(v)) || 0;
+    merged.sellosAjustes = {};
     ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','premium','setup'].forEach(f => {
-      merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
+      const ganaLocal = hora(sL[f]) > hora(sR[f]) || remoteState[f] === undefined;
+      merged[f] = ganaLocal ? localState[f] : remoteState[f];
+      const sello = ganaLocal ? sL[f] : sR[f];
+      if (sello) merged.sellosAjustes[f] = sello;
     });
     // Días sin gastos (racha): se juntan los de ambos lados; la mejor racha, la mayor
     merged.diasSinGastos = [...new Set([].concat(localState.diasSinGastos || [], remoteState.diasSinGastos || []))].sort().slice(-400);

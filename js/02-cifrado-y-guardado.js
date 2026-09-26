@@ -248,6 +248,21 @@ const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
 // ────────────────────────────────────────────────────────────────────
 // SAVE — cifra el state con DEK antes de guardar en localStorage
 // ────────────────────────────────────────────────────────────────────
+// Dos pestañas abiertas: la que se quedó atrás no debe pisar lo que guardó la
+// otra. Cuando otra pestaña guarda, esta deja de guardar y pide recargar.
+let _otraPestana = false;
+window.addEventListener('storage', e => {
+  if (e.key !== LS_KEY || _otraPestana) return;
+  _otraPestana = true;
+  const aviso = document.createElement('div');
+  aviso.id = 'aviso-otra-pestana';
+  aviso.setAttribute('role', 'alert');
+  aviso.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483001;background:#B45309;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)';
+  aviso.innerHTML = '<span>⚠️ Guardaste algo en otra pestaña o ventana. Esta ya no guarda para no borrar esos cambios.</span><button type="button" style="background:#fff;color:#B45309;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Recargar</button>';
+  aviso.querySelector('button').onclick = () => location.reload();
+  document.body.appendChild(aviso);
+});
+
 function save() {
   if (typeof sellarMontosUSD === 'function') sellarMontosUSD();
   // Si no hay DEK en sesión, significa que el usuario no ha desbloqueado
@@ -256,6 +271,7 @@ function save() {
   // están escritos: quien recarga la página justo después debe esperarla.
   // Con PIN y la sesión bloqueada (sin DEK) no se escribe nada: sería en
   // plano. Queda pendiente y se guarda cifrado al desbloquear.
+  if (_otraPestana) return Promise.resolve(false);
   if (!_sessionDEK && _tienePIN()) { _guardadoPendiente = true; return Promise.resolve(false); }
   _guardadoPendiente = false;
   recalcularSaldosTarjetas();

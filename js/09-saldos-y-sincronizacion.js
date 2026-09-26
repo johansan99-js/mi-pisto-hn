@@ -68,8 +68,11 @@ const SYNC_ARRAYS = ['transactions','goals','receivables','payables','prestamos'
 const ELIMINADOS_MAX_DIAS = 180;
 let _idsGuardados = null;
 
-function _huellaItem(it) {
+// El saldo de una tarjeta se calcula de sus movimientos: si contara, cada
+// compra re-sellaría la tarjeta y al combinar ganaría la copia equivocada.
+function _huellaItem(it, campo) {
   const { _h, updatedAt, ...resto } = it;
+  if (campo === 'tarjetas') { delete resto.saldo; delete resto.saldoUSD; }
   const txt = JSON.stringify(resto);
   let h = 0x811c9dc5;
   for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 0x01000193); }
@@ -79,10 +82,16 @@ function _huellaItem(it) {
 // dispositivo desactualizado): no deben contar como recién editados.
 function _huellaBase(stateObj) {
   SYNC_ARRAYS.forEach(f => (stateObj[f] || []).forEach(it => {
-    if (it && typeof it === 'object' && it._h === undefined) it._h = _huellaItem(it);
+    if (it && typeof it === 'object' && it._h === undefined) it._h = _huellaItem(it, f);
   }));
 }
+// Ajustes sueltos (nombre, días de pago…): también llevan su sello, para que al
+// combinar gane el que se cambió de último y no siempre el de la nube.
+const AJUSTES_SYNC = ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','premium'];
+let _ajustesGuardados = null;
 function _tomarBaseSync() {
+  _ajustesGuardados = {};
+  AJUSTES_SYNC.forEach(f => { _ajustesGuardados[f] = JSON.stringify(state[f] === undefined ? null : state[f]); });
   _idsGuardados = {};
   SYNC_ARRAYS.forEach(f => { _idsGuardados[f] = new Set((state[f] || []).map(x => String(x.id))); });
 }
@@ -93,11 +102,17 @@ function sellarCambios() {
   if (primeraVez) _huellaBase(state);
   SYNC_ARRAYS.forEach(f => (state[f] || []).forEach(it => {
     if (!it || typeof it !== 'object') return;
-    const h = _huellaItem(it);
+    const h = _huellaItem(it, f);
     if (it._h === h) return;
+    // Huella de antes (con el saldo): se actualiza sin contar como edición
+    if (f === 'tarjetas' && it._h === _huellaItem(it)) { it._h = h; return; }
     it._h = h;
     it.updatedAt = ahora;
   }));
+  if (!state.sellosAjustes || typeof state.sellosAjustes !== 'object') state.sellosAjustes = {};
+  if (_ajustesGuardados) AJUSTES_SYNC.forEach(f => {
+    if (JSON.stringify(state[f] === undefined ? null : state[f]) !== _ajustesGuardados[f]) state.sellosAjustes[f] = ahora;
+  });
   if (!state.eliminados || typeof state.eliminados !== 'object') state.eliminados = {};
   if (_idsGuardados && !primeraVez) {
     SYNC_ARRAYS.forEach(f => {
@@ -190,9 +205,11 @@ function getCuentaBalance(cuenta) {
     };
   }
   const inicial = state.cuentasIniciales[cuenta] || 0;
-  return state.transactions
+  // Redondeado a centavos: sumar decimales dejaba 0.7999999 y no dejaba transferir L 0.80
+  const saldo = state.transactions
     .filter(t => !t.deletedAt && t.cuenta === cuenta)
     .reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), inicial);
+  return Math.round(saldo * 100) / 100;
 }
 
 function getGreeting(){
@@ -342,12 +359,13 @@ function ejecutarTransferencia(opts){
   if(from===to)return alert('Las cuentas deben ser diferentes');
   // P0-4: validación con saldo derivado
   const saldoDisponible=getCuentaBalance(from);
-  if(monto>saldoDisponible)return alert('Saldo insuficiente en '+nombreCompletoCuenta(infoCuenta(from)));
+  if(monto>saldoDisponible+0.004)return alert('Saldo insuficiente en '+nombreCompletoCuenta(infoCuenta(from)));
   const fromNom=from==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(from));
   const toNom=to==='ahorro'?'Ahorro':nombreCompletoCuenta(infoCuenta(to));
   // Registrar como par de transacciones internas — el saldo se recalcula automáticamente
-  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Transferencia',subcat:`Salida de ${fromNom}`,cuenta:from,tipo:'fijo',date:fechaTx,esTransferencia:true});
-  state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:fechaTx,esTransferencia:true});
+  const parId=uid();
+  state.transactions.push({id:uid(),type:'expense',amount:monto,cat:'Transferencia',subcat:`Salida de ${fromNom}`,cuenta:from,tipo:'fijo',date:fechaTx,esTransferencia:true,parId});
+  state.transactions.push({id:uid(),type:'income',amount:monto,cat:'Transferencia',subcat:`Entrada a ${toNom}`,cuenta:to,date:fechaTx,esTransferencia:true,parId});
   save();closeModal('modal-transferir');renderAll();
   if(!opts.silencioso)alert(`✅ Transferencia completada.\n${fromNom}: ${fL(getCuentaBalance(from))}\n${toNom}: ${fL(getCuentaBalance(to))}`);
 }
@@ -399,7 +417,7 @@ function renderTransferenciasProgramadas(){
         ? '<span style="color:var(--text2)">⏸️ Pausada</span>'
         : (yaEsteMonth
             ? `<span style="color:var(--green)">✓ Ya se ejecutó este mes</span>`
-            : `<span style="color:var(--aviso)">Próxima: día ${t.dia}</span>`);
+            : `<span style="color:var(--aviso)">Próxima: día ${esc(t.dia)}</span>`);
     return `<div class="card" style="padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="flex:1;min-width:0">
@@ -439,8 +457,10 @@ function _ejecutarTransferenciaInterna(desde, hasta, monto, nombre, transferenci
   const fromNom = desde === 'ahorro' ? 'Ahorro' : nombreCompletoCuenta(infoCuenta(desde));
   const toNom = hasta === 'ahorro' ? 'Ahorro' : nombreCompletoCuenta(infoCuenta(hasta));
   const meta = transferenciaProgramadaId ? { transferenciaProgramadaId } : {};
-  state.transactions.push({id:uid(), type:'expense', amount:monto, cat:'Transferencia', subcat:`${nombre} · Salida de ${fromNom}`, cuenta:desde, tipo:'fijo', date:new Date().toISOString(), esTransferencia:true, ...meta});
-  state.transactions.push({id:uid(), type:'income', amount:monto, cat:'Transferencia', subcat:`${nombre} · Entrada a ${toNom}`, cuenta:hasta, date:new Date().toISOString(), esTransferencia:true, ...meta});
+  meta.parId = uid();
+  const fecha = new Date().toISOString();
+  state.transactions.push({id:uid(), type:'expense', amount:monto, cat:'Transferencia', subcat:`${nombre} · Salida de ${fromNom}`, cuenta:desde, tipo:'fijo', date:fecha, esTransferencia:true, ...meta});
+  state.transactions.push({id:uid(), type:'income', amount:monto, cat:'Transferencia', subcat:`${nombre} · Entrada a ${toNom}`, cuenta:hasta, date:fecha, esTransferencia:true, ...meta});
 }
 
 function ejecutarTransferenciaProgramadaAhora(id){
@@ -763,7 +783,9 @@ function eliminarGastoConPapelera(id) {
   var gasto = state.transactions.find(function(t) { return t.id === id; });
   if (!gasto) return;
   if (confirm('Eliminar este gasto? Puedes recuperarlo desde la papelera.')) {
+    var par = parDeTransferencia(gasto);
     gasto.deletedAt = new Date().toISOString();
+    if (par) par.deletedAt = gasto.deletedAt;
     save();
     renderAll();
     alert('Eliminado. Ve a Configuracion > Papelera para restaurar si lo necesitas.');
@@ -773,7 +795,9 @@ function eliminarGastoConPapelera(id) {
 function restaurarGastoDePapelera(id) {
   var gasto = state.transactions.find(function(t) { return t.id == id && t.deletedAt; });
   if (!gasto) return;
+  var par = parDeTransferencia(gasto);
   gasto.deletedAt = null;
+  if (par) par.deletedAt = null;
   save();
   renderAll();
   alert('Gasto restaurado correctamente');

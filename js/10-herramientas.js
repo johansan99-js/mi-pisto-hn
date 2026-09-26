@@ -68,6 +68,26 @@ function renderLiquidez7Dias() {
 // ==========================================
 let _editTxType = 'expense';
 
+// Una transferencia entre cuentas son dos movimientos (salida y entrada).
+// Editar o borrar solo uno de los dos crea o desaparece dinero, así que siempre
+// se tocan juntos. Las nuevas llevan parId; las viejas se emparejan por monto y hora.
+function parDeTransferencia(t) {
+  if (!t || !t.esTransferencia) return null;
+  const txs = state.transactions || [];
+  if (t.parId) return txs.find(x => x !== t && x.parId === t.parId) || null;
+  if (t.cat !== 'Transferencia') return null;
+  const hora = new Date(t.date).getTime();
+  let mejor = null, dist = Infinity;
+  txs.forEach(x => {
+    if (x === t || !x.esTransferencia || x.cat !== 'Transferencia' || x.parId || x.type === t.type) return;
+    if (!!x.deletedAt !== !!t.deletedAt || Math.abs(x.amount - t.amount) > 0.005) return;
+    if ((x.transferenciaProgramadaId || '') !== (t.transferenciaProgramadaId || '')) return;
+    const d = Math.abs(new Date(x.date).getTime() - hora);
+    if (d <= 5000 && d < dist) { mejor = x; dist = d; }
+  });
+  return mejor;
+}
+
 function abrirEdicionTx(id) {
   const t = state.transactions.find(x => x.id === id);
   if (!t) return;
@@ -94,6 +114,11 @@ function abrirEdicionTx(id) {
   } else {
     tipoWrap.style.display = 'none';
   }
+  // Una transferencia, un pago de tarjeta o un abono a meta no pueden volverse
+  // ingreso/gasto normal: eso crearía dinero de la nada
+  const tipoFijo = !!(t.esTransferencia || t.tarjetaId || t.esConciliacion);
+  const toggle = document.querySelector('#modal-edit-tx .edit-type-toggle');
+  if (toggle) toggle.style.display = tipoFijo ? 'none' : '';
   // Toggle tipo
   document.getElementById('edit-type-income').className = 'edit-type-btn' + (t.type==='income'?' active-income':'');
   document.getElementById('edit-type-expense').className = 'edit-type-btn' + (t.type==='expense'?' active-expense':'');
@@ -122,9 +147,12 @@ function guardarEdicionTx() {
   if (!t) return;
   const nuevoMonto = leerMonto(document.getElementById('edit-monto').value);
   if (!nuevoMonto || nuevoMonto <= 0) { alert('Monto inválido'); return; }
-  // Ajustar saldo si cambió el monto o tipo
-  const montoDiff = nuevoMonto - t.amount;
-  const tipoCambio = _editTxType !== t.type;
+  const fechaTxt = document.getElementById('edit-fecha').value;
+  const nuevaFecha = fechaTxt ? new Date(fechaTxt) : null;
+  if (!nuevaFecha || isNaN(nuevaFecha.getTime())) { alert('Pon la fecha del movimiento.'); return; }
+  const tipoFijo = !!(t.esTransferencia || t.tarjetaId || t.esConciliacion);
+  const tipoCambio = !tipoFijo && _editTxType !== t.type;
+  const par = parDeTransferencia(t);
   // Lo que cobró el banco manda sobre el monto (compras en moneda extranjera)
   let montoFinal = nuevoMonto;
   const wrapCobrado = document.getElementById('edit-cobrado-wrap');
@@ -145,9 +173,11 @@ function guardarEdicionTx() {
   t.cat      = document.getElementById('edit-cat').value || t.cat;
   t.subcat   = document.getElementById('edit-subcat').value;
   t.etiqueta = document.getElementById('edit-etiqueta').value.trim();
-  t.date     = new Date(document.getElementById('edit-fecha').value).toISOString();
-  if (_editTxType === 'expense') t.tipo = document.getElementById('edit-tipo').value;
-  if (tipoCambio) t.type = _editTxType;
+  t.date     = nuevaFecha.toISOString();
+  if (t.type === 'expense' && (!tipoCambio || _editTxType === 'expense')) t.tipo = document.getElementById('edit-tipo').value;
+  if (tipoCambio) { t.type = _editTxType; if (t.type === 'expense') t.tipo = document.getElementById('edit-tipo').value; }
+  // La otra mitad de la transferencia se mueve con esta
+  if (par) { par.amount = t.amount; par.date = t.date; }
   save();
   closeModal('modal-edit-tx');
   renderAll();
