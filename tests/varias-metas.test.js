@@ -20,6 +20,10 @@ describe('Varias metas de ahorro', () => {
     assert.deepEqual(await page.evaluate(() => state.goals.map(g => g.nombre)), ['Fondo de emergencia', 'Viaje a Roatán', 'Moto', 'Escuela']);
     assert.equal(await page.locator('#metas-list .goal-card-pro').count(), 4);
     assert.ok(await page.isVisible('#btn-nueva-meta'), 'el botón sigue a la vista');
+    // Y al final de la lista, la tarjeta para agregar otra
+    await page.click('#metas-list .meta-agregar-otra');
+    assert.ok(await page.isVisible('#modal-meta'));
+    await page.evaluate(() => closeModal('modal-meta'));
     // En el Inicio salen 3 y un enlace a todas
     await page.evaluate(() => switchView('dashboard'));
     assert.equal(await page.locator('#dashboard-goals .goal-mini').count(), 3);

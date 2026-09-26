@@ -110,7 +110,11 @@
               <button class="goal-pro-btn eliminar" onclick="window.eliminarMetaPro('${escFn(g.id)}')">🗑️ Eliminar</button>
             </div>
           </div>`;
-      }).join('');
+      }).join('') + `
+          <button type="button" class="meta-agregar-otra" onclick="openModal('modal-meta')">
+            <span style="font-size:22px">➕</span>
+            <span><strong>Agregar otra meta</strong><br><small>Viaje, electrodoméstico, universidad… puedes tener todas las que quieras</small></span>
+          </button>`;
     };
 
     window.editarMeta = function (id) {
