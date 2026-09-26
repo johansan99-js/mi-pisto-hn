@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v84-nube-compu';
+const VERSION = 'v85-huella-y-nube';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -108,12 +108,14 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/38-un-toque.js',
   BASE_PATH + 'js/39-importar-banco.js',
   BASE_PATH + 'js/40-guia.js',
+  BASE_PATH + 'js/41-acceso-y-nube.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];
 
 // Assets opcionales (no fallan si no existen)
 const ASSETS_OPTIONAL = [
+  BASE_PATH + 'js/vendor/qrcode.js',
   BASE_PATH + 'icon-192.png',
   BASE_PATH + 'icon-512.png',
   BASE_PATH + 'icon-maskable-192.png',

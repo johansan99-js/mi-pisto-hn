@@ -137,7 +137,7 @@ describe('PIN, cifrado y recuperación', () => {
     await page.waitForSelector('#modal-cloud-pass', { state: 'visible' });
     await page.fill('#cloud-pass-1', 'corta'); await page.fill('#cloud-pass-2', 'corta');
     await page.click('#btn-cloud-pass-ok');
-    assert.match(await page.textContent('#cloud-pass-error'), /12 caracteres/);
+    assert.match(await page.textContent('#cloud-pass-error'), /10 caracteres/);
     await page.fill('#cloud-pass-1', 'respaldo seguro 2026'); await page.fill('#cloud-pass-2', 'respaldo seguro 2026');
     page.respuestas = [true];
     await page.click('#btn-cloud-pass-ok');

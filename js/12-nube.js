@@ -149,9 +149,12 @@ const cloudSync = {
     // Con PIN, el state real aparece después de desbloquear
     while (localStorage.getItem('finanzas_pin_hash') && !_sessionDEK) await new Promise(r => setTimeout(r, 500));
     const pidioTraer = localStorage.getItem('mph_nube_traer') === '1';
+    const pidioEmpezar = localStorage.getItem('mph_nube_empezar') === '1';
     localStorage.removeItem('mph_nube_traer');
+    localStorage.removeItem('mph_nube_empezar');
     const email = (this.user && this.user.email) || '';
     const vacio = !state.setup || !(state.transactions || []).length;
+    if (pidioEmpezar) return this._primeraConexion();
     if (!pidioTraer && !vacio) {
       avisar('✅ Sesión iniciada como ' + email);
       setTimeout(() => this.checkForNewerVersion(), 1000);
@@ -166,6 +169,26 @@ const cloudSync = {
     const ob = document.getElementById('onboarding');
     if (ob) ob.style.display = 'none';
     abrirModalBajarCloud(info);
+  },
+
+  /** Recién creado el perfil y conectado con Google: si la cuenta no tiene
+      nada, este es el primer dispositivo y sube; si ya tiene, recibe o junta. */
+  async _primeraConexion() {
+    let info;
+    try { info = await this.getRemoteInfo({ strict: true }); }
+    catch (e) { return avisar('❌ No se pudo consultar la nube: ' + e.message + '\n\nPuedes intentarlo después en Configuración → Sincronización.'); }
+    const conDatos = (state.transactions || []).some(t => !t.deletedAt);
+    if (info && !conDatos) {
+      // Perfil recién hecho y la cuenta ya tiene datos: se traen tal cual
+      return abrirModalBajarCloud(info);
+    }
+    if (!await this.asegurarClaveNube()) return;
+    const r = await this.uploadState();
+    if (r.ok) {
+      renderCloudSyncUI();
+      await avisar('✅ Listo: tus datos quedan respaldados en la nube y se actualizan solos.\n\nPara verlos en la computadora, abre la app allá, toca "📲 Ya uso Mi Pisto en otro dispositivo" y entra con esta misma cuenta de Google.');
+    } else avisar('❌ No se pudo subir: ' + (r.error || 'error desconocido') + '\n\nPuedes intentarlo en Configuración → Sincronización.');
+    if (localStorage.getItem('mph_tour_pendiente') === '1' && typeof abrirTour === 'function') { localStorage.removeItem('mph_tour_pendiente'); abrirTour(0); }
   },
 
   /** Inicia sesión con Google (OAuth vía Supabase, flujo PKCE).
@@ -276,7 +299,7 @@ const cloudSync = {
   // de los blobs viejos protegidos con el PIN. La DEK envuelta se guarda en
   // este dispositivo para que el auto-sync no tenga que pedirla cada vez.
   CLOUD_KDF_ITER: 600000,
-  CLOUD_PASS_MIN: 12,
+  CLOUD_PASS_MIN: 10,
   hasCloudKey() {
     return !!(localStorage.getItem('mph_cloud_dek') && localStorage.getItem('mph_cloud_dek_iv') && localStorage.getItem('mph_cloud_salt'));
   },
@@ -287,6 +310,38 @@ const cloudSync = {
   },
   async _kekDeContrasena(pass, saltStr) {
     return _deriveKEKFromPIN(pass, _b64DecodeArr(saltStr.slice(3)), this.CLOUD_KDF_ITER);
+  },
+  /** Los dos dispositivos ya tenían datos, cada uno con su clave: se baja lo
+      de la nube con la contraseña, se junta con lo de aquí y este dispositivo
+      pasa a usar la clave de la nube (así los dos quedan con la misma). */
+  async _juntarConLaNube(pass, info) {
+    const { data, error } = await this.client.from('encrypted_states')
+      .select('ciphertext, dek_ciphertext, dek_iv, pin_salt, version, device_name').eq('user_id', this.user.id).maybeSingle();
+    if (error || !data) { alert('❌ No se pudo bajar lo de la nube' + (error ? ': ' + error.message : '')); return false; }
+    const kek = await this._kekDeContrasena(pass, data.pin_salt);
+    const dek = await _decryptDEK(_b64DecodeArr(data.dek_ciphertext), _b64DecodeArr(data.dek_iv), kek);
+    const remoto = dek && await _decryptState(data.ciphertext, dek);
+    if (!remoto || typeof remoto !== 'object' || _revisionProfunda(remoto)) { alert('❌ Los datos de la nube no se pudieron abrir.'); return false; }
+    const n = (state.transactions || []).filter(t => !t.deletedAt).length;
+    const nR = (remoto.transactions || []).filter(t => !t.deletedAt).length;
+    if (!(await confirmar('☁️ La nube ya tiene datos de ' + (data.device_name || 'otro dispositivo') + ' (' + nR + ' movimientos) y aquí tienes ' + n + '.\n\nSe van a juntar: no se pierde nada de ningún lado.\n\n[Aceptar] = Juntar mis datos\n[Cancelar] = Ahora no'))) return false;
+    // El PIN de este dispositivo vuelve a proteger la clave nueva
+    const pin = await _pinDeEsteDispositivo();
+    if (!pin) return false;
+    const { merged } = this.mergeStates(state, remoto);
+    _createPreMergeBackup();
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, merged);
+    ['pagosRecurrentes','prestamos','goals','tarjetas','receivables','payables','transferenciasProgramadas','grupos','presupuestos','misCuentas','categorias'].forEach(f => { if (!state[f]) state[f] = []; });
+    await _usarOtraClaveLocal(dek, pin);
+    this._saveCloudKey(data.dek_ciphertext, data.dek_iv, data.pin_salt);
+    this.setLocalSyncVersion(data.version);
+    _tomarBaseSync();
+    const enc = await _encryptState(state, dek);
+    localStorage.setItem(LS_KEY, enc);
+    try { await saveStateToDB(state); } catch (e) {}
+    if (typeof renderAll === 'function') renderAll();
+    return true;
   },
   async crearClaveNube(pass) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -321,21 +376,7 @@ const cloudSync = {
     if (!pass) return false;
     if (!existe) { await this.crearClaveNube(pass); return true; }
     const r = await this.adoptarClaveNube(pass);
-    if (r.otraClave) {
-      // La nube tiene datos de otro dispositivo que empezó por su cuenta (p. ej.
-      // la compu con la app vacía). Hay que elegir cuáles son los buenos.
-      const n = (state.transactions || []).filter(t => !t.deletedAt).length;
-      const desde = (info && info.device_name) || 'otro dispositivo';
-      if (await confirmar('☁️ La nube tiene otros datos, subidos desde ' + desde + '. No se pueden combinar con los de este dispositivo porque cada uno empezó por separado.\n\n¿Cuáles son tus datos buenos?\n\n[Aceptar] = Los de la nube (bajarlos aquí)\n[Cancelar] = Los de este dispositivo')) {
-        abrirModalBajarCloud(info);
-        return false;
-      }
-      if (!(await confirmar('⚠️ Se reemplazará lo que hay en la nube (desde ' + desde + ') por los ' + n + ' movimientos de este dispositivo. Tus otros dispositivos tendrán que volver a bajar los datos.\n\n[Aceptar] = Reemplazar la nube\n[Cancelar] = No hacer nada'))) return false;
-      await this.crearClaveNube(pass);
-      // Ya no hay que bajar la versión de la nube antes de subir: se reemplaza
-      if (info && info.version) this.setLocalSyncVersion(info.version);
-      return true;
-    }
+    if (r.otraClave) return this._juntarConLaNube(pass, info);
     if (!r.ok) alert('❌ ' + r.error);
     return r.ok;
   },
@@ -460,6 +501,7 @@ const cloudSync = {
         _borrarKitRecuperacion();
         setTimeout(() => alert('🆘 Tu kit de recuperación anterior ya no sirve con los datos de la nube. Genera uno nuevo en Config → Seguridad.'), 1500);
       }
+      if (cambiaDEK && typeof _olvidarHuella === 'function') _olvidarHuella(true);
       _sessionDEK = dek;
       _sessionPIN = pin;
       if (conContrasena) {

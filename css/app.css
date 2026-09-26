@@ -1526,3 +1526,7 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 .guia-nota{font-size:12.5px;color:var(--text2);margin:0 0 12px;padding:8px 10px;background:var(--bg3);border-radius:8px}
 .guia-btn{width:auto!important;margin:0 0 14px!important}
 @media (min-width:1024px){#guia-lista{columns:2;column-gap:16px}#guia-lista .guia-grupo{break-after:avoid;column-span:all}#guia-lista .guia-tema{break-inside:avoid}}
+
+/* Botón de actualizar con la cuenta: gira mientras sincroniza */
+.btn-actualizar-nube.girando{animation:girar-nube 1s linear infinite;pointer-events:none}
+@keyframes girar-nube{to{transform:rotate(360deg)}}
