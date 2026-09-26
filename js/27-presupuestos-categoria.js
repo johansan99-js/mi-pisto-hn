@@ -187,10 +187,10 @@ function guardarPresupuestoCat() {
   renderPresupuestos();
   if (typeof avisoRapido === 'function') avisoRapido(`✅ ${nombreCatPresupuesto(cat)}: ${fL(monto)} ${PERIODO_TXT[periodo]}`);
 }
-function quitarPresupuestoCat() {
+async function quitarPresupuestoCat() {
   const id = document.getElementById('pc-id').value;
   const p = (state.presupuestos || []).find(x => x.id === id);
-  if (!p || !confirm('¿Quitar el presupuesto de ' + nombreCatPresupuesto(p.cat) + '?')) return;
+  if (!p || !(await confirmar('¿Quitar el presupuesto de ' + nombreCatPresupuesto(p.cat) + '?'))) return;
   state.presupuestos = state.presupuestos.filter(x => x.id !== id);
   save();
   closeModal('modal-presu-cat');

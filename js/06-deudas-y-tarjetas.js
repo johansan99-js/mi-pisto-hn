@@ -22,20 +22,20 @@ function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)ret
       </button>
     </div>
   </div>`;}).join('')}
-function abonarCobrar(id){
+async function abonarCobrar(id){
   const r=state.receivables.find(x=>x.id===id);
   if(!r)return;
   const pendiente=r.monto-(r.pagado||0);
   if(pendiente<=0)return alert('Este cobro ya está saldado ✅');
   // prompt y confirm muestran texto plano: esc() dejaba "&amp;" a la vista y guardado
-  const m=leerMonto(prompt(`¿Cuánto te pagó ${r.persona}?\nPendiente: ${fL(pendiente)}`));
+  const m=leerMonto((await preguntar(`¿Cuánto te pagó ${r.persona}?\nPendiente: ${fL(pendiente)}`)));
   if(!m||m<=0)return;
   const abono=Math.min(m,pendiente);
-  const cuenta=pedirCuenta(`¿Dónde recibiste los ${fL(abono)}?`,'[Aceptar] = Cuenta de Ahorro (transferencia)\n[Cancelar] = Efectivo');
+  const cuenta=(await pedirCuenta(`¿Dónde recibiste los ${fL(abono)}?`,'[Aceptar] = Cuenta de Ahorro (transferencia)\n[Cancelar] = Efectivo'));
   if(!cuenta)return;
   r.pagado=(r.pagado||0)+abono;
   state.transactions.push({id:uid(),type:'income',amount:abono,cat:'Cobro Deuda',subcat:`Cobro a ${r.persona}`,cuenta,date:new Date().toISOString()});
-  if(r.pagado>=r.monto){if(confirm(`✅ Cobro saldado. ¿Eliminar el registro de "${r.persona}"?`)){state.receivables=state.receivables.filter(x=>x.id!==id);}}
+  if(r.pagado>=r.monto){if((await confirmar(`✅ Cobro saldado. ¿Eliminar el registro de "${r.persona}"?`))){state.receivables=state.receivables.filter(x=>x.id!==id);}}
   save();renderAll();
 }
 
@@ -132,7 +132,7 @@ function _renderAbonoDeuda() {
     (total > 0 ? '; después del pago quedaría en <strong style="color:' + (saldo - total < 0 ? 'var(--red)' : 'var(--text)') + '">' + fL(saldo - total) + '</strong>.' : '.') +
     (abono > 0 ? '<br>' + (liquida ? '🎉 Con esto quedas libre de esta deuda.' : 'Después te faltará ' + fL(pendiente - abono) + '.') : '');
 }
-function guardarAbonoDeuda() {
+async function guardarAbonoDeuda() {
   const p = state.payables.find(x => x.id === document.getElementById('abono-deuda-id').value);
   if (!p) return;
   const cuenta = cuentaValida(document.getElementById('abono-deuda-cuenta').value, 'ahorro');
@@ -141,10 +141,10 @@ function guardarAbonoDeuda() {
   const interes = leerMonto(document.getElementById('abono-deuda-interes').value) || 0;
   if (!(abono > 0) && !(interes > 0)) return alert('Escribe cuánto vas a abonar.');
   if (abono < 0 || interes < 0) return alert('Los montos no pueden ser negativos.');
-  if (abono > pendiente + 0.005 && !confirm('Solo debes ' + fL(pendiente) + '. ¿Abonar solo eso?')) return;
+  if (abono > pendiente + 0.005 && !(await confirmar('Solo debes ' + fL(pendiente) + '. ¿Abonar solo eso?'))) return;
   abono = Math.min(abono, pendiente);
   const total = abono + interes, saldo = getCuentaBalance(cuenta);
-  if (total > saldo + 0.005 && !confirm('Tu ' + _nombreCuentaDeuda(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - total) + '.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = pagar de todos modos')) return;
+  if (total > saldo + 0.005 && !(await confirmar('Tu ' + _nombreCuentaDeuda(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - total) + '.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = pagar de todos modos'))) return;
   const ahora = new Date().toISOString();
   if (abono > 0) {
     const tx = { id: uid(), type: 'expense', amount: Math.round(abono * 100) / 100, cat: 'Pago Deuda', subcat: 'Pago a ' + p.creditor, cuenta, tipo: 'fijo', deudaId: p.id, date: ahora };
@@ -268,11 +268,11 @@ function renderPrestamos(){
     }).join('');
     document.getElementById('total-prestamos').textContent=fL(totalPrestado);
 }
-function pagarCuotaPrestamo(id){
+async function pagarCuotaPrestamo(id){
   const prestamo=state.prestamos.find(p=>p.id===id);
   if(!prestamo)return;
   if((prestamo.cuotasPagadas||0)>=(prestamo.cuotasTotal||99))return alert('🎉 ¡Felicidades! Ya terminaste de pagar este préstamo.');
-  const cuenta=pedirCuenta(`¿Pagar cuota de ${fL(prestamo.cuota)}?`,'[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo');
+  const cuenta=(await pedirCuenta(`¿Pagar cuota de ${fL(prestamo.cuota)}?`,'[Aceptar] = desde Cuenta de Ahorro\n[Cancelar] = desde Efectivo'));
   if(!cuenta)return;
   prestamo.cuotasPagadas=(prestamo.cuotasPagadas||0)+1;
   state.transactions.push({id:uid(),type:'expense',amount:Math.round(prestamo.cuota*100)/100,cat:'Préstamo',subcat:`Cuota ${prestamo.entidad}`,cuenta,tipo:'fijo',date:new Date().toISOString()});
@@ -648,13 +648,13 @@ function guardarPlanCuotas() {
   (t.cuotas = t.cuotas || []).push(nuevoPlanCuotas(descripcion, total, meses, pagadas));
   save(); closeModal('modal-cuotas'); renderAll();
 }
-function pagarCuotaTasaCero(tarjetaId, planId) {
+async function pagarCuotaTasaCero(tarjetaId, planId) {
   const t = state.tarjetas.find(x => x.id === tarjetaId);
   const c = t && (t.cuotas || []).find(x => x.id === planId);
   if (!c || !planActivo(c)) return;
   const monto = montoCuota(c);
-  if (_mismoMes(c.ultimoPago) && !confirm('Ya pagaste una cuota de esta compra este mes. ¿Registrar otra (adelantar)?')) return;
-  const cuenta = pedirCuenta(`¿De dónde sale la cuota ${c.cuotasPagadas + 1}/${c.meses} de ${fL(monto)}?`);
+  if (_mismoMes(c.ultimoPago) && !(await confirmar('Ya pagaste una cuota de esta compra este mes. ¿Registrar otra (adelantar)?'))) return;
+  const cuenta = (await pedirCuenta(`¿De dónde sale la cuota ${c.cuotasPagadas + 1}/${c.meses} de ${fL(monto)}?`));
   if (!cuenta) return;
   c.cuotasPagadas++;
   c.ultimoPago = new Date().toISOString();
@@ -665,24 +665,24 @@ function pagarCuotaTasaCero(tarjetaId, planId) {
   save(); renderAll();
   alert(planActivo(c) ? `✅ Cuota registrada. Quedan ${fL(pendientePlan(c))}.` : `🎉 ¡Terminaste de pagar "${c.descripcion}"!`);
 }
-function eliminarPlanCuotas(tarjetaId, planId) {
+async function eliminarPlanCuotas(tarjetaId, planId) {
   const t = state.tarjetas.find(x => x.id === tarjetaId);
   const c = t && (t.cuotas || []).find(x => x.id === planId);
   if (!c) return;
-  if (!confirm(`¿Eliminar la compra a cuotas "${c.descripcion}"?\n\nNo se borran los gastos ni los pagos ya registrados.`)) return;
+  if (!(await confirmar(`¿Eliminar la compra a cuotas "${c.descripcion}"?\n\nNo se borran los gastos ni los pagos ya registrados.`))) return;
   t.cuotas = t.cuotas.filter(x => x.id !== planId);
   save(); renderAll();
 }
 
-function pagarTarjeta(id){
+async function pagarTarjeta(id){
     const tarjeta=state.tarjetas.find(t=>t.id===id);if(!tarjeta)return;
     // Lempiras y dólares: se elige qué saldo se paga (32-tarjetas-dolares.js)
     if(tarjeta.bimoneda&&typeof abrirPagoTarjeta==='function')return abrirPagoTarjeta(id);
     const pagoMinimo=pagoMinimoTarjeta(tarjeta);
-    const montoStr=prompt(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2));
+    const montoStr=(await preguntar(`Ingresa el monto a abonar a ${tarjeta.nombre}\nSaldo actual: ${fL(tarjeta.saldo)}\nPago mínimo sugerido: ${fL(pagoMinimo)}`,pagoMinimo.toFixed(2)));
     if(!montoStr)return;const monto=leerMonto(montoStr);if(isNaN(monto)||monto<=0)return alert('Monto inválido');
-    if(monto>tarjeta.saldo){if(!confirm(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`))return;}
-    const cuenta=pedirCuenta(`¿De dónde sale el pago de ${fL(monto)}?`);
+    if(monto>tarjeta.saldo){if(!(await confirmar(`Estás pagando ${fL(monto)} pero solo debes ${fL(tarjeta.saldo)}. ¿Deseas dejar la tarjeta con saldo a favor?`)))return;}
+    const cuenta=(await pedirCuenta(`¿De dónde sale el pago de ${fL(monto)}?`));
     if(!cuenta)return;
     // La compra con tarjeta ya se registró como gasto: el pago solo mueve
     // dinero de la cuenta a la tarjeta (baja la cuenta, no es un gasto nuevo).
@@ -692,11 +692,11 @@ function pagarTarjeta(id){
 // Conciliar contra el estado de cuenta: la diferencia no se pierde. Si el
 // banco cobra más (seguro de deuda, membresía, comisiones), se registra como
 // gasto; si cobra menos, puede ser un pago que no se anotó.
-function ajustarSaldoTarjeta(id){
+async function ajustarSaldoTarjeta(id){
   const t=state.tarjetas.find(x=>x.id===id);if(!t)return;
   recalcularSaldosTarjetas();
   const cuotas=cupoComprometido(t);
-  const txt=prompt(`Conciliar ${t.nombre} con tu estado de cuenta\n\nSaldo en la app: ${fL(t.saldo)}${cuotas>0?`\n(sin contar ${fL(cuotas)} de compras a cuotas Tasa Cero)`:''}\n\n¿Qué saldo dice tu estado de cuenta? (usa - para saldo a favor)`,t.saldo.toFixed(2));
+  const txt=(await preguntar(`Conciliar ${t.nombre} con tu estado de cuenta\n\nSaldo en la app: ${fL(t.saldo)}${cuotas>0?`\n(sin contar ${fL(cuotas)} de compras a cuotas Tasa Cero)`:''}\n\n¿Qué saldo dice tu estado de cuenta? (usa - para saldo a favor)`,t.saldo.toFixed(2)));
   if(txt===null)return;
   const limpio=String(txt).trim(),neg=limpio.startsWith('-'),valor=leerMonto(neg?limpio.slice(1):limpio);
   if(isNaN(valor))return alert('Monto inválido');
@@ -705,12 +705,12 @@ function ajustarSaldoTarjeta(id){
   if(dif===0){save();renderAll();return alert('✅ El saldo coincide con tu estado de cuenta.');}
   let registrado=false;
   if(dif>0){
-    if(confirm(`El banco cobra ${fL(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (seguro de deuda, membresía, comisiones…)?\n\n[Cancelar] = solo corregir el saldo`)){
+    if((await confirmar(`El banco cobra ${fL(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (seguro de deuda, membresía, comisiones…)?\n\n[Cancelar] = solo corregir el saldo`))){
       state.transactions.push({id:uid(),type:'expense',amount:dif,cat:'Cargos Bancarios',subcat:`Conciliación ${t.nombre}`,pago:'credito',cuenta:null,tipo:'fijo',tarjetaId:t.id,tarjetaNombre:t.nombre,date:new Date().toISOString()});
       registrado=true;
     }
-  }else if(confirm(`El estado de cuenta dice ${fL(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`)){
-    const cuenta=pedirCuenta(`¿De dónde salió ese pago de ${fL(-dif)}?`);
+  }else if((await confirmar(`El estado de cuenta dice ${fL(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`))){
+    const cuenta=(await pedirCuenta(`¿De dónde salió ese pago de ${fL(-dif)}?`));
     if(!cuenta)return;
     state.transactions.push({id:uid(),type:'expense',amount:-dif,cat:'Pago Tarjeta',subcat:`Pago a ${t.nombre} (conciliación)`,pago:cuenta,cuenta,tipo:'fijo',esTransferencia:true,tarjetaId:t.id,date:new Date().toISOString()});
     registrado=true;
@@ -719,69 +719,69 @@ function ajustarSaldoTarjeta(id){
   if(!registrado)t.saldoBase=Math.round((t.saldoBase+dif)*100)/100;
   save();renderAll();alert(`✅ Tarjeta conciliada. Nuevo saldo: ${fL(nuevo)}`);
 }
-function deleteTarjeta(id){if(confirm('¿Eliminar esta tarjeta? Se perderá el registro.')){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
+async function deleteTarjeta(id){if((await confirmar('¿Eliminar esta tarjeta? Se perderá el registro.'))){state.tarjetas=state.tarjetas.filter(t=>t.id!==id);save();renderAll();}}
 
 // ========== PAGOS RECURRENTES ==========
 // savePagoRecurrente y editarRecurrente están en 33-sin-esfuerzo.js
 
 // ── EDITAR / ELIMINAR COBRAR (dinero que me deben) ──────────
-function editarCobrar(id){
+async function editarCobrar(id){
   const r=state.receivables.find(x=>x.id===id);if(!r)return;
-  const nuevo=prompt(`Editar nombre de "${esc(r.persona)}":`,r.persona);
+  const nuevo=(await preguntar(`Editar nombre de "${esc(r.persona)}":`,r.persona));
   if(nuevo===null)return;
-  const monto=leerMonto(prompt('Monto total:',r.monto));
+  const monto=leerMonto((await preguntar('Monto total:',r.monto)));
   if(isNaN(monto)||monto<=0)return;
   r.persona=nuevo.trim()||r.persona;
   r.monto=monto;
   save();renderAll();
 }
-function eliminarCobrar(id){
+async function eliminarCobrar(id){
   const r=state.receivables.find(x=>x.id===id);if(!r)return;
-  const pendR=fL(r.monto-(r.pagado||0));if(!confirm(`¿Eliminar cobro de "${esc(r.persona)}"?\nPendiente: ${pendR}`))return;
+  const pendR=fL(r.monto-(r.pagado||0));if(!(await confirmar(`¿Eliminar cobro de "${esc(r.persona)}"?\nPendiente: ${pendR}`)))return;
   state.receivables=state.receivables.filter(x=>x.id!==id);
   save();renderAll();
 }
 
 // ── EDITAR / ELIMINAR PAGAR (dinero que debo) ────────────────
-function editarPagar(id){
+async function editarPagar(id){
   const p=state.payables.find(x=>x.id===id);if(!p)return;
-  const nuevo=prompt(`Editar acreedor "${p.creditor}":`,p.creditor);
+  const nuevo=(await preguntar(`Editar acreedor "${p.creditor}":`,p.creditor));
   if(nuevo===null)return;
-  const monto=leerMonto(prompt('Monto total:',p.monto));
+  const monto=leerMonto((await preguntar('Monto total:',p.monto)));
   if(isNaN(monto)||monto<=0)return;
   p.creditor=nuevo.trim()||p.creditor;
   p.monto=monto;
   save();renderAll();
 }
-function eliminarPagar(id){
+async function eliminarPagar(id){
   const p=state.payables.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`¿Eliminar la deuda con "${p.creditor}"?\n\nLos movimientos que ya anotaste se quedan en tu historial.`))return;
+  if(!(await confirmar(`¿Eliminar la deuda con "${p.creditor}"?\n\nLos movimientos que ya anotaste se quedan en tu historial.`)))return;
   state.payables=state.payables.filter(x=>x.id!==id);
   save();renderAll();
 }
 
 // ── EDITAR / ELIMINAR PRÉSTAMOS ──────────────────────────────
-function editarPrestamo(id){
+async function editarPrestamo(id){
   const p=state.prestamos.find(x=>x.id===id);if(!p)return;
-  const entidad=prompt('Entidad bancaria:',p.entidad);
+  const entidad=(await preguntar('Entidad bancaria:',p.entidad));
   if(entidad===null)return;
-  const cuota=leerMonto(prompt('Cuota mensual (L):',p.cuota));
+  const cuota=leerMonto((await preguntar('Cuota mensual (L):',p.cuota)));
   if(isNaN(cuota)||cuota<=0)return;
   p.entidad=entidad.trim()||p.entidad;
   p.cuota=cuota;
   save();renderAll();
 }
-function eliminarPrestamo(id){
+async function eliminarPrestamo(id){
   const p=state.prestamos.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`¿Eliminar préstamo de "${esc(p.entidad)}"?\n\nSe eliminará el registro pero NO se agregarán transacciones de cancelación.`))return;
+  if(!(await confirmar(`¿Eliminar préstamo de "${esc(p.entidad)}"?\n\nSe eliminará el registro pero NO se agregarán transacciones de cancelación.`)))return;
   state.prestamos=state.prestamos.filter(x=>x.id!==id);
   save();renderAll();
 }
 
 // ── EDITAR / ELIMINAR PAGOS RECURRENTES ──────────────────────
-function eliminarRecurrente(id){
+async function eliminarRecurrente(id){
   const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`¿Eliminar "${esc(p.servicio)}"?`))return;
+  if(!(await confirmar(`¿Eliminar "${esc(p.servicio)}"?`)))return;
   state.pagosRecurrentes=state.pagosRecurrentes.filter(x=>x.id!==id);
   save();renderAll();
 }

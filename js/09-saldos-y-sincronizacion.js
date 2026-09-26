@@ -443,10 +443,10 @@ function toggleTransferenciaProgramada(id){
   save(); renderAll();
 }
 
-function eliminarTransferenciaProgramada(id){
+async function eliminarTransferenciaProgramada(id){
   const t = (state.transferenciasProgramadas||[]).find(x => x.id === id);
   if (!t) return;
-  if (!confirm(`¿Eliminar la transferencia programada "${t.nombre}"?`)) return;
+  if (!(await confirmar(`¿Eliminar la transferencia programada "${t.nombre}"?`))) return;
   state.transferenciasProgramadas = state.transferenciasProgramadas.filter(x => x.id !== id);
   save(); renderAll();
 }
@@ -508,10 +508,10 @@ if ('serviceWorker' in navigator) {
       reg.addEventListener('updatefound', () => {
         const nuevoSW = reg.installing;
         if (!nuevoSW) return;
-        nuevoSW.addEventListener('statechange', () => {
+        nuevoSW.addEventListener('statechange', async () => {
           if (nuevoSW.state === 'installed' && navigator.serviceWorker.controller) {
             // Hay versión nueva esperando a tomar el control
-            if (confirm('🆕 Hay una nueva versión de Mi Pisto HN disponible. ¿Actualizar ahora?')) {
+            if ((await confirmar('🆕 Hay una nueva versión de Mi Pisto HN disponible. ¿Actualizar ahora?'))) {
               nuevoSW.postMessage({ type: 'SKIP_WAITING' });
               // Cuando el nuevo SW tome control, recargamos
               navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -756,8 +756,8 @@ verificarPIN = async function() {
     document.getElementById('pin-error').style.display='none';
     if (intento.length < PIN_MIN_DIGITOS && sessionStorage.getItem('pinCortoAvisado') !== '1') {
       sessionStorage.setItem('pinCortoAvisado', '1');
-      setTimeout(() => {
-        if (confirm(`🔐 Tu PIN tiene ${intento.length} dígitos. Con tan pocos, alguien con acceso a tu teléfono puede adivinarlo probando todas las combinaciones.\n\n¿Cambiarlo ahora por uno de ${PIN_MIN_DIGITOS} a 8 dígitos?`)) configurarPIN({ soloCambiar: true });
+      setTimeout(async () => {
+        if ((await confirmar(`🔐 Tu PIN tiene ${intento.length} dígitos. Con tan pocos, alguien con acceso a tu teléfono puede adivinarlo probando todas las combinaciones.\n\n¿Cambiarlo ahora por uno de ${PIN_MIN_DIGITOS} a 8 dígitos?`))) configurarPIN({ soloCambiar: true });
       }, 800);
     }
     
@@ -779,10 +779,10 @@ verificarPIN = async function() {
 };
 
 // SISTEMA DE PAPELERA
-function eliminarGastoConPapelera(id) {
+async function eliminarGastoConPapelera(id) {
   var gasto = state.transactions.find(function(t) { return t.id === id; });
   if (!gasto) return;
-  if (confirm('Eliminar este gasto? Puedes recuperarlo desde la papelera.')) {
+  if ((await confirmar('Eliminar este gasto? Puedes recuperarlo desde la papelera.'))) {
     var par = parDeTransferencia(gasto);
     gasto.deletedAt = new Date().toISOString();
     if (par) par.deletedAt = gasto.deletedAt;
@@ -803,10 +803,10 @@ function restaurarGastoDePapelera(id) {
   alert('Gasto restaurado correctamente');
 }
 
-function vaciarPapelera() {
+async function vaciarPapelera() {
   var deleted = state.transactions.filter(function(t) { return t.deletedAt; });
   if (deleted.length === 0) { alert('Papelera vacia'); return; }
-  if (confirm('Eliminar permanentemente ' + deleted.length + ' gastos? Esta accion NO se puede deshacer.')) {
+  if ((await confirmar('Eliminar permanentemente ' + deleted.length + ' gastos? Esta accion NO se puede deshacer.'))) {
     state.transactions = state.transactions.filter(function(t) { return !t.deletedAt; });
     save();
     renderAll();

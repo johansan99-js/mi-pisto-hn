@@ -86,7 +86,7 @@ describe('Mis cuentas', () => {
     await page.evaluate(id => { abrirModalCuenta(id); archivarCuenta(); }, c.id);
     assert.match(page.dialogos.pop(), /tiene L\. ?700\.00\. Transfiere el dinero/);
     page.respuestas = ['0', true];
-    await page.evaluate(id => { closeModal('modal-cuenta'); ajustarSaldoCuenta(id); abrirModalCuenta(id); archivarCuenta(); }, c.id);
+    await page.evaluate(async id => { closeModal('modal-cuenta'); await ajustarSaldoCuenta(id); abrirModalCuenta(id); await archivarCuenta(); }, c.id);
     assert.equal(await page.evaluate(() => state.misCuentas[0].archivada), true);
     const opciones = await page.evaluate(() => [...document.getElementById('gasto-cuenta').options].map(o => o.value));
     assert.ok(!opciones.includes(c.id), 'una cuenta archivada ya no se ofrece');

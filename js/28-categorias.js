@@ -168,11 +168,11 @@ function ocultarCategoria() {
   renderCategorias();
   if (typeof avisoRapido === 'function') avisoRapido(c.oculta ? '🙈 ' + nombre + ' ya no sale al registrar' : '👁️ ' + nombre + ' vuelve a salir al registrar');
 }
-function borrarCategoria() {
+async function borrarCategoria() {
   const c = _ed.original && _catGuardada(_ed.original, _ed.tipo);
   if (!c || _esDeFabrica(c.nombre, _ed.tipo)) return;
   const usos = usosCategoria(c.nombre, _ed.tipo);
-  if (!confirm('¿Borrar la categoría ' + c.nombre + '?' + (usos ? '\n\nTus ' + usos + ' movimientos la conservan: solo pierde su ícono y su color.' : ''))) return;
+  if (!(await confirmar('¿Borrar la categoría ' + c.nombre + '?' + (usos ? '\n\nTus ' + usos + ' movimientos la conservan: solo pierde su ícono y su color.' : '')))) return;
   state.categorias = state.categorias.filter(x => x !== c);
   save();
   closeModal('modal-categoria');

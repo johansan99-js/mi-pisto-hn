@@ -271,7 +271,7 @@ function importData(event) {
     }
     // 3) Backup XOR legacy (compatibilidad con versiones < 2.0)
     else if (parsed && parsed.tipo === 'finanzas-hn-encriptado' && parsed.datos) {
-      const password = prompt('🔐 Contraseña del respaldo (formato antiguo):');
+      const password = (await preguntar('🔐 Contraseña del respaldo (formato antiguo):'));
       if (!password) { event.target.value=''; return; }
       datosRecuperados = _descifrarBackupXORLegacy(parsed, password);
       if (!datosRecuperados) {
@@ -292,7 +292,7 @@ function importData(event) {
       event.target.value=''; return;
     }
 
-    if (!confirm('⚠️ Esto reemplazará TODOS tus datos actuales con los del respaldo.\n\n¿Continuar?')) {
+    if (!(await confirmar('⚠️ Esto reemplazará TODOS tus datos actuales con los del respaldo.\n\n¿Continuar?'))) {
       event.target.value=''; return;
     }
 
@@ -352,7 +352,7 @@ async function eliminarFactura(id) {
         return;
     }
     
-    if (confirm('¿Eliminar la factura adjunta a este gasto?')) {
+    if ((await confirmar('¿Eliminar la factura adjunta a este gasto?'))) {
         if (gasto.facturaImagenId) {
             await _eliminarFactura(gasto.facturaImagenId);
             gasto.facturaImagenId = null;
@@ -454,7 +454,7 @@ function openModal(id){
   closeFabMenu();
 }
 function closeModal(id){document.getElementById(id).style.display='none'}
-function closeModalIfBg(e,id){if(e.target.id===id){if(hasUnsavedModalData){if(confirm("¿Descartar los datos ingresados?")){{hasUnsavedModalData=false;closeModal(id)}}}else{closeModal(id)}}}
+async function closeModalIfBg(e,id){if(e.target.id===id){if(hasUnsavedModalData){if((await confirmar("¿Descartar los datos ingresados?"))){{hasUnsavedModalData=false;closeModal(id)}}}else{closeModal(id)}}}
 
 let _fabOpen = false;
 function toggleFabMenu(){
