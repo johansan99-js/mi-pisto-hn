@@ -45,6 +45,11 @@ describe('Fase 4: computadora', () => {
     await page.click('#sb-papelera');
     assert.equal(await page.evaluate(() => document.querySelector('.view.active').id), 'view-config');
     assert.equal(await page.isVisible('.desktop-hamburger'), false, 'ya no hay un segundo menú ☰');
+    // Solo se ve la pantalla activa (Análisis se colaba debajo de las demás)
+    for (const v of ['metas', 'consejero', 'tarjetas', 'dashboard']) {
+      await page.evaluate(x => switchView(x), v);
+      assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('.view')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.id)), ['view-' + v], v);
+    }
   });
 
   it('atajos: N abre el registro, Esc lo cierra, / va al buscador y buscar filtra los movimientos', async () => {
