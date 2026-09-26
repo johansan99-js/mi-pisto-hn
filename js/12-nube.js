@@ -94,7 +94,7 @@ const cloudSync = {
       const { data: { session } } = await this.client.auth.getSession();
       if (session) {
         this.user = session.user;
-        console.log('☁️ Sesión restaurada:', this.user.email);
+        console.log('☁️ Sesión restaurada');
         this._logDevice().catch(e => console.warn('device_log:', e.message));
         // FASE 3: Mostrar indicador y chequear si hay versión nueva en nube
         setTimeout(() => {
