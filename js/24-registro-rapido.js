@@ -30,7 +30,7 @@ const CATS_GASTO = [
 ];
 // `tipo` es el que ya usaba el formulario de ingresos
 const CATS_INGRESO = [
-  { n: 'Salario', i: '💼', c: '#43A047', tipo: 'salario', k: ['salario', 'quincena', 'sueldo', 'nomina'] },
+  { n: 'Salario', i: '💼', c: '#43A047', tipo: 'salario', k: ['salario', 'quincena', 'sueldo', 'nomina', 'planilla'] },
   { n: 'Extra', i: '✨', c: '#F9A825', tipo: 'extra', k: ['extra', 'bono', 'aguinaldo', 'decimo', 'catorceavo'] },
   { n: 'Freelance', i: '💻', c: '#1E88E5', tipo: 'freelance', k: ['freelance', 'independiente', 'proyecto'] },
   { n: 'Negocio', i: '🏪', c: '#FB8C00', tipo: 'negocio', k: ['negocio', 'venta'] },
@@ -54,7 +54,12 @@ function iconoCategoria(cat, tipo) {
   }
   const listas = tipo === 'income' ? [CATS_INGRESO, CATS_GASTO] : [CATS_GASTO, CATS_INGRESO];
   for (const l of listas) { const x = l.find(c => _normCat(c.n) === n); if (x) return x; }
-  for (const l of listas) { const x = l.find(c => c.k.some(p => n.includes(p))); if (x) return x; }
+  // Gana la palabra más larga ("combustible" es Gasolina aunque contenga "bus")
+  for (const l of listas) {
+    let mejor = null, largo = 0;
+    l.forEach(c => c.k.forEach(p => { if (p.length > largo && n.includes(p)) { mejor = c; largo = p.length; } }));
+    if (mejor) return mejor;
+  }
   let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return { i: (String(cat || '?').trim()[0] || '?').toUpperCase(), c: _COLORES_CAT[h % _COLORES_CAT.length], letra: true };
 }

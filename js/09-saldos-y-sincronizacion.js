@@ -954,6 +954,8 @@ function procesarAccionDeURL() {
   setTimeout(() => {
     if (compartido) { openModal('modal-gasto'); abrirModalSMS(compartido.slice(0, 1000)); }
     else if (accion === 'new-expense') abrirRegistro('gasto');
+    else if (accion === 'dictar') { abrirRegistro('gasto'); if (typeof abrirDictado === 'function') abrirDictado(); }
+    else if (accion === 'favoritos') abrirRegistro('gasto');
     else if (accion === 'balance' && typeof switchView === 'function') switchView('dashboard');
   }, 400);
 }

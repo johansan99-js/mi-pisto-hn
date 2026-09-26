@@ -24,7 +24,7 @@ describe('Consejero', () => {
   it('sin movimientos pide anotar primero, y en el Inicio no muestra nada', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase());
-    assert.deepEqual(await page.evaluate(() => consejos().map(c => c.id)), ['empezar']);
+    assert.deepEqual(await page.evaluate(() => consejos().map(c => c.id)), ['empezar', 'guia']);
     assert.equal(await page.isVisible('#consejo-inicio'), false);
     assert.deepEqual(page.errores, []);
   });

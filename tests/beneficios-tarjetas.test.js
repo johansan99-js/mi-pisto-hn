@@ -30,6 +30,8 @@ describe('Beneficios de tarjetas y recomendador', () => {
     await page.fill('#benef-porcentaje', '50');
     page.respuestas = [true];
     await page.click('#modal-beneficios .btn-primary');
+    // El aviso llega por la ventana propia (asíncrona): se espera a que aparezca
+    for (let i = 0; i < 50 && !page.dialogos.some(m => /entre 0.1 y 30/.test(m)); i++) await page.waitForTimeout(20);
     assert.ok(page.dialogos.some(m => /entre 0.1 y 30/.test(m)));
     await page.fill('#benef-porcentaje', '3');
     await page.selectOption('#benef-aplica', 'categoria');

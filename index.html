@@ -65,6 +65,10 @@
     <div class="si-icon">💡</div>
     Consejero
   </div>
+  <div class="sidebar-item" id="sb-guia" onclick="switchView('guia');setSidebarActive('sb-guia')">
+    <div class="si-icon">📘</div>
+    Guía
+  </div>
   <div class="sidebar-item" id="sb-presupuestos" onclick="switchView('presupuestos');setSidebarActive('sb-presupuestos')">
     <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">📅</div>
     Presupuestos
@@ -131,6 +135,10 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
     </div>
     Ingresos
+  </div>
+  <div class="sidebar-item" id="sb-importar" onclick="abrirImportarBanco()">
+    <div class="si-icon">🏦</div>
+    Importar del banco
   </div>
   <div class="sidebar-item" id="sb-papelera" onclick="abrirPapelera();setSidebarActive('sb-papelera')">
     <div class="si-icon">🗑️</div>
@@ -218,6 +226,14 @@
     <!-- ── OPERACIONES DIARIAS ── -->
     <div class="more-section-label">Operaciones</div>
 
+    <div class="hamburger-item" onclick="switchView('guia');toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">📘</div>
+      <div><div>Guía</div><div style="font-size:11px;color:var(--text2);font-weight:400">Trucos para no perder tiempo</div></div>
+    </div>
+    <div class="hamburger-item" onclick="abrirImportarBanco();toggleHamburger()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🏦</div>
+      <div><div>Importar del banco</div><div style="font-size:11px;color:var(--text2);font-weight:400">Tu estado de cuenta en Excel o CSV</div></div>
+    </div>
     <div class="hamburger-item" onclick="switchView('consejero');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--amber-rgb),.15)">💡</div>
       <div><div>Consejero</div><div style="font-size:11px;color:var(--text2);font-weight:400">Soluciones con tus números</div></div>
@@ -440,6 +456,7 @@
   <div id="desktop-grid">
   <div id="desktop-grid-left">
   <div id="primeros-pasos" class="card" style="display:none"></div>
+  <div id="favoritos-inicio" class="card favoritos-inicio" style="display:none"></div>
   <div id="aviso-resumen" class="card" style="display:none;border-color:rgba(var(--amber-rgb),.45)"></div>
   <div id="fondo-emergencia-card" class="card" style="display:none"></div>
   <div id="auto-anotados" class="card auto-anotados" style="display:none"></div>
@@ -634,6 +651,12 @@
 <div id="view-presupuestos" class="view">
   <h2 style="margin-bottom:15px">📅 Presupuestos</h2>
   <div id="presupuestos-vista" class="card registros-card analisis-card"></div>
+</div>
+
+<div id="view-guia" class="view">
+  <h2 style="margin-bottom:6px">📘 Guía: Mi Pisto sin esfuerzo</h2>
+  <p style="color:var(--text2);font-size:13px;margin-bottom:15px">Trucos cortos para llevar tus cuentas casi sin tocar la app. Toca uno para ver los pasos y probarlo.</p>
+  <div id="guia-lista"></div>
 </div>
 
 <div id="view-consejero" class="view">
@@ -1624,5 +1647,8 @@
 <script src="js/35-dialogos.js"></script>
 <script src="js/36-escritorio.js"></script>
 <script src="js/37-consejero.js"></script>
+<script src="js/38-un-toque.js"></script>
+<script src="js/39-importar-banco.js"></script>
+<script src="js/40-guia.js"></script>
 </body>
 </html>
