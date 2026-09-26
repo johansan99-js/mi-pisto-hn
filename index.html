@@ -445,6 +445,8 @@
     </div>
     <div class="card" style="margin:0 0 16px;text-align:left;border-color:var(--border)"><strong style="font-size:12px">Tu distribución personalizada</strong><div id="ob-preview" style="margin-top:10px;font-size:12px;color:var(--text2)"></div></div>
     <button class="btn btn-primary" onclick="finishOnboarding()" style="font-size:15px;padding:16px;min-height:54px">Comenzar →</button>
+    <button type="button" class="btn btn-secondary" id="ob-traer-nube" onclick="traerDatosDeOtroDispositivo()" style="margin-top:10px">📲 Ya uso Mi Pisto en otro dispositivo</button>
+    <p id="ob-traer-estado" style="display:none;font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5"></p>
     <p style="font-size:11px;color:var(--text2);margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--green)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Tus datos se guardan SOLO en este dispositivo
@@ -746,6 +748,9 @@
         Tus datos siguen cifrados con tu PIN local — Google solo identifica tu cuenta,
         nunca ve tus movimientos.
       </p>
+      <p style="font-size:12px;margin-bottom:16px;line-height:1.5;padding:10px;border-radius:8px;background:rgba(var(--aviso-rgb),.1);border:1px solid rgba(var(--aviso-rgb),.3)">
+        👤 Usa <strong>la misma cuenta de Google</strong> en el celular y en la compu. Cada cuenta tiene su propio espacio: con otra cuenta no verás tus datos.
+      </p>
       <div id="cloud-login-status" style="font-size:12px;margin-bottom:10px;display:none"></div>
       <button class="btn btn-primary" onclick="iniciarSesionConGoogle()" id="btn-google-login" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.3-1.8 13.7-5l-6.3-5.3C29.5 35.9 26.9 37 24 37c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 40 16.2 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.3 5.3C41 35.6 44.5 30.5 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
@@ -762,10 +767,10 @@
   </div>
 
   <!-- Modal de descarga: confirmación + PIN -->
-  <div id="modal-cloud-download" class="modal" onclick="closeModalIfBg(event,'modal-cloud-download')">
+  <div id="modal-cloud-download" class="modal" onclick="if(event.target===this)cancelarBajarCloud()">
     <div class="modal-content">
       <h3 style="margin-bottom:6px">⬇️ Bajar datos de la nube</h3>
-      <div style="background:rgba(var(--red-rgb),.1);border:1px solid var(--red);padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text)">
+      <div id="cloud-download-aviso" style="background:rgba(var(--red-rgb),.1);border:1px solid var(--red);padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text)">
         ⚠️ <strong>Atención:</strong> Esta acción <strong>reemplazará tus datos locales</strong> con los que están en la nube. Si tu dispositivo tiene cambios sin subir, se perderán.
       </div>
       <div id="cloud-download-info" style="font-size:11px;background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:14px;line-height:1.6"></div>
@@ -777,7 +782,7 @@
       <input type="password" id="cloud-download-pin" class="input-field" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       <div id="cloud-download-status" style="font-size:12px;margin-bottom:10px;display:none;line-height:1.4"></div>
       <div style="display:flex;gap:10px;margin-top:8px">
-        <button class="btn btn-secondary" onclick="closeModal('modal-cloud-download')" style="flex:1">Cancelar</button>
+        <button class="btn btn-secondary" onclick="cancelarBajarCloud()" style="flex:1">Cancelar</button>
         <button class="btn btn-primary" onclick="confirmarBajarCloud()" style="flex:2;background:var(--red);color:white" id="btn-confirmar-bajar">⬇️ Sí, sobrescribir con datos de la nube</button>
       </div>
     </div>

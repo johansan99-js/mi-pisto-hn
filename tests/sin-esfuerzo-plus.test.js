@@ -126,7 +126,7 @@ describe('Sin esfuerzo, parte 2', () => {
     await sembrar(page, conCafe());
     await page.evaluate(() => abrirGuia('importar'));
     await page.waitForTimeout(150);
-    assert.equal(await page.locator('#guia-lista .guia-tema').count(), 16);
+    assert.equal(await page.locator('#guia-lista .guia-tema').count(), 17);
     assert.equal(await page.evaluate(() => document.getElementById('guia-importar').open), true);
     await page.click('#guia-importar .guia-btn');
     assert.equal(await page.isVisible('#modal-importar-banco'), true);

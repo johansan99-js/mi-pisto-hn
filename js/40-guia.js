@@ -26,13 +26,19 @@ const GUIA = [
   ] },
   { grupo: 'Tranquilidad', temas: [
     { id: 'seguridad', icono: '🔐', titulo: 'Que nadie vea tus datos y no los pierdas', pasos: ['Pon un <strong>PIN</strong>: tus datos quedan cifrados en el teléfono y la app se bloquea sola al minuto de no usarla.', 'Crea tu <strong>kit de recuperación</strong>: si olvidas el PIN, con esa clave entras sin perder nada.', 'Activa el <strong>respaldo en la nube</strong> para no perder nada si cambias de teléfono.'], boton: ['Ir a Configuración', "switchView('config')"] },
-    { id: 'compu', icono: '💻', titulo: 'En la computadora', pasos: ['Abre la misma dirección de la app en el navegador.', 'Atajos: <strong>N</strong> gasto, <strong>I</strong> ingreso, <strong>T</strong> transferencia, <strong>/</strong> buscar y <strong>Esc</strong> cerrar.', 'El <strong>🔒</strong> de arriba bloquea la app si te levantas de la compu.'] },
+    { id: 'nube', icono: '☁️', titulo: 'Tus datos en el celular y en la compu', pasos: ['<strong>En el celular</strong> (donde ya tienes tus datos): Configuración → Sincronización → <strong>Activar</strong> y entra con Google.', 'Toca <strong>⬆️ Subir ahora</strong> y crea la <strong>contraseña de la nube</strong> (12 letras o más). Anótala: sin ella no se pueden abrir tus datos en otro lado.', '<strong>En la compu</strong>: abre la app y, en la bienvenida, toca <strong>📲 Ya uso Mi Pisto en otro dispositivo</strong> (no llenes el perfil).', 'Entra con <strong>la misma cuenta de Google</strong>, escribe la contraseña de la nube y crea un PIN para la compu. Listo: desde ahí se sincronizan solos mientras la app esté abierta.'], nota: 'Si dice que no hay datos, casi siempre es otra cuenta de Google o falta tocar "Subir ahora" en el celular. Tus datos viajan cifrados: ni Google ni nosotros podemos verlos.', boton: ['Ir a Sincronización', 'irASincronizacion()'] },
+    { id: 'compu', icono: '💻', titulo: 'En la computadora', pasos: ['Abre la misma dirección de la app en el navegador y trae tus datos (mira <strong>"Tus datos en el celular y en la compu"</strong>).', 'Atajos: <strong>N</strong> gasto, <strong>I</strong> ingreso, <strong>T</strong> transferencia, <strong>/</strong> buscar y <strong>Esc</strong> cerrar.', 'El <strong>🔒</strong> de arriba bloquea la app si te levantas de la compu.'] },
   ] },
 ];
 
 function irARecordatorio() {
   switchView('config');
   setTimeout(() => { const el = document.getElementById('recordatorio-activo'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); } }, 80);
+}
+
+function irASincronizacion() {
+  switchView('config');
+  setTimeout(() => { const el = document.getElementById('cloud-sync-card'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
 }
 
 function renderGuia() {
