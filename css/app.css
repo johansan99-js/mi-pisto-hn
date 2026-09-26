@@ -1535,3 +1535,21 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 .meta-agregar-otra{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px;margin-top:4px;border:2px dashed rgba(var(--green-rgb),.45);border-radius:16px;background:rgba(var(--green-rgb),.06);color:var(--text);font:inherit;cursor:pointer}
 .meta-agregar-otra small{color:var(--text2);font-size:12px}
 .meta-agregar-otra:hover{background:rgba(var(--green-rgb),.12)}
+
+/* Anotar sin desbloquear */
+.rap-caja{text-align:left}
+.rap-sub{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:12px}
+.rap-tipos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.rap-tipos button{padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.rap-tipos button.activo{background:rgba(var(--green-rgb),.15);border-color:var(--green);color:var(--green)}
+.rap-monto{font-size:24px;font-weight:800;text-align:center}
+.rap-cats{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.rap-cat{display:flex;align-items:center;gap:4px;padding:7px 10px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+.rap-cat.activo{background:var(--green);border-color:var(--green);color:#fff}
+.rap-acciones{display:flex;gap:8px}
+.rap-acciones .btn{margin:0}
+.rap-acciones .btn-primary{flex:2}
+.rap-acciones .btn-secondary{flex:1}
+#rap-mic.escuchando{background:rgba(var(--red-rgb),.15);border-color:var(--red)}
+.rap-estado{font-size:12px;color:var(--text2);min-height:18px;margin:10px 0 4px;text-align:center}
+.rap-entrar{display:block;margin:4px auto 0;background:none;border:none;color:var(--text2);text-decoration:underline;font:inherit;font-size:12px;cursor:pointer}

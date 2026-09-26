@@ -131,7 +131,7 @@ describe('Sin esfuerzo, parte 2', () => {
     await page.click('#guia-importar .guia-btn');
     assert.equal(await page.isVisible('#modal-importar-banco'), true);
     const man = require('../manifest.json');
-    assert.deepEqual(man.shortcuts.map(s => s.url), ['./?action=new-expense', './?action=dictar', './?action=favoritos', './?action=balance']);
+    assert.deepEqual(man.shortcuts.map(s => s.url), ['./?action=new-expense', './?action=new-income', './?action=dictar', './?action=pago-fijo']);
     assert.deepEqual(page.errores, []);
   });
 });
