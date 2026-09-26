@@ -664,7 +664,7 @@ const cloudSync = {
           console.error('☁️ Auto-sync falló tras 3 reintentos:', result.error);
         }
       }
-    }, 3000);
+    }, 1500);
   },
 
   _cancelAutoSync() {
