@@ -393,12 +393,29 @@ function leerMonto(str) {
   return n === null ? NaN : n;
 }
 
+// Un número con puntos y comas, escrito como la gente lo escribe:
+// "1,500.50" y "1.500,50" son mil quinientos con cincuenta; "1.500" y
+// "1,500" son mil quinientos (nadie escribe lempiras con 3 decimales);
+// "0.500", "12.5" y "12,50" son decimales.
+function _normalizarNumero(tok) {
+  const seps = tok.match(/[.,]/g);
+  const partes = tok.split(/[.,]/);
+  const miles = partes.slice(1).every(p => p.length === 3) && partes[0] !== '0' && partes[0].length <= 3;
+  if (seps.length === 1) return miles ? partes.join('') : partes[0] + '.' + partes[1];
+  const ultimo = seps[seps.length - 1];
+  const distintos = new Set(seps).size > 1;
+  // "1.500,50": el último separador (distinto a los demás) es el decimal
+  if (distintos && seps.slice(0, -1).every(x => x !== ultimo)) return partes.slice(0, -1).join('') + '.' + partes[partes.length - 1];
+  // "1,500,000" o "1.500.000": todo son miles
+  if (!distintos && miles) return partes.join('');
+  return tok; // Formato raro: se rechaza más abajo
+}
+
 function parseMonto(str) {
   if (str === null || str === undefined) return null;
   // En Honduras la coma separa miles ("1,500.00"): una coma seguida de
   // exactamente 3 dígitos se descarta; cualquier otra se toma como decimal.
-  let s = String(str).trim().replace(/\s+/g, '')
-    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(',', '.');
+  let s = String(str).trim().replace(/\s+/g, '').replace(/\d+(?:[.,]\d+)+/g, _normalizarNumero);
   // Si no es un número simple pero parece una operación (+ - * /), intentar
   // evaluarla como calculadora rápida antes de rechazarla.
   if (!/^-?\d+(\.\d+)?$/.test(s) && /[+\-*/()]/.test(s)) {

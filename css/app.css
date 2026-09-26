@@ -1427,3 +1427,21 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 body.app-bloqueada>*:not(#modal-pin):not(#bio-screen):not(script){visibility:hidden!important}
 #modal-pin{z-index:2147483000!important}
 body.app-bloqueada #modal-pin{background:var(--bg)!important}
+
+/* ── Fase 2 ── */
+/* El panel ☰ quedaba debajo de la barra de arriba y su ✕ no se podía tocar */
+.hamburger-overlay{z-index:258}
+.hamburger-panel{z-index:259}
+.hamburger-close{min-width:44px;min-height:44px}
+/* Los avisos rápidos salen arriba: abajo tapaban los botones de guardar */
+#aviso-rapido{bottom:auto;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-20px)}
+/* Montos enormes no se salen de la tarjeta */
+.balance-amount{font-size:clamp(24px,9vw,36px);overflow-wrap:anywhere;line-height:1.1}
+#cuenta-efectivo-val,#cuenta-ahorro-val,.kpi-value{overflow-wrap:anywhere}
+/* Teléfono acostado: el registro se puede desplazar y nada queda cortado */
+@media (orientation:landscape) and (max-height:520px){
+  #modal-registro .modal-content{max-height:100dvh;overflow-y:auto;border-radius:0}
+  #modal-registro{align-items:stretch}
+  .reg-monto-txt{font-size:28px}
+  .reg-monto-caja{min-height:56px}
+}
