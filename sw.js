@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v87-tiempo-real';
+const VERSION = 'v88-atajos-y-anotar';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -109,6 +109,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/39-importar-banco.js',
   BASE_PATH + 'js/40-guia.js',
   BASE_PATH + 'js/41-acceso-y-nube.js',
+  BASE_PATH + 'js/42-anotar-rapido.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];

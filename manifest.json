@@ -82,9 +82,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Registrar gasto",
-      "short_name": "Nuevo gasto",
-      "description": "Anota un gasto o ingreso",
+      "name": "Anotar un gasto",
+      "short_name": "Gasto",
+      "description": "Anota un gasto al instante, incluso sin desbloquear",
       "url": "./?action=new-expense",
       "icons": [
         {
@@ -95,8 +95,21 @@
       ]
     },
     {
+      "name": "Anotar un ingreso",
+      "short_name": "Ingreso",
+      "description": "Anota lo que te entró",
+      "url": "./?action=new-income",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Dictar un gasto",
-      "short_name": "Dictar gasto",
+      "short_name": "Dictar",
       "description": "Di el gasto en voz alta y se llena solo",
       "url": "./?action=dictar",
       "icons": [
@@ -108,23 +121,10 @@
       ]
     },
     {
-      "name": "Mis gastos de siempre",
-      "short_name": "Gastos de siempre",
-      "description": "Tus gastos repetidos a un toque",
-      "url": "./?action=favoritos",
-      "icons": [
-        {
-          "src": "./icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Ver balance",
-      "short_name": "Balance",
-      "description": "Ve tu balance total",
-      "url": "./?action=balance",
+      "name": "Agregar un pago fijo",
+      "short_name": "Pago fijo",
+      "description": "Salario, luz, alquiler… que se anotan solos cada mes",
+      "url": "./?action=pago-fijo",
       "icons": [
         {
           "src": "./icon-192.png",
