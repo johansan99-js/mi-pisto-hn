@@ -154,7 +154,6 @@ window.onload = async function() {
   // 4. Resto de inicialización
   var recordarEl = document.getElementById('recordar-pin');
   if (recordarEl) recordarEl.checked = recordarPIN;
-  renderBudgetRules();
   setTimeout(ejecutarVerificacionesNuevas, 500);
   // Mostrar banner PWA iOS si corresponde
   showPwaBanner();
@@ -183,7 +182,6 @@ var originalRenderAll = renderAll;
 renderAll = function() {
   originalRenderAll();
   setTimeout(function() {
-    verificarAlertasPresupuesto();
     calcularProyeccionCaja();
     detectarDuplicados();
     renderPapelera();

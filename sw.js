@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v77-ventanas-propias';
+const VERSION = 'v78-fase3-limpieza';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -114,10 +114,9 @@ const ASSETS_OPTIONAL = [
   BASE_PATH + 'icon-maskable-512.png'
 ];
 
-// Librerías CDN con versión fija (inmutables): se cachean para que gráficas,
+// Librerías CDN con versión fija (inmutables): se cachean para que el
 // Excel y el SDK de sync carguen sin conexión. Deben coincidir con index.html.
 const CDN_LIBS = [
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'
 ];

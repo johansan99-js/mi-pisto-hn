@@ -652,7 +652,7 @@ function _tickBloqueoPIN() {
 (typeof window.createInterval === 'function' ? window.createInterval : setInterval)(_tickBloqueoPIN, 1000);
 
 // P0-1: verificarPIN async con comparación de hash PBKDF2
-var verificarPINoriginal = null; // ya no se usa, se mantiene por compatibilidad
+ // ya no se usa, se mantiene por compatibilidad
 verificarPIN = async function() {
   const bloqueo = _estadoBloqueoPIN();
   if (bloqueo.bloqueado) {
@@ -805,12 +805,15 @@ function restaurarGastoDePapelera(id) {
 
 async function vaciarPapelera() {
   var deleted = state.transactions.filter(function(t) { return t.deletedAt; });
-  if (deleted.length === 0) { alert('Papelera vacia'); return; }
-  if ((await confirmar('Eliminar permanentemente ' + deleted.length + ' gastos? Esta accion NO se puede deshacer.'))) {
+  if (deleted.length === 0) { alert('La papelera está vacía.'); return; }
+  if ((await confirmar('¿Eliminar para siempre ' + deleted.length + (deleted.length === 1 ? ' movimiento' : ' movimientos') + '? Esto no se puede deshacer.'))) {
+    // Las fotos de facturas de esos movimientos también se borran del teléfono
+    var fotos = deleted.map(function(t) { return t.facturaImagenId; }).filter(Boolean);
     state.transactions = state.transactions.filter(function(t) { return !t.deletedAt; });
     save();
     renderAll();
-    alert('Papelera vaciada');
+    for (var i = 0; i < fotos.length; i++) await _eliminarFactura(fotos[i]);
+    alert('Papelera vaciada.');
   }
 }
 
@@ -853,85 +856,7 @@ function renderPapelera() {
     (fijo/extra) contra lo que la regla 65/20/15 permite según el ingreso
     del mes. La parte "ahorro" no se puede medir contra gastos (es lo que
     sobra), así que solo se vigila gastos fijos y extra. */
-function calcularProgresoPresupuestoMes() {
-  var hoy = new Date();
-  var esteMes = function(t) {
-    var f = fechaContable(t);
-    return f.getFullYear() === hoy.getFullYear() && f.getMonth() === hoy.getMonth();
-  };
-  var realTx = state.transactions.filter(function(t) { return !t.deletedAt && !t.esTransferencia && !t.esConciliacion && esteMes(t); });
-  var ingresos = realTx.filter(function(t) { return t.type === 'income'; }).reduce(function(a, b) { return a + b.amount; }, 0);
-  var gastoFijo = realTx.filter(function(t) { return t.type === 'expense' && t.tipo === 'fijo'; }).reduce(function(a, b) { return a + b.amount; }, 0);
-  var gastoExtra = realTx.filter(function(t) { return t.type === 'expense' && t.tipo === 'extra'; }).reduce(function(a, b) { return a + b.amount; }, 0);
-  var rules = state.budgetRules || { gastos: 65, ahorro: 20, extra: 15 };
-  var limiteFijo = ingresos * (rules.gastos / 100);
-  var limiteExtra = ingresos * (rules.extra / 100);
-  return {
-    ingresos: ingresos,
-    fijo: { gastado: gastoFijo, limite: limiteFijo, pct: limiteFijo > 0 ? (gastoFijo / limiteFijo) * 100 : 0 },
-    extra: { gastado: gastoExtra, limite: limiteExtra, pct: limiteExtra > 0 ? (gastoExtra / limiteExtra) * 100 : 0 }
-  };
-}
 
-function _barraPresupuesto(nombre, info) {
-  var color = info.pct >= 100 ? 'var(--red)' : (info.pct >= 80 ? 'var(--aviso)' : 'var(--green)');
-  var pctBarra = Math.min(100, info.pct);
-  return '<div style="margin-bottom:8px">' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">' +
-      '<span>' + nombre + '</span>' +
-      '<span style="color:' + color + ';font-weight:700">' + fL(info.gastado) + ' de ' + fL(info.limite) + ' (' + info.pct.toFixed(0) + '%)</span>' +
-    '</div>' +
-    '<div style="background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">' +
-      '<div style="width:' + pctBarra + '%;height:100%;background:' + color + '"></div>' +
-    '</div>' +
-  '</div>';
-}
-
-function verificarAlertasPresupuesto() {
-  var alertasDiv = document.getElementById('budget-alerts');
-  var progresoDiv = document.getElementById('budget-progreso-mes');
-  var progreso = calcularProgresoPresupuestoMes();
-
-  if (progresoDiv) {
-    if (progreso.ingresos > 0) {
-      progresoDiv.innerHTML = _barraPresupuesto('🏠 Gastos fijos', progreso.fijo) + _barraPresupuesto('🎉 Gastos extra', progreso.extra);
-    } else {
-      progresoDiv.innerHTML = '';
-    }
-  }
-
-  if (alertasDiv) {
-    var peor = progreso.fijo.pct >= progreso.extra.pct ? { nombre: 'Gastos fijos', info: progreso.fijo } : { nombre: 'Gastos extra', info: progreso.extra };
-    var html = '';
-    if (progreso.ingresos > 0 && peor.info.pct >= 100) {
-      html = '<div class="alert-budget-critical"><span style="font-size:20px">🚨</span><div class="alert-content"><div class="alert-title">¡' + peor.nombre + ' excedidos este mes!</div><div class="alert-detail">' + fL(peor.info.gastado) + ' de ' + fL(peor.info.limite) + ' (' + peor.info.pct.toFixed(0) + '%)</div></div></div>';
-    } else if (progreso.ingresos > 0 && peor.info.pct >= 80) {
-      html = '<div class="alert-budget-warning"><span style="font-size:20px">⚠️</span><div class="alert-content"><div class="alert-title">' + peor.nombre + ' al ' + Math.round(peor.info.pct) + '%</div><div class="alert-detail">Te quedan ' + fL(Math.max(0, peor.info.limite - peor.info.gastado)) + ' este mes</div></div></div>';
-    }
-    alertasDiv.innerHTML = html;
-  }
-
-  // Push notification cuando se cruza un umbral (una sola vez por mes+categoría+nivel)
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  var hoy = new Date();
-  var mesClave = hoy.getFullYear() + '-' + hoy.getMonth();
-  var alertasEnviadas = JSON.parse(localStorage.getItem('alertas_enviadas') || '{}');
-  [['fijo', 'Gastos fijos', progreso.fijo], ['extra', 'Gastos extra', progreso.extra]].forEach(function(entry) {
-    var key = entry[0], nombre = entry[1], info = entry[2];
-    if (progreso.ingresos <= 0) return;
-    var nivel = info.pct >= 100 ? 'excedido' : (info.pct >= 80 ? 'aviso' : null);
-    if (!nivel) return;
-    var clave = 'presup_' + key + '_' + mesClave + '_' + nivel;
-    if (alertasEnviadas[clave]) return;
-    if (nivel === 'excedido') {
-      enviarNotificacion('🚨 ' + nombre + ' excedidos', fL(info.gastado) + ' de ' + fL(info.limite) + ' este mes (' + info.pct.toFixed(0) + '%)', null);
-    } else {
-      enviarNotificacion('⚠️ ' + nombre + ' al ' + Math.round(info.pct) + '%', 'Te quedan ' + fL(Math.max(0, info.limite - info.gastado)) + ' este mes', null);
-    }
-    alertasEnviadas[clave] = true;
-  });
-  localStorage.setItem('alertas_enviadas', JSON.stringify(alertasEnviadas));
-}
 
 // ═══ RECORDATORIO DIARIO ══════════════════════════════════════════════════
 // Con la app abierta se revisa cada minuto. Con la app cerrada lo intenta el
@@ -1104,14 +1029,6 @@ function detectarDuplicados() {
   }
 }
 
-// VALIDACION DE MONTO
-function validarMonto(input) {
-  var valor = input.value.replace(/[^0-9.]/g, '');
-  var partes = valor.split('.');
-  if (partes.length > 2) valor = partes[0] + '.' + partes.slice(1).join('');
-  if (partes[1] && partes[1].length > 2) valor = partes[0] + '.' + partes[1].slice(0, 2);
-  input.value = valor;
-}
 
 // VER TUTORIAL DE NUEVO
 // Antes abría la pantalla de configuración inicial, y al tocar "Comenzar"
@@ -1218,12 +1135,6 @@ async function enviarComentarios() { location.href = await urlComentarios(); }
 // INYECTAR ELEMENTOS NUEVOS EN DOM
 function inyectarElementosNuevos() {
   var dashboard = document.getElementById('view-dashboard');
-  if (dashboard && !document.getElementById('budget-alerts')) {
-    var alertasDiv = document.createElement('div');
-    alertasDiv.id = 'budget-alerts';
-    alertasDiv.style.marginBottom = '15px';
-    dashboard.insertBefore(alertasDiv, dashboard.firstChild);
-  }
   if (dashboard && !document.getElementById('duplicates-alert')) {
     var dupDiv = document.createElement('div');
     dupDiv.id = 'duplicates-alert';
@@ -1258,7 +1169,6 @@ function inyectarElementosNuevos() {
 function ejecutarVerificacionesNuevas() {
   inyectarElementosNuevos();
   setTimeout(function() {
-    verificarAlertasPresupuesto();
     calcularProyeccionCaja();
     renderLiquidez7Dias();
     detectarDuplicados();

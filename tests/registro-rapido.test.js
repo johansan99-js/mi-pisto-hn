@@ -139,7 +139,7 @@ describe('Registro rápido con teclado', () => {
       await sembrar(page, estadoBase());
       const [acento, aviso] = await page.evaluate(() => { const c = getComputedStyle(document.documentElement); return [c.getPropertyValue('--amber').trim(), c.getPropertyValue('--aviso').trim()]; });
       assert.ok(aviso && aviso !== acento, esquema);
-      assert.equal(await page.evaluate(() => { const d = document.createElement('span'); d.className = 'survival-status warning'; document.body.appendChild(d); return getComputedStyle(d).color; }),
+      assert.equal(await page.evaluate(() => { const d = document.createElement('span'); d.className = 'badge-liq-warning'; document.body.appendChild(d); return getComputedStyle(d).color; }),
         esquema === 'light' ? 'rgb(180, 83, 9)' : 'rgb(245, 181, 68)');
     }
   });

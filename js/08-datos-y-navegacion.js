@@ -341,56 +341,7 @@ async function verFactura(id) {
     document.addEventListener('keydown', closeOnEsc);
 }
 
-async function eliminarFactura(id) {
-    const gasto = state.transactions.find(t => String(t.id) === String(id));
-    if (!gasto) return alert('Transacción no encontrada.');
-    
-    // P0-2: Verificar si tiene factura en IDB o legacy
-    const tieneFac = gasto.facturaImagenId || gasto.facturaImagen;
-    if (!tieneFac) {
-        alert('No hay factura para eliminar.');
-        return;
-    }
-    
-    if ((await confirmar('¿Eliminar la factura adjunta a este gasto?'))) {
-        if (gasto.facturaImagenId) {
-            await _eliminarFactura(gasto.facturaImagenId);
-            gasto.facturaImagenId = null;
-        }
-        gasto.facturaImagen = null; // limpiar legacy si existía
-        save();
-        renderAll();
-        alert('✅ Factura eliminada');
-    }
-}
 
-async function reemplazarFactura(id) {
-    const gasto = state.transactions.find(t => String(t.id) === String(id));
-    if (!gasto) return;
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-            // P0-2: Guardar en IDB (no en la transacción)
-            const nuevoId = await _guardarTempFactura(ev.target.result);
-            if (gasto.facturaImagenId) {
-                await _eliminarFactura(gasto.facturaImagenId); // eliminar vieja
-            }
-            gasto.facturaImagenId = nuevoId;
-            gasto.facturaImagen = null; // limpiar legacy
-            save();
-            renderAll();
-            alert('✅ Factura reemplazada');
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-}
 
 // ========== EXPORTACIÓN A EXCEL PROFESIONAL ==========
 // exportToExcelPro() está en 23-excel.js
@@ -481,7 +432,7 @@ document.addEventListener('click',e=>{
 
 function renderAll(){
     recalcularSaldosTarjetas();
-    renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderTransferenciasProgramadas();renderHistorico();renderBudgetRules();
+    renderDashboard();renderGastos();renderIngresos();renderMetas();renderCobrar();renderPagar();renderPrestamos();renderTarjetas();renderPagosRecurrentes();renderTransferenciasProgramadas();renderHistorico();
     // FIX: el saludo/topbar (nombre, fecha, avatar) tiene su propio ciclo de
     // render independiente de renderAll(). Sin esto, cualquier flujo que solo
     // llame renderAll() tras cargar el state (ej. desbloqueo con PIN o con
@@ -504,7 +455,6 @@ function renderAll(){
     if (typeof renderRegistrosMes === 'function') renderRegistrosMes();
     if (typeof renderSugerenciaRecurrente === 'function') renderSugerenciaRecurrente();
     if (typeof renderAutoAnotados === 'function') renderAutoAnotados();
-    if (typeof previewConciliacion === 'function') previewConciliacion();
     renderResumenMes();
     renderAvisoResumen();
     if (typeof notificarInformeMes === 'function') notificarInformeMes();

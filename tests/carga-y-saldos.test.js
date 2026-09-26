@@ -52,26 +52,6 @@ describe('Carga, montos y saldos', () => {
     assert.equal(await page.evaluate(() => getCuentaBalance('efectivo')), 1200);
   });
 
-  it('"Cobrado hoy" y "Pagado hoy" usan la fecha local de Honduras', async () => {
-    const page = await env.pagina({ timezoneId: 'America/Tegucigalpa' });
-    const estado = await page.evaluate(() => {
-      const hora = h => { const d = new Date(); d.setHours(h, 0, 0, 0); return d.toISOString(); };
-      const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
-      return [
-        { id: 'aaaaa1', type: 'income', amount: 1500, cat: 'Salario', cuenta: 'efectivo', date: hora(9) },
-        { id: 'aaaaa2', type: 'expense', amount: 300, cat: 'Comida', cuenta: 'efectivo', date: hora(13) },
-        { id: 'aaaaa3', type: 'expense', amount: 120, cat: 'Taxi', cuenta: 'efectivo', date: hora(20) }, // 02:00 UTC de mañana
-        { id: 'aaaaa4', type: 'expense', amount: 200, cat: 'Transferencia', cuenta: 'efectivo', esTransferencia: true, date: hora(10) },
-        { id: 'aaaaa5', type: 'expense', amount: 999, cat: 'Ajuste', cuenta: 'efectivo', esConciliacion: true, date: hora(11) },
-        { id: 'aaaaa6', type: 'expense', amount: 400, cat: 'Comida', cuenta: 'efectivo', date: ayer.toISOString() },
-        { id: 'aaaaa7', type: 'expense', amount: 77, cat: 'Borrado', cuenta: 'efectivo', date: hora(12), deletedAt: hora(12) },
-      ];
-    });
-    await sembrar(page, estadoBase({ transactions: estado }));
-    assert.equal(await page.textContent('#cobrado-hoy'), 'L. 1,500.00');
-    assert.equal(await page.textContent('#pagado-hoy'), 'L. 420.00');
-  });
-
   it('el modo discreto oculta los montos y se recuerda', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase({ transactions: [{ id: 'aaaaa1', type: 'income', amount: 15000, cat: 'Salario', cuenta: 'ahorro', date: new Date().toISOString() }] }));
