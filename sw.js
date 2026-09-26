@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v85-huella-y-nube';
+const VERSION = 'v86-metas-y-actualizar';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW

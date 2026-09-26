@@ -499,28 +499,43 @@ function verificarTransferenciasProgramadas(){
 }
 
 // Registro del Service Worker (fuera del window.onload, aquí sí va)
+// Versión nueva: el SW nuevo se instala solo (skipWaiting) y toma el control;
+// la pantalla se recarga sola en cuanto no estás en medio de algo. Antes se
+// quedaba mostrando la versión vieja hasta cerrar la app por completo.
 if ('serviceWorker' in navigator) {
+  const _habiaVersion = !!navigator.serviceWorker.controller;
+  let _versionNuevaLista = false;
+  const _ocupado = () => !!document.querySelector('.modal[style*="flex"], #dialogo-app') ||
+    /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
+  const _recargarSiSePuede = () => {
+    if (!_versionNuevaLista) return;
+    if (document.visibilityState === 'visible' && _ocupado()) return _avisoVersionNueva();
+    _versionNuevaLista = false;
+    window.location.reload();
+  };
+  function _avisoVersionNueva() {
+    if (document.getElementById('aviso-version-nueva')) return;
+    const b = document.createElement('div');
+    b.id = 'aviso-version-nueva';
+    b.className = 'cloud-banner';
+    b.innerHTML = '<span>🆕 Hay una versión nueva de Mi Pisto HN</span><button onclick="location.reload()">Actualizar</button>';
+    document.body.appendChild(b);
+  }
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!_habiaVersion) return; // primera instalación: no hay nada viejo que cambiar
+    _versionNuevaLista = true;
+    _recargarSiSePuede();
+  });
   navigator.serviceWorker.register('./sw.js')
     .then(reg => {
       console.log('✅ Service Worker registrado', reg);
-      // P1-10: detectar versión nueva y ofrecer recargar al usuario.
-      // Sin esto, el SW viejo sigue sirviendo la app vieja hasta cerrar todas las pestañas.
-      reg.addEventListener('updatefound', () => {
-        const nuevoSW = reg.installing;
-        if (!nuevoSW) return;
-        nuevoSW.addEventListener('statechange', async () => {
-          if (nuevoSW.state === 'installed' && navigator.serviceWorker.controller) {
-            // Hay versión nueva esperando a tomar el control
-            if ((await confirmar('🆕 Hay una nueva versión de Mi Pisto HN disponible. ¿Actualizar ahora?'))) {
-              nuevoSW.postMessage({ type: 'SKIP_WAITING' });
-              // Cuando el nuevo SW tome control, recargamos
-              navigator.serviceWorker.addEventListener('controllerchange', () => {
-                window.location.reload();
-              }, { once: true });
-            }
-          }
-        });
+      // Buscar versión nueva cada vez que se vuelve a la app (y cada hora)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        if (_versionNuevaLista) return _recargarSiSePuede();
+        reg.update().catch(() => {});
       });
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
     })
     .catch(err => console.error('❌ Error al registrar SW:', err));
 }
