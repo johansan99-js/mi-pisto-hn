@@ -429,7 +429,7 @@ const cloudSync = {
       }
 
       // 5) Validación básica: el state debe verse como un state real
-      if (typeof decryptedState !== 'object' || decryptedState === null) {
+      if (typeof decryptedState !== 'object' || decryptedState === null || _revisionProfunda(decryptedState)) {
         return { ok: false, error: 'Formato del state descifrado inválido.' };
       }
 
@@ -516,6 +516,7 @@ const cloudSync = {
       if (!data || !data.ciphertext) return { ok: false, noData: true };
       const decrypted = await _decryptState(data.ciphertext, _sessionDEK);
       if (!decrypted) return { ok: false, error: 'No se pudo descifrar el blob remoto' };
+      if (typeof decrypted !== 'object' || _revisionProfunda(decrypted)) return { ok: false, error: 'Los datos de la nube vienen dañados' };
       return { ok: true, state: decrypted, version: data.version,
                updatedAt: data.updated_at, deviceName: data.device_name };
     } catch (e) {
@@ -661,6 +662,7 @@ const cloudSync = {
       if (!data || !data.ciphertext) return { ok: false, noRemote: true };
       const decrypted = await _decryptState(data.ciphertext, _sessionDEK);
       if (!decrypted) return { ok: false, error: 'Error descifrando (¿PIN cambiado en otro dispositivo?)' };
+      if (typeof decrypted !== 'object' || _revisionProfunda(decrypted)) return { ok: false, error: 'Los datos de la nube vienen dañados' };
       return { ok: true, data: decrypted, version: data.version, updatedAt: data.updated_at, deviceName: data.device_name };
     } catch (e) { return { ok: false, error: e.message }; }
   },
@@ -672,9 +674,15 @@ const cloudSync = {
   mergeStates(localState, remoteState) {
     const diff = { localNew:{}, remoteNew:{}, conflicts:{}, totalLocalNew:0, totalRemoteNew:0, totalConflicts:0, totalRemovidos:0 };
     const merged = {};
-    // Escalares: remoto gana
+    // Ajustes: gana el que se cambió de último; sin sellos, el remoto (regla anterior)
+    const sL = localState.sellosAjustes || {}, sR = remoteState.sellosAjustes || {};
+    const hora = v => (v && Date.parse(v)) || 0;
+    merged.sellosAjustes = {};
     ['nombre','saldoInicial','cuentas','cuentasIniciales','cuentasInicialesV','budgetRules','diasPago','tarjetaAlPagar','premium','setup'].forEach(f => {
-      merged[f] = (remoteState[f] !== undefined) ? remoteState[f] : localState[f];
+      const ganaLocal = hora(sL[f]) > hora(sR[f]) || remoteState[f] === undefined;
+      merged[f] = ganaLocal ? localState[f] : remoteState[f];
+      const sello = ganaLocal ? sL[f] : sR[f];
+      if (sello) merged.sellosAjustes[f] = sello;
     });
     // Días sin gastos (racha): se juntan los de ambos lados; la mejor racha, la mayor
     merged.diasSinGastos = [...new Set([].concat(localState.diasSinGastos || [], remoteState.diasSinGastos || []))].sort().slice(-400);
@@ -1008,14 +1016,15 @@ window.cerrarSesionCloud = cerrarSesionCloud;
 // SEGURIDAD: backup pre-merge + overlay de solo-lectura
 // ═══════════════════════════════════════════════════════════════════
 
-/** Guarda una snapshot del state actual en sessionStorage antes de
-    sobrescribirlo con datos de la nube. Válido por 5 minutos.
-    (sessionStorage se borra al cerrar la pestaña — perfect scope) */
+/** Guarda una snapshot del state actual antes de sobrescribirlo con datos
+    de la nube. Válido por 5 minutos. Solo en memoria (antes iba en claro a
+    sessionStorage): se borra al bloquear la app y al cerrar la pestaña. */
+window._preMergeBackup = null;
 function _createPreMergeBackup() {
   try {
     const snapshot = JSON.stringify(state);
-    sessionStorage.setItem('mph_premerge_backup', snapshot);
-    sessionStorage.setItem('mph_premerge_backup_time', Date.now().toString());
+    window._preMergeBackup = { snapshot, time: Date.now() };
+    try { sessionStorage.removeItem('mph_premerge_backup'); sessionStorage.removeItem('mph_premerge_backup_time'); } catch (e) {}
     console.log('☁️ Backup pre-merge creado (' + (snapshot.length/1024).toFixed(1) + ' KB)');
     return true;
   } catch(e) {
@@ -1028,15 +1037,10 @@ function _createPreMergeBackup() {
     Retorna true si restauró, false si no había backup válido. */
 async function _restorePreMergeBackup() {
   try {
-    const snapshot = sessionStorage.getItem('mph_premerge_backup');
-    const timeStr  = sessionStorage.getItem('mph_premerge_backup_time');
-    if (!snapshot || !timeStr) return false;
-    const age = Date.now() - parseInt(timeStr);
-    if (age > 5 * 60 * 1000) {
-      sessionStorage.removeItem('mph_premerge_backup');
-      sessionStorage.removeItem('mph_premerge_backup_time');
-      return false;
-    }
+    const copia = window._preMergeBackup;
+    if (!copia) return false;
+    const snapshot = copia.snapshot;
+    if (Date.now() - copia.time > 5 * 60 * 1000) { window._preMergeBackup = null; return false; }
     const parsed = JSON.parse(snapshot);
     Object.keys(state).forEach(k => delete state[k]);
     Object.assign(state, parsed);
@@ -1046,8 +1050,7 @@ async function _restorePreMergeBackup() {
       localStorage.setItem(LS_KEY, enc);
       saveStateToDB(state).catch(()=>{});
     }
-    sessionStorage.removeItem('mph_premerge_backup');
-    sessionStorage.removeItem('mph_premerge_backup_time');
+    window._preMergeBackup = null;
     if (typeof renderAll === 'function') renderAll();
     return true;
   } catch(e) {
@@ -1078,9 +1081,9 @@ function _hideMergeOverlay() {
 
 /** Muestra el botón "↩️ Deshacer merge" por 5 minutos si hay backup disponible */
 function _mostrarBotonDeshacer() {
-  const timeStr = sessionStorage.getItem('mph_premerge_backup_time');
-  if (!timeStr) return;
-  const age = Date.now() - parseInt(timeStr);
+  const copia = window._preMergeBackup;
+  if (!copia) return;
+  const age = Date.now() - copia.time;
   if (age > 5 * 60 * 1000) return; // Ya expiró
 
   const existing = document.getElementById('cloud-undo-merge-btn');

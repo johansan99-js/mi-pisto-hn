@@ -1423,3 +1423,7 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .inf-aviso-btns{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:10px}
 .inf-aviso-btns .btn{margin:0}
 .inf-ver{margin:4px 0 10px}
+/* Con la app bloqueada, nada se ve ni se toca detrás del PIN */
+body.app-bloqueada>*:not(#modal-pin):not(#bio-screen):not(script){visibility:hidden!important}
+#modal-pin{z-index:2147483000!important}
+body.app-bloqueada #modal-pin{background:var(--bg)!important}

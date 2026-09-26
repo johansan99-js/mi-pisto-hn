@@ -184,7 +184,7 @@ function reconcileBalance(){
   const saldoActual=getCuentaBalance(cuentaSel);
   const saldoReal=parseMonto(document.getElementById('reconcile-balance')?.value);
   if(saldoReal===null)return alert('Ingresa el saldo real de tu '+cuentaNombre);
-  const diff=saldoReal-saldoActual;
+  const diff=Math.round((saldoReal-saldoActual)*100)/100;
   if(Math.abs(diff)<0.01)return alert('✅ El saldo ya está correcto. No se necesita ajuste.');
   const nota=document.getElementById('reconcile-nota')?.value||`Conciliación ${cuentaNombre} — ajuste automático`;
   if(!confirm(`¿Confirmar ajuste de ${cuentaNombre}?\n\nSaldo registrado: ${fL(saldoActual)}\nSaldo real: ${fL(saldoReal)}\nDiferencia: ${fL(diff)}\n\nSe creará un asiento de ${diff>0?'ingreso':'gasto'} por esta diferencia.`))return;

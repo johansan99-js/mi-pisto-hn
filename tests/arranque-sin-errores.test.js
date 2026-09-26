@@ -57,7 +57,7 @@ describe('Arranque sin errores con el código dividido en archivos', () => {
   it('con PIN: bloqueada al recargar y desbloqueo', async () => {
     const page = await env.pagina();
     await sembrar(page, conDatos());
-    page.respuestas = ['123456', true];
+    page.respuestas = ['123456', '123456', true];
     await page.evaluate(() => configurarPIN());
     await page.waitForFunction(() => !!_sessionDEK, null, { timeout: 15000 });
     await page.reload(); await esperarCarga(page);

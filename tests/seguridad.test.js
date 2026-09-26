@@ -11,7 +11,7 @@ const conGasto = () => estadoBase({ nombre: 'Ana', transactions: [
 ] });
 
 async function crearPIN(page, pin) {
-  page.respuestas = [pin, true];
+  page.respuestas = [pin, pin, true];
   await page.evaluate(() => configurarPIN());
   await page.waitForFunction(() => !!_sessionDEK, null, { timeout: 15000 });
   await page.waitForTimeout(300);
@@ -79,7 +79,7 @@ describe('PIN, cifrado y recuperación', () => {
     await crearPIN(page, '123456');
     const facId = await page.evaluate(() => _guardarTempFactura('data:image/png;base64,QUJD'));
     assert.ok((await leerIDB(page, 'facturas', facId))._enc, 'la factura se guarda cifrada');
-    page.respuestas = ['', true, true];
+    page.respuestas = ['123456', '', true, true];
     await page.evaluate(() => configurarPIN());
     await page.waitForFunction(() => !localStorage.getItem('finanzas_pin_hash'));
     await page.reload(); await esperarCarga(page);

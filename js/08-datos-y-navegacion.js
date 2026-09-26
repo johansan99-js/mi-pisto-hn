@@ -61,9 +61,9 @@ function _validarSchemaBackup(obj) {
     return !dangerous.test(str);
   }
   
-  // ── Validar transacciones (muestreo de 100) ──
+  // ── Validar transacciones (todas: antes solo se miraban las primeras 100) ──
   if (Array.isArray(obj.transactions)) {
-    for (const t of obj.transactions.slice(0, 100)) {
+    for (const t of obj.transactions) {
       if (typeof t !== 'object' || t === null) return 'Transacción inválida';
       
       // ID obligatorio y válido
@@ -89,7 +89,7 @@ function _validarSchemaBackup(obj) {
   
   // ── Validar metas ──
   if (Array.isArray(obj.goals)) {
-    for (const g of obj.goals.slice(0, 50)) {
+    for (const g of obj.goals) {
       if (!esIdValido(g.id)) return `ID inválido en meta: ${g.id}`;
       if (!esStringSeguro(g.nombre, 200)) return 'nombre de meta sospechoso';
       if (typeof g.objetivo !== 'number' || g.objetivo < 0 || g.objetivo > 1e9) return 'objetivo inválido';
@@ -100,7 +100,7 @@ function _validarSchemaBackup(obj) {
   
   // ── Validar cuentas por cobrar ──
   if (Array.isArray(obj.receivables)) {
-    for (const r of obj.receivables.slice(0, 50)) {
+    for (const r of obj.receivables) {
       if (!esIdValido(r.id)) return `ID inválido en cobrar: ${r.id}`;
       if (!esStringSeguro(r.persona, 200)) return 'persona sospechosa en cobrar';
     }
@@ -108,7 +108,7 @@ function _validarSchemaBackup(obj) {
   
   // ── Validar cuentas por pagar ──
   if (Array.isArray(obj.payables)) {
-    for (const p of obj.payables.slice(0, 50)) {
+    for (const p of obj.payables) {
       if (!esIdValido(p.id)) return `ID inválido en pagar: ${p.id}`;
       if (!esStringSeguro(p.creditor, 200)) return 'acreedor sospechoso';
     }
@@ -120,7 +120,7 @@ function _validarSchemaBackup(obj) {
 
   // ── Validar mis cuentas ──
   if (Array.isArray(obj.misCuentas)) {
-    for (const c of obj.misCuentas.slice(0, 100)) {
+    for (const c of obj.misCuentas) {
       if (!esIdValido(c.id) || !esStringSeguro(c.nombre, 40) || !esStringSeguro(c.grupo, 40) || /[<>"']/.test((c.nombre || '') + (c.grupo || '') + (c.color || '') + (c.icono || ''))) return 'cuenta inválida';
       if (c.color !== undefined && !/^#[0-9a-f]{6}$/i.test(c.color)) return 'color de cuenta inválido';
       if (c.moneda !== undefined && c.moneda !== 'USD' && c.moneda !== 'HNL') return 'moneda de cuenta inválida';
@@ -129,13 +129,13 @@ function _validarSchemaBackup(obj) {
 
   // ── Validar presupuestos ──
   if (Array.isArray(obj.presupuestos)) {
-    for (const p of obj.presupuestos.slice(0, 100)) {
+    for (const p of obj.presupuestos) {
       if (!esIdValido(p.id) || !esStringSeguro(p.cat, 60) || typeof p.monto !== 'number' || !['semana','quincena','mes'].includes(p.periodo)) return 'presupuesto inválido';
     }
   }
   // ── Validar categorías propias ──
   if (Array.isArray(obj.categorias)) {
-    for (const c of obj.categorias.slice(0, 200)) {
+    for (const c of obj.categorias) {
       if (!esIdValido(c.id) || !esStringSeguro(c.nombre, 40) || !c.nombre || /[<>]/.test(c.nombre) || !['gasto', 'ingreso'].includes(c.tipo)) return 'categoría inválida';
       if (typeof c.icono !== 'string' || !c.icono || c.icono.length > 12 || /[<>"'&]/.test(c.icono)) return 'ícono de categoría inválido';
       if (!/^#[0-9a-f]{6}$/i.test(c.color || '')) return 'color de categoría inválido';
@@ -145,7 +145,7 @@ function _validarSchemaBackup(obj) {
 
   // ── Validar gastos compartidos ──
   if (Array.isArray(obj.grupos)) {
-    for (const g of obj.grupos.slice(0, 50)) {
+    for (const g of obj.grupos) {
       if (!esIdValido(g.id)) return `ID inválido en grupo: ${g.id}`;
       if (!esStringSeguro(g.nombre, 60)) return 'nombre de grupo sospechoso';
       if (!Array.isArray(g.miembros) || !Array.isArray(g.gastos) || !Array.isArray(g.pagos)) return 'grupo mal formado';
@@ -156,7 +156,7 @@ function _validarSchemaBackup(obj) {
 
   // ── Validar préstamos ──
   if (Array.isArray(obj.prestamos)) {
-    for (const p of obj.prestamos.slice(0, 50)) {
+    for (const p of obj.prestamos) {
       if (!esIdValido(p.id)) return `ID inválido en préstamo: ${p.id}`;
       if (!esStringSeguro(p.entidad, 200)) return 'entidad sospechosa';
     }
@@ -164,7 +164,7 @@ function _validarSchemaBackup(obj) {
   
   // ── Validar tarjetas ──
   if (Array.isArray(obj.tarjetas)) {
-    for (const tc of obj.tarjetas.slice(0, 20)) {
+    for (const tc of obj.tarjetas) {
       if (!esIdValido(tc.id)) return `ID inválido en tarjeta: ${tc.id}`;
       if (!esStringSeguro(tc.nombre, 100)) return 'nombre de tarjeta sospechoso';
       if (tc.ultimos4 !== undefined && !/^\d{4}$/.test(String(tc.ultimos4))) return 'últimos dígitos de tarjeta inválidos';
@@ -189,7 +189,48 @@ function _validarSchemaBackup(obj) {
     }
   }
   
-  return null; // ✅ Validación pasada
+  // ── Pagos fijos, transferencias programadas y abonos de grupos ──
+  for (const p of obj.pagosRecurrentes || []) {
+    if (!p || !esIdValido(p.id) || !esStringSeguro(p.servicio, 100)) return 'pago fijo inválido';
+    if (p.dia !== undefined && p.dia !== null && !(Number.isInteger(+p.dia) && +p.dia >= 1 && +p.dia <= 31)) return 'día de pago fijo inválido';
+    if (p.dias !== undefined && p.dias !== null && !(Array.isArray(p.dias) && p.dias.length <= 31 && p.dias.every(d => Number.isInteger(+d) && +d >= 1 && +d <= 31))) return 'días de pago fijo inválidos';
+  }
+  for (const tp of obj.transferenciasProgramadas || []) {
+    if (!tp || !esIdValido(tp.id) || !esStringSeguro(tp.nombre, 100)) return 'transferencia programada inválida';
+    if (tp.dia !== undefined && tp.dia !== null && !(Number.isInteger(+tp.dia) && +tp.dia >= 1 && +tp.dia <= 31)) return 'día de transferencia inválido';
+  }
+  for (const g of obj.grupos || []) for (const pg of g.pagos) if (!pg || !esIdValido(pg.id) || typeof pg.monto !== 'number') return 'abono de grupo sospechoso';
+
+  return _revisionProfunda(obj);
+}
+
+// Revisión de todo el árbol (también se usa con lo que baja de la nube):
+// ids y referencias con formato de id, montos que sean números de verdad y
+// ningún texto con etiquetas HTML o javascript:. Un solo "amount":"100" en un
+// respaldo dejaba la app rota para siempre.
+const _CAMPOS_NUMERO = new Set(['amount', 'monto', 'pagado', 'objetivo', 'limite', 'saldoBase', 'saldoBaseUSD', 'saldoUSD', 'pagoUSD', 'originalAmount', 'conversionRate', 'saldoInicial']);
+function _revisionProfunda(obj) {
+  // Sin comillas ni símbolos: así un id nunca puede romper un onclick="f('id')"
+  const idOk = v => typeof v === 'number' ? isFinite(v) : typeof v === 'string' && /^[a-z0-9_-]{1,64}$/i.test(v);
+  const peligro = /<\s*\/?\s*[a-z!]|javascript:/i;
+  let malo = null, nodos = 0;
+  const ver = (v, clave, prof) => {
+    if (malo) return;
+    if (++nodos > 2e6 || prof > 12) { malo = 'estructura demasiado grande o profunda'; return; }
+    if (typeof v === 'string') { if (peligro.test(v)) malo = `texto sospechoso en ${clave}`; return; }
+    if (typeof v === 'number') { if (!isFinite(v)) malo = `número inválido en ${clave}`; return; }
+    if (!v || typeof v !== 'object') return;
+    if (Array.isArray(v)) { v.forEach(x => ver(x, clave, prof + 1)); return; }
+    for (const k of Object.keys(v)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') { malo = 'clave prohibida'; return; }
+      const x = v[k];
+      if (x !== undefined && x !== null && x !== '' && (k === 'id' || /[a-z]Id$/.test(k)) && !idOk(x)) { malo = `id inválido en ${k}`; return; }
+      if (x !== undefined && x !== null && _CAMPOS_NUMERO.has(k) && (typeof x !== 'number' || !isFinite(x))) { malo = `${k} debe ser un número`; return; }
+      ver(x, k, prof + 1);
+    }
+  };
+  ver(obj, 'raíz', 0);
+  return malo;
 }
 
 function importData(event) {
@@ -255,7 +296,8 @@ function importData(event) {
       event.target.value=''; return;
     }
 
-    state = datosRecuperados;
+    // Lo que falte en el respaldo viejo queda con su valor por defecto
+    state = Object.assign(estadoInicial(), datosRecuperados);
     save().then(() => location.reload());
   };
   reader.readAsText(file);

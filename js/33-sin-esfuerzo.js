@@ -20,6 +20,9 @@ function verificarPagosAutomaticos(ahora) {
   const hoy = ahora ? new Date(ahora) : new Date();
   const y = hoy.getFullYear(), m = hoy.getMonth();
   const anotados = [];
+  const mesActual = y * 12 + m;
+  const revisoMesPasado = state.pagosRevisadosMes === mesActual - 1;
+  if (!(state.pagosRevisadosMes >= mesActual)) state.pagosRevisadosMes = mesActual;
   (state.pagosRecurrentes || []).forEach(p => {
     if (!p.auto || !(p.monto > 0)) return;
     const desde = p.autoDesde ? new Date(p.autoDesde) : null;
@@ -27,16 +30,21 @@ function verificarPagosAutomaticos(ahora) {
     const dias = diasPagoFijo(p);
     // La tarjeta se borró o la cuenta se archivó: no se anota en otro lado
     if (!_destinoPagoFijoValido(p)) return;
+    // También el mes pasado si la app se abrió ese mes pero no en sus últimos
+    // días (un pago del 29 al 31). Tras meses sin abrirla no se rellena nada viejo.
+    const meses = [[y, m]];
+    if (revisoMesPasado) meses.unshift(m === 0 ? [y - 1, 11] : [y, m - 1]);
+    meses.forEach(([yy, mm]) => {
     // En un mes corto, el 30 y el 31 caen el mismo día: se anota una sola vez
-    const fechasMes = [...new Set(dias.map(d => Math.min(d, _diasDelMes(y, m))))];
+    const fechasMes = [...new Set(dias.map(d => Math.min(d, _diasDelMes(yy, mm))))];
     fechasMes.forEach(dd => {
-      const fecha = new Date(y, m, dd, 9, 0);
+      const fecha = new Date(yy, mm, dd, 9, 0);
       if (fecha > hoy || (desde && fecha < desde)) return;
-      const clave = _claveAnotado(y, m, dd);
+      const clave = _claveAnotado(yy, mm, dd);
       p.anotados = p.anotados || {};
       if (p.anotados[clave]) return;
-      // Si ya se marcó pagado a mano este mes (un pago de un solo día), no se repite
-      if (fechasMes.length === 1 && p.ultimoPago && new Date(p.ultimoPago).getFullYear() === y && new Date(p.ultimoPago).getMonth() === m) { p.anotados[clave] = 'manual'; return; }
+      // Si ya se marcó pagado a mano ese mes (un pago de un solo día), no se repite
+      if (fechasMes.length === 1 && p.ultimoPago && new Date(p.ultimoPago).getFullYear() === yy && new Date(p.ultimoPago).getMonth() === mm) { p.anotados[clave] = 'manual'; return; }
       const tx = _txDePagoFijo(p, fecha);
       if (!tx) return;
       // El mismo id en cualquier teléfono: si dos lo anotan antes de sincronizar, queda uno solo
@@ -44,9 +52,10 @@ function verificarPagosAutomaticos(ahora) {
       if ((state.transactions || []).some(t => t.id === tx.id)) { p.anotados[clave] = tx.id; return; }
       state.transactions.push(tx);
       p.anotados[clave] = tx.id;
-      p.ultimoPago = fecha.toISOString();
+      if (!p.ultimoPago || new Date(p.ultimoPago) < fecha) p.ultimoPago = fecha.toISOString();
       if (p.tipo !== 'ingreso') p.pagado = _c2((p.pagado || 0) + tx.amount);
       anotados.push(tx);
+    });
     });
     // Solo se guardan los últimos meses
     Object.keys(p.anotados || {}).forEach(k => { const [ay, am] = k.split('-').map(Number); if ((y * 12 + m) - (ay * 12 + am) > 3) delete p.anotados[k]; });
@@ -220,5 +229,5 @@ function cuadrarEfectivo() {
 
 // Al volver a la app otro día (queda abierta en segundo plano), se revisa de nuevo
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state && state.setup) { try { verificarPagosAutomaticos(); } catch (e) { console.error(e); } }
+  if (document.visibilityState === 'visible' && state && state.setup && !(typeof _tienePIN === 'function' && _tienePIN() && !_sessionDEK)) { try { verificarPagosAutomaticos(); } catch (e) { console.error(e); } }
 });

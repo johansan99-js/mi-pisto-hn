@@ -471,8 +471,10 @@ function softDeleteTx(id) {
   const t = state.transactions.find(x => x.id === id);
   if (!t) return;
 
-  // Marcar como eliminado
+  // Marcar como eliminado (con la otra mitad si es una transferencia)
+  const par = parDeTransferencia(t);
   t.deletedAt = new Date().toISOString();
+  if (par) par.deletedAt = t.deletedAt;
   _undoTxId = id;
   save();
   renderAll();
@@ -524,7 +526,7 @@ function _undoDeleteFromToast() {
 function _undoDelete(id) {
   if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
   const t = state.transactions.find(x => x.id === id);
-  if (t) { t.deletedAt = null; save(); renderAll(); }
+  if (t) { const par = parDeTransferencia(t); t.deletedAt = null; if (par) par.deletedAt = null; save(); renderAll(); }
   _undoTxId = null;
   _dismissToast();
 }

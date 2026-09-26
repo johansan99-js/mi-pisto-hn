@@ -39,6 +39,7 @@
     <tr><td>Movimientos, cuentas, tarjetas, préstamos, metas, nombre y demás información que registras</td><td>Solo en tu teléfono (almacenamiento del navegador). Con PIN, cifrado con AES-256.</td></tr>
     <tr><td>Fotos de facturas que adjuntas</td><td>Solo en tu teléfono, cifradas con tu PIN. El reconocimiento de texto (OCR) se hace en el teléfono; las imágenes no se envían a ningún servidor.</td></tr>
     <tr><td>PIN</td><td>No se guarda. Se guarda un derivado (PBKDF2 con 600,000 iteraciones) que sirve para verificarlo.</td></tr>
+    <tr><td>Huella o rostro (opcional)</td><td>Lo gestiona el sistema de tu teléfono; la app nunca recibe tus datos biométricos. Solo confirma que eres tú: para descifrar tus datos siempre se necesita el PIN.</td></tr>
     <tr><td>Tu voz, si usas el dictado (🎤, opcional)</td><td>Solo mientras tocas el micrófono. El reconocimiento de voz lo hace el servicio de tu teléfono (en Android, el de Google): el audio se envía a ese servicio para convertirlo en texto, según su propia política de privacidad. La app solo recibe el texto de la frase, lo usa para llenar el movimiento y no guarda ni envía el audio. Si no quieres usarlo, puedes escribir la frase o usar el teclado de siempre.</td></tr>
     <tr><td>Imagen de "Tu mes" que compartes</td><td>Se crea en tu teléfono y solo lleva porcentajes, sin montos. Solo sale del teléfono si tú la compartes.</td></tr>
   </table>

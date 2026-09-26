@@ -90,6 +90,16 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+/** Tapa (o destapa) toda la app detrás del modal del PIN */
+function _bloquearVista(si) {
+  // El candado y la huella van al nivel de <body>, para que no queden dentro de algo que se tapa
+  if (si) ['modal-pin', 'bio-screen'].forEach(id => { const el = document.getElementById(id); if (el && el.parentElement !== document.body) document.body.appendChild(el); });
+  document.body.classList.toggle('app-bloqueada', !!si);
+  [...document.body.children].forEach(el => {
+    if (el.id === 'modal-pin' || el.id === 'bio-screen' || el.tagName === 'SCRIPT') return;
+    if (si) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+  });
+}
 function _bloquearAppPorInactividad() {
   // Solo bloquea si hay PIN configurado y la sesión estaba desbloqueada
   const storedHash = localStorage.getItem('finanzas_pin_hash');
@@ -97,6 +107,13 @@ function _bloquearAppPorInactividad() {
   sessionStorage.removeItem('pinVerificado');
   _sessionPIN = null;
   _sessionDEK = null;
+  // Detrás del candado no queda nada: se cierran las ventanas, se vacía la
+  // memoria y la página queda tapada e inerte hasta volver a poner el PIN
+  // (al desbloquear, los datos se vuelven a descifrar).
+  document.querySelectorAll('.modal').forEach(m => { if (m.id !== 'modal-pin') m.style.display = 'none'; });
+  try { state = estadoInicial(); } catch (e) {}
+  window._preMergeBackup = null;
+  _bloquearVista(true);
   const modal = document.getElementById('modal-pin');
   if (modal) {
     modal.style.display = 'flex';
@@ -112,7 +129,13 @@ const USD_HNL_VALID_RANGE = { min: 20, max: 35 };
 
 // ========== VARIABLES GLOBALES Y ESTADO ==========
 const LS_KEY='mifinanzashn_pro_v20_full';
-let state={setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,eliminados:{},sellosV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],grupos:[],presupuestos:[],misCuentas:[],categorias:[],diasPago:null,tarjetaAlPagar:false,premium:null,diasSinGastos:[],mejorRacha:0,budgetRules:{gastos:65,ahorro:20,extra:15}};
+// La forma completa del state, en un solo lugar. Todo lo que carga datos
+// (IndexedDB, descifrado, nube) copia las claves de aquí: una clave que
+// falte aquí se pierde al desbloquear con el PIN.
+function estadoInicial() {
+  return {setup:false,nombre:'',saldoInicial:0,cuentas:{efectivo:0,ahorro:0},cuentasIniciales:null,cuentasInicialesV:0,eliminados:{},sellosV:0,transactions:[],goals:[],receivables:[],payables:[],prestamos:[],tarjetas:[],pagosRecurrentes:[],transferenciasProgramadas:[],grupos:[],presupuestos:[],misCuentas:[],categorias:[],diasPago:null,tarjetaAlPagar:false,premium:null,diasSinGastos:[],mejorRacha:0,budgetRules:{gastos:65,ahorro:20,extra:15},_guardadoEn:0};
+}
+let state=estadoInicial();
 
 // ────────────────────────────────────────────────────────────────────
 // CARGA INICIAL — detecta si el state está cifrado o en plano

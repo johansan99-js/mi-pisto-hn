@@ -248,34 +248,74 @@ const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
 // ────────────────────────────────────────────────────────────────────
 // SAVE — cifra el state con DEK antes de guardar en localStorage
 // ────────────────────────────────────────────────────────────────────
+// Dos pestañas abiertas: la que se quedó atrás no debe pisar lo que guardó la
+// otra. Cuando otra pestaña guarda, esta deja de guardar y pide recargar.
+let _otraPestana = false;
+window.addEventListener('storage', e => {
+  if (e.key !== LS_KEY || _otraPestana) return;
+  _otraPestana = true;
+  const aviso = document.createElement('div');
+  aviso.id = 'aviso-otra-pestana';
+  aviso.setAttribute('role', 'alert');
+  aviso.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483001;background:#B45309;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)';
+  aviso.innerHTML = '<span>⚠️ Guardaste algo en otra pestaña o ventana. Esta ya no guarda para no borrar esos cambios.</span><button type="button" style="background:#fff;color:#B45309;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Recargar</button>';
+  aviso.querySelector('button').onclick = () => location.reload();
+  document.body.appendChild(aviso);
+});
+
 function save() {
   if (typeof sellarMontosUSD === 'function') sellarMontosUSD();
   // Si no hay DEK en sesión, significa que el usuario no ha desbloqueado
   // con PIN (ej. durante onboarding inicial). Guardar en plano temporalmente.
   // Devuelve una promesa que se cumple cuando localStorage e IndexedDB ya
   // están escritos: quien recarga la página justo después debe esperarla.
-  const guardarIDB = () => saveStateToDB(state).catch(e => console.error('❌ Error guardando en IndexedDB:', e));
+  // Con PIN y la sesión bloqueada (sin DEK) no se escribe nada: sería en
+  // plano. Queda pendiente y se guarda cifrado al desbloquear.
+  if (_otraPestana) return Promise.resolve(false);
+  if (!_sessionDEK && _tienePIN()) { _guardadoPendiente = true; return Promise.resolve(false); }
+  _guardadoPendiente = false;
   recalcularSaldosTarjetas();
   sellarCambios();
   if (leerRecordatorio().activo) _actualizarFichaRecordatorio();
+  // Marca para saber, al abrir, cuál copia es la más nueva (localStorage o IndexedDB)
+  state._guardadoEn = Math.max(Date.now(), (state._guardadoEn || 0) + 1);
+  let lsOk = true;
+  const escribirLS = valor => { try { localStorage.setItem(LS_KEY, valor); } catch (e) { lsOk = false; console.warn('localStorage lleno o bloqueado:', e && e.name); } };
+  // IndexedDB es la copia principal; si tampoco se pudo, se avisa
+  const guardarIDB = () => saveStateToDB(state).then(() => { if (!lsOk) _avisarAlmacenamiento(false); return true; }, e => { console.error('❌ Error guardando en IndexedDB:', e); _avisarAlmacenamiento(!lsOk); return false; });
   if (!_sessionDEK) {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    escribirLS(JSON.stringify(state));
     return guardarIDB();
   }
   
   // Cifrar state con DEK y guardar
   return _encryptState(state, _sessionDEK).then(encrypted => {
-    localStorage.setItem(LS_KEY, encrypted);
+    escribirLS(encrypted);
     const idb = guardarIDB(); // saveStateToDB también cifra la copia de IDB
     // FASE 3: disparar auto-sync si el usuario tiene la nube activada
     if (typeof cloudSync !== 'undefined') cloudSync._scheduleAutoSync();
     return idb;
   }).catch(error => {
+    // Nunca se guarda en plano con PIN: se avisa y se reintenta en el próximo guardado
     console.error('❌ Error cifrando state:', error);
-    // Fallback: guardar en plano para no perder datos
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-    return guardarIDB();
+    _guardadoPendiente = true;
+    _avisarAlmacenamiento(true);
+    return false;
   });
+}
+const _tienePIN = () => { try { return !!localStorage.getItem('finanzas_pin_hash'); } catch (e) { return false; } };
+let _guardadoPendiente = false, _avisoAlmacenamientoDado = false;
+// grave=true: no se pudo guardar en ningún lado. Si no, solo el almacenamiento rápido está lleno.
+function _avisarAlmacenamiento(grave) {
+  if (!grave || _avisoAlmacenamientoDado) return;
+  _avisoAlmacenamientoDado = true;
+  setTimeout(() => alert('⚠️ No se pudo guardar tu último cambio: el almacenamiento del teléfono está lleno o bloqueado.\n\nLibera espacio, exporta un respaldo (Configuración → Respaldo) y vuelve a intentar. Mientras la app siga abierta, tus datos siguen aquí.'), 50);
+}
+/** De dos copias del state, la guardada más recientemente (null si ninguna) */
+function _copiaMasNueva(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  return (Number(b._guardadoEn) || 0) > (Number(a._guardadoEn) || 0) ? b : a;
 }
 const todayStr=()=>new Date().toISOString().split('T')[0];
 const CATEGORIES={vivienda:{label:'🏠 Vivienda',sub:['Hipoteca/Alquiler','Teléfono','Electricidad','Gas','Agua','Mantenimiento']},transporte:{label:'🚗 Transporte',sub:['Pago de Auto','Combustible','Seguros','Mantenimiento']},alimentos:{label:'🍽️ Alimentación',sub:['Supermercado','Restaurantes','Delivery']},ocio:{label:'🎬 Ocio',sub:['Streaming','Salidas','Hobbies']},prestamos:{label:'💳 Préstamos',sub:['Personal','Estudiantil','Tarjeta de Crédito']},seguros:{label:'🛡️ Seguros',sub:['Salud','Vida','Hogar']},impuestos:{label:'📄 Impuestos',sub:['Federal','Estatal','Local']},ahorros:{label:'💰 Ahorros',sub:['Emergencia','Jubilación','Inversiones']},regalos:{label:'🎁 Regalos',sub:['Caridad','Familia','Amigos']},personal:{label:'✂️ Cuidado Personal',sub:['Médico','Ropa','Gimnasio']}};
