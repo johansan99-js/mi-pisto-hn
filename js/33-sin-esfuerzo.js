@@ -202,7 +202,7 @@ function editarRecurrente(id) { abrirPagoFijo(id); }
 // Para quien no quiere anotar cada gasto en efectivo: una vez por semana la
 // app pregunta cuánto efectivo tienes y la diferencia se anota como gasto del
 // "Día a día". No hay detalle de en qué se fue, pero las cuentas cuadran.
-function cuadrarEfectivo() {
+async function cuadrarEfectivo() {
   const inp = document.getElementById('cuadre-efectivo');
   const real = leerMonto(inp ? inp.value : '');
   if (real === null || isNaN(real) || real < 0) return alert('Escribe cuánto efectivo tienes (cuenta billetes y monedas).');
@@ -218,7 +218,7 @@ function cuadrarEfectivo() {
     return avisoRapido(`🪙 Se anotaron ${fL(-dif)} como gastos del día a día`, 4000);
   }
   // Hay más de lo que dice la app: casi siempre un ingreso sin anotar
-  if (confirm(`Tienes ${fL(dif)} más de lo que dice la app.\n\n¿Te faltó anotar un ingreso? (una venta, un pago, un regalo)\n\n[Aceptar] = anotarlo como ingreso\n[Cancelar] = solo corregir el saldo`)) {
+  if ((await confirmar(`Tienes ${fL(dif)} más de lo que dice la app.\n\n¿Te faltó anotar un ingreso? (una venta, un pago, un regalo)\n\n[Aceptar] = anotarlo como ingreso\n[Cancelar] = solo corregir el saldo`))) {
     state.transactions.push({ id: uid(), type: 'income', amount: dif, cat: 'Otros', subcat: 'extra', cuenta: 'efectivo', nota: 'Cuadre de efectivo', esCuadre: true, date: new Date().toISOString() });
   } else {
     state.transactions.push({ id: uid(), type: 'income', amount: dif, cat: 'Ajuste de saldo', subcat: 'Cuadre de efectivo', cuenta: 'efectivo', esConciliacion: true, date: new Date().toISOString() });

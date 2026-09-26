@@ -48,10 +48,10 @@ function datosDolaresFormTarjeta() {
   const usd = leerMonto(document.getElementById('tc-saldo-usd')?.value) || 0;
   return { bimoneda: true, bimonedaDesde: new Date().toISOString(), saldoUSD: _c2(usd), saldoBaseUSD: _c2(usd) };
 }
-function activarDolaresTarjeta(id) {
+async function activarDolaresTarjeta(id) {
   const t = (state.tarjetas || []).find(x => String(x.id) === String(id));
   if (!t || esBimoneda(t)) return;
-  const txt = prompt(`💱 ${t.nombre}: saldo en dólares\n\nSi tu tarjeta lleva un saldo en lempiras y otro en dólares, las compras en dólares se van a sumar aparte y podrás pagar cada uno.\n\n¿Cuánto debes hoy en dólares? (US$)`, '0');
+  const txt = (await preguntar(`💱 ${t.nombre}: saldo en dólares\n\nSi tu tarjeta lleva un saldo en lempiras y otro en dólares, las compras en dólares se van a sumar aparte y podrás pagar cada uno.\n\n¿Cuánto debes hoy en dólares? (US$)`, '0'));
   if (txt === null) return;
   const usd = leerMonto(txt);
   if (!(usd >= 0)) return alert('Monto inválido');
@@ -107,7 +107,7 @@ function _renderPagoTC() {
     ? `De tu cuenta salen ≈ ${fL(_c2(monto * tasaUSD('ask')))} (el banco te vende los dólares a L ${tasaUSD('ask').toFixed(4)}).`
     : `De tu cuenta en dólares salen ≈ ${_usdTxt(_c2(monto / tasaUSD('bid')))} (a L ${tasaUSD('bid').toFixed(4)} por dólar).`;
 }
-function guardarPagoTarjeta() {
+async function guardarPagoTarjeta() {
   const t = (state.tarjetas || []).find(x => String(x.id) === String(_pagoTC.id));
   if (!t) return;
   const usd = _pagoTC.moneda === 'USD';
@@ -115,7 +115,7 @@ function guardarPagoTarjeta() {
   if (!(monto > 0)) return alert('Escribe cuánto pagas.');
   const saldo = usd ? Number(t.saldoUSD) || 0 : Number(t.saldo) || 0;
   const fmt = v => usd ? _usdTxt(v) : fL(v);
-  if (monto > saldo + 0.005 && !confirm(`Estás pagando ${fmt(monto)} pero debes ${fmt(saldo)}. ¿Dejar la tarjeta con saldo a favor?`)) return;
+  if (monto > saldo + 0.005 && !(await confirmar(`Estás pagando ${fmt(monto)} pero debes ${fmt(saldo)}. ¿Dejar la tarjeta con saldo a favor?`))) return;
   const cuenta = cuentaValida(document.getElementById('ptc-cuenta').value);
   const desdeUSD = _pagoTCCuentaUSD();
   let amount = monto;
@@ -136,11 +136,11 @@ function guardarPagoTarjeta() {
 }
 
 // ─── Conciliar el saldo en dólares con el estado de cuenta ──────────────
-function ajustarSaldoTarjetaUSD(id) {
+async function ajustarSaldoTarjetaUSD(id) {
   const t = (state.tarjetas || []).find(x => String(x.id) === String(id));
   if (!t || !esBimoneda(t)) return;
   recalcularSaldosTarjetas();
-  const txt = prompt(`Conciliar el saldo en dólares de ${t.nombre}\n\nSaldo en la app: ${_usdTxt(t.saldoUSD)}\n\n¿Qué saldo en dólares dice tu estado de cuenta? (usa - para saldo a favor)`, (t.saldoUSD || 0).toFixed(2));
+  const txt = (await preguntar(`Conciliar el saldo en dólares de ${t.nombre}\n\nSaldo en la app: ${_usdTxt(t.saldoUSD)}\n\n¿Qué saldo en dólares dice tu estado de cuenta? (usa - para saldo a favor)`, (t.saldoUSD || 0).toFixed(2)));
   if (txt === null) return;
   const limpio = String(txt).trim(), neg = limpio.startsWith('-'), valor = leerMonto(neg ? limpio.slice(1) : limpio);
   if (isNaN(valor)) return alert('Monto inválido');
@@ -150,12 +150,12 @@ function ajustarSaldoTarjetaUSD(id) {
   const ask = tasaUSD('ask');
   let registrado = false;
   if (dif > 0) {
-    if (confirm(`El banco cobra ${_usdTxt(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (membresía, comisiones, compras sin anotar…)?\n\n[Cancelar] = solo corregir el saldo`)) {
+    if ((await confirmar(`El banco cobra ${_usdTxt(dif)} más de lo que registraste.\n\n¿Registrarlo como gasto en "Cargos bancarios" (membresía, comisiones, compras sin anotar…)?\n\n[Cancelar] = solo corregir el saldo`))) {
       state.transactions.push({ id: uid(), type: 'expense', amount: _c2(dif * ask), cat: 'Cargos Bancarios', subcat: `Conciliación ${t.nombre} (dólares)`, pago: 'credito', cuenta: null, tipo: 'fijo', tarjetaId: t.id, tarjetaNombre: t.nombre, originalAmount: dif, originalCurrency: 'USD', conversionRate: ask, conversionSide: 'ask', date: new Date().toISOString() });
       registrado = true;
     }
-  } else if (confirm(`El estado de cuenta dice ${_usdTxt(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`)) {
-    const cuenta = pedirCuenta(`¿De dónde salió ese pago de ${_usdTxt(-dif)}?`);
+  } else if ((await confirmar(`El estado de cuenta dice ${_usdTxt(-dif)} menos que la app.\n\n¿Es un pago a la tarjeta que no registraste?\n\n[Cancelar] = solo corregir el saldo (reembolso o error)`))) {
+    const cuenta = (await pedirCuenta(`¿De dónde salió ese pago de ${_usdTxt(-dif)}?`));
     if (!cuenta) return;
     const tx = { id: uid(), type: 'expense', amount: _c2(-dif * ask), cat: 'Pago Tarjeta', subcat: `Pago a ${t.nombre} (dólares, conciliación)`, pago: cuenta, cuenta, tipo: 'fijo', esTransferencia: true, tarjetaId: t.id, pagoUSD: -dif, date: new Date().toISOString() };
     if ((infoCuenta(cuenta) || {}).moneda === 'USD') tx.montoUSD = -dif;

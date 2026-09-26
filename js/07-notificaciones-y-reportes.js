@@ -131,16 +131,16 @@ function renderPagosRecurrentes(){const c=document.getElementById('pagos-list');
   </div>`;}).join('')}
 const _pagadoEsteMes = p => { if (!p.ultimoPago) return false; const d = new Date(p.ultimoPago), h = new Date(); return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth(); };
 // Antes solo sumaba a p.pagado: no quedaba ningún gasto ni se veía que ya se pagó
-function marcarPagoRecurrente(id){
+async function marcarPagoRecurrente(id){
   const p=state.pagosRecurrentes.find(x=>x.id===id);if(!p)return;
-  if(_pagadoEsteMes(p)&&!confirm(`Ya registraste el pago de "${p.servicio}" este mes. ¿Registrar otro pago?`))return;
+  if(_pagadoEsteMes(p)&&!(await confirmar(`Ya registraste el pago de "${p.servicio}" este mes. ¿Registrar otro pago?`)))return;
   let monto=p.monto;
-  if(!(monto>0)){monto=parseMonto(prompt(`¿Cuánto ${p.tipo==='ingreso'?'recibiste':'pagaste'} de "${p.servicio}"?`));if(!(monto>0))return;}
+  if(!(monto>0)){monto=parseMonto((await preguntar(`¿Cuánto ${p.tipo==='ingreso'?'recibiste':'pagaste'} de "${p.servicio}"?`)));if(!(monto>0))return;}
   // Con cuenta o tarjeta elegida (33-sin-esfuerzo.js) no se pregunta
   if(p.cuenta||p.tarjetaId){const tx=_txDePagoFijo(Object.assign({},p,{monto}),new Date());delete tx.autoRegistrado;state.transactions.push(tx);}
   else{
     const ing=p.tipo==='ingreso';
-    const cuenta=pedirCuenta(ing?`¿A qué cuenta entran los ${fL(monto)} de "${p.servicio}"?`:`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`);
+    const cuenta=(await pedirCuenta(ing?`¿A qué cuenta entran los ${fL(monto)} de "${p.servicio}"?`:`¿De dónde sale el pago de ${fL(monto)} de "${p.servicio}"?`));
     if(!cuenta)return;
     if(ing){const tx=_txDePagoFijo(Object.assign({},p,{monto,cuenta}),new Date());delete tx.autoRegistrado;state.transactions.push(tx);}
     else state.transactions.push({id:uid(),type:'expense',amount:monto,cat:p.cat||'Servicios',subcat:p.servicio,pago:cuenta,cuenta,tipo:'fijo',pagoRecurrenteId:p.id,date:new Date().toISOString()});
@@ -177,7 +177,7 @@ function previewConciliacion(){
   }
 }
 
-function reconcileBalance(){
+async function reconcileBalance(){
   // P0-4: leer saldo derivado, no mutamos state.cuentas
   const cuentaSel=document.getElementById('reconcile-cuenta')?.value||'efectivo';
   const cuentaNombre=cuentaSel==='ahorro'?'Cuenta de Ahorro':cuentaSel==='efectivo'?'Efectivo':nombreCompletoCuenta(infoCuenta(cuentaSel));
@@ -187,7 +187,7 @@ function reconcileBalance(){
   const diff=Math.round((saldoReal-saldoActual)*100)/100;
   if(Math.abs(diff)<0.01)return alert('✅ El saldo ya está correcto. No se necesita ajuste.');
   const nota=document.getElementById('reconcile-nota')?.value||`Conciliación ${cuentaNombre} — ajuste automático`;
-  if(!confirm(`¿Confirmar ajuste de ${cuentaNombre}?\n\nSaldo registrado: ${fL(saldoActual)}\nSaldo real: ${fL(saldoReal)}\nDiferencia: ${fL(diff)}\n\nSe creará un asiento de ${diff>0?'ingreso':'gasto'} por esta diferencia.`))return;
+  if(!(await confirmar(`¿Confirmar ajuste de ${cuentaNombre}?\n\nSaldo registrado: ${fL(saldoActual)}\nSaldo real: ${fL(saldoReal)}\nDiferencia: ${fL(diff)}\n\nSe creará un asiento de ${diff>0?'ingreso':'gasto'} por esta diferencia.`)))return;
   // Crear transacción de conciliación
   state.transactions.push({
     id:uid(),
@@ -724,9 +724,9 @@ function _descifrarBackupXORLegacy(archivo, password) {
     return JSON.parse(descifrado);
   } catch { return null; }
 }
-function resetApp(){
-  if(!confirm('⚠️ ZONA DE PELIGRO\n\n¿Estás seguro de que deseas BORRAR TODOS tus datos?\n\nEsto eliminará:\n• Todos tus gastos e ingresos\n• Préstamos y tarjetas\n• Metas de ahorro\n• Configuración personal\n\nEsta acción NO se puede deshacer.')) return;
-  if(!confirm('¿Confirmas? Se borrará TODO y volverás al tutorial inicial.')) return;
+async function resetApp(){
+  if(!(await confirmar('⚠️ ZONA DE PELIGRO\n\n¿Estás seguro de que deseas BORRAR TODOS tus datos?\n\nEsto eliminará:\n• Todos tus gastos e ingresos\n• Préstamos y tarjetas\n• Metas de ahorro\n• Configuración personal\n\nEsta acción NO se puede deshacer.'))) return;
+  if(!(await confirmar('¿Confirmas? Se borrará TODO y volverás al tutorial inicial.'))) return;
   
   // 1. Limpiar localStorage
   localStorage.clear();

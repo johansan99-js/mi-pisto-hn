@@ -26,7 +26,7 @@ describe('Margen del banco en compras en dólares', () => {
   it('al anotar lo que cobró el banco, el gasto y la tarjeta quedan por ese monto', async () => {
     const page = await env.pagina();
     await sembrar(page, estadoBase({ tarjetas: [tarjeta] }));
-    const r = await page.evaluate(() => {
+    const r = await page.evaluate(async () => {
       window.currencyManager.getRate = () => ({ bid: 26.8, ask: 26.9, mid: 26.85 });
       openModal('modal-gasto');
       document.getElementById('gasto-monto').value = '100';
@@ -37,7 +37,7 @@ describe('Margen del banco en compras en dólares', () => {
       document.getElementById('gasto-cat').value = 'Compras';
       document.getElementById('gasto-cuenta').value = 'credito'; checkCreditCard();
       document.getElementById('gasto-tarjeta').value = state.tarjetas[0].id;
-      saveGasto();
+      await saveGasto();
       const t = state.transactions[state.transactions.length - 1];
       return { vista, amount: t.amount, cobrado: t.cobradoBanco, ref: referenciaHNL(t), saldo: state.tarjetas[0].saldo };
     });

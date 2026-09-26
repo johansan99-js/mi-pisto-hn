@@ -141,7 +141,7 @@ function _renderMargenEdicion() {
   el.innerHTML = cobrado > 0 ? _textoMargen(t.originalAmount, t.originalCurrency, referenciaHNL(t), cobrado)
     : 'Compra de ' + esc(moneda) + ' · a la tasa de referencia serían ' + fL(referenciaHNL(t)) + '. Anota lo que dice tu estado de cuenta.';
 }
-function guardarEdicionTx() {
+async function guardarEdicionTx() {
   const id = document.getElementById('edit-tx-id').value; // P1-4: UUID string, no parseInt
   const t = state.transactions.find(x => String(x.id) === String(id));
   if (!t) return;
@@ -161,7 +161,7 @@ function guardarEdicionTx() {
     if (txt) {
       const cobrado = parseMonto(txt);
       if (!(cobrado > 0)) { alert('El monto que te cobró el banco no es válido.'); return; }
-      if (!_cobradoRazonable(cobrado, referenciaHNL(t))) return;
+      if (!(await _cobradoRazonable(cobrado, referenciaHNL(t)))) return;
       montoFinal = cobrado; t.cobradoBanco = true;
     } else if (t.cobradoBanco) {
       delete t.cobradoBanco;
@@ -318,8 +318,8 @@ async function authenticateWithWebAuthn() {
   } catch(e) { console.warn('WebAuthn:', e.name); return false; }
 }
 
-function desactivarBiometria() {
-  if (!confirm('¿Desactivar la autenticación biométrica?')) return;
+async function desactivarBiometria() {
+  if (!(await confirmar('¿Desactivar la autenticación biométrica?'))) return;
   localStorage.removeItem(WEBAUTHN_KEY);
   renderBiometriaConfig();
   alert('🚫 Biometría desactivada.');

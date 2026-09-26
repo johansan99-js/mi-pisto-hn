@@ -175,9 +175,9 @@ function guardarPresupuesto() {
   document.getElementById('presu-monto').value = '';
   save(); _renderListaPresupuestos(); renderPresupuestos();
 }
-function eliminarPresupuesto(id) {
+async function eliminarPresupuesto(id) {
   const p = (state.presupuestos || []).find(x => x.id === id);
-  if (!p || !confirm('¿Quitar el presupuesto de ' + nombreCatPresupuesto(p.cat) + '?')) return;
+  if (!p || !(await confirmar('¿Quitar el presupuesto de ' + nombreCatPresupuesto(p.cat) + '?'))) return;
   state.presupuestos = state.presupuestos.filter(x => x.id !== id);
   save(); _renderListaPresupuestos(); renderPresupuestos();
 }

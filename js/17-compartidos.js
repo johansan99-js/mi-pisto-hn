@@ -177,11 +177,11 @@ function guardarGrupo() {
   _grupoAbierto = g.id;
   save(); closeModal('modal-grupo'); renderAll(); renderGrupos();
 }
-function eliminarGrupo(id) {
+async function eliminarGrupo(id) {
   const g = grupoPorId(id);
   if (!g) return;
   const pendiente = pagosParaSaldar(saldosGrupo(g)).length > 0;
-  if (!confirm('¿Eliminar el grupo "' + g.nombre + '"?' + (pendiente ? '\n\nTodavía hay cuentas pendientes.' : '') + '\n\nTus gastos ya anotados se quedan en tu historial.')) return;
+  if (!(await confirmar('¿Eliminar el grupo "' + g.nombre + '"?' + (pendiente ? '\n\nTodavía hay cuentas pendientes.' : '') + '\n\nTus gastos ya anotados se quedan en tu historial.'))) return;
   state.grupos = state.grupos.filter(x => x.id !== id);
   _grupoAbierto = null;
   save(); renderAll(); renderGrupos();
@@ -236,7 +236,7 @@ function _renderGastoGrupo() {
     `Tu parte: <strong>${fL(mia)}</strong>` + (pagaYo && monto - mia > 0.005 ? ` · adelantas <strong>${fL(monto - mia)}</strong> que te deben` : '') +
     (!pagaYo && mia > 0 ? ` · se lo quedas debiendo a ${esc(nombreMiembro(grupoPorId(_gastoGrupoId), document.getElementById('gg-pago').value))}` : '');
 }
-function guardarGastoGrupo() {
+async function guardarGastoGrupo() {
   const g = grupoPorId(_gastoGrupoId);
   if (!g) return;
   const desc = _limpiarNombre(document.getElementById('gg-desc').value) || document.getElementById('gg-cat').value;
@@ -252,7 +252,7 @@ function guardarGastoGrupo() {
   const mia = partes[YO] || 0, ahora = new Date().toISOString(), e = { id: uid(), desc, cat, monto: _c2(monto), pagadoPor, partes, fecha: ahora, txIds: [] };
   if (pagadoPor === YO) {
     const saldo = getCuentaBalance(cuenta);
-    if (monto > saldo + 0.005 && !confirm('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este gasto quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = guardar de todos modos')) return;
+    if (monto > saldo + 0.005 && !(await confirmar('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este gasto quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = guardar de todos modos'))) return;
     if (mia > 0) { const t = { id: uid(), type: 'expense', amount: mia, cat, subcat: desc + ' · ' + g.nombre, cuenta, pago: cuenta, tipo: 'extra', grupoId: g.id, date: ahora }; state.transactions.push(t); e.txIds.push(t.id); }
     const adelanto = _c2(monto - mia);
     if (adelanto > 0) { const t = { id: uid(), type: 'expense', amount: adelanto, cat: 'Gasto compartido', subcat: 'Adelantaste en ' + g.nombre + ': ' + desc, cuenta, pago: cuenta, tipo: 'extra', esTransferencia: true, grupoId: g.id, date: ahora }; state.transactions.push(t); e.txIds.push(t.id); }
@@ -281,7 +281,7 @@ function abrirPagoGrupo(id, k) {
   document.getElementById('pg-cuenta').value = 'efectivo';
   openModal('modal-pago-grupo');
 }
-function guardarPagoGrupo() {
+async function guardarPagoGrupo() {
   const x = _pagoGrupo, g = x && grupoPorId(x.grupoId);
   if (!g) return;
   const monto = _c2(leerMonto(document.getElementById('pg-monto').value) || 0);
@@ -291,7 +291,7 @@ function guardarPagoGrupo() {
   const p = { id: uid(), de: x.de, a: x.a, monto, fecha: ahora, txIds: [] };
   if (x.de === YO) {
     const saldo = getCuentaBalance(cuenta);
-    if (monto > saldo + 0.005 && !confirm('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = pagar de todos modos')) return;
+    if (monto > saldo + 0.005 && !(await confirmar('Tu ' + nombreCuentaTexto(cuenta) + ' tiene ' + fL(saldo) + ': con este pago quedaría en ' + fL(saldo - monto) + '.\n\n[Aceptar] = pagar de todos modos'))) return;
     const t = { id: uid(), type: 'expense', amount: monto, cat: 'Gasto compartido', subcat: 'Pago a ' + nombreMiembro(g, x.a) + ' (' + g.nombre + ')', cuenta, pago: cuenta, tipo: 'extra', esTransferencia: true, grupoId: g.id, date: ahora };
     state.transactions.push(t); p.txIds.push(t.id);
   } else if (x.a === YO) {
@@ -304,11 +304,11 @@ function guardarPagoGrupo() {
 }
 
 // Borrar un gasto o un pago también quita sus movimientos de tus cuentas
-function eliminarMovGrupo(gid, mid) {
+async function eliminarMovGrupo(gid, mid) {
   const g = grupoPorId(gid);
   if (!g) return;
   const e = (g.gastos || []).find(x => x.id === mid), p = (g.pagos || []).find(x => x.id === mid), m = e || p;
-  if (!m || !confirm(e ? '¿Eliminar el gasto "' + e.desc + '" de ' + fL(e.monto) + '?' : '¿Eliminar este pago de ' + fL(p.monto) + '?')) return;
+  if (!m || !(await confirmar(e ? '¿Eliminar el gasto "' + e.desc + '" de ' + fL(e.monto) + '?' : '¿Eliminar este pago de ' + fL(p.monto) + '?'))) return;
   const ahora = new Date().toISOString();
   (m.txIds || []).forEach(id => { const t = state.transactions.find(x => x.id === id); if (t && !t.deletedAt) t.deletedAt = ahora; });
   if (e) g.gastos = g.gastos.filter(x => x.id !== mid); else g.pagos = g.pagos.filter(x => x.id !== mid);

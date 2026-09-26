@@ -77,7 +77,8 @@ function puedeUsarPremium(que) {
   if (n !== undefined && _usoPremium(que) < n) return true;
   const e = estadoPremium();
   const oferta = e.pruebaUsada ? 'Con Premium no hay límite.' : `Pruébalo ${PREMIUM.diasPrueba} días gratis, sin tarjeta.`;
-  if (confirm('⭐ ' + _TXT_LIMITE[que](n) + '\n\n' + oferta + ' Lo que ya tienes sigue igual.\n\n¿Ver Mi Pisto Premium?')) verPremium();
+  // No se espera la respuesta: quien pregunta ya sabe que no se puede
+  confirmar('⭐ ' + _TXT_LIMITE[que](n) + '\n\n' + oferta + ' Lo que ya tienes sigue igual.\n\n¿Ver Mi Pisto Premium?').then(si => { if (si) verPremium(); });
   return false;
 }
 function verPremium() {

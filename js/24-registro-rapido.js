@@ -398,7 +398,7 @@ function _regLlenarFormulario(monto) {
   }
 }
 
-function guardarRegistro() {
+async function guardarRegistro() {
   const t = _reg.tipo;
   const monto = _regValor();
   if (monto === null || monto <= 0) {
@@ -411,7 +411,7 @@ function guardarRegistro() {
   _regLlenarFormulario(monto);
   const fecha = fechaRegistro();
   const antes = state.transactions.length;
-  if (t === 'gasto') saveGasto({ silencioso: true, fecha });
+  if (t === 'gasto') (await saveGasto({ silencioso: true, fecha }));
   else if (t === 'ingreso') saveIngreso({ cat: _reg.cat, fecha, extra: typeof datosRemesaRegistro === 'function' ? datosRemesaRegistro() : null });
   else ejecutarTransferencia({ silencioso: true, fecha });
   if (state.transactions.length === antes) return; // la función ya avisó por qué no se guardó

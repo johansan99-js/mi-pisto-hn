@@ -81,7 +81,7 @@ async function _kekRecuperacion(claveNorm, salt) { return _deriveKEKFromPIN(clav
 
 async function generarKitRecuperacion() {
   if (!_sessionDEK) return alert('🔐 Primero configura un PIN: el kit protege tus datos cifrados.');
-  if (tieneKitRecuperacion() && !confirm('Ya tienes un kit de recuperación. Si generas uno nuevo, la clave anterior dejará de funcionar.\n\n¿Generar uno nuevo?')) return;
+  if (tieneKitRecuperacion() && !(await confirmar('Ya tienes un kit de recuperación. Si generas uno nuevo, la clave anterior dejará de funcionar.\n\n¿Generar uno nuevo?'))) return;
   const clave = _generarClaveRecuperacion();
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const { encrypted, iv } = await _encryptDEK(_sessionDEK, await _kekRecuperacion(_normalizarClaveRecuperacion(clave), salt));
@@ -112,7 +112,7 @@ function renderEstadoKitRecuperacion() {
 }
 /** Olvido de PIN: abre la DEK con la clave y crea un PIN nuevo. */
 async function recuperarConKit() {
-  const txt = prompt('🆘 Escribe tu clave de recuperación (los guiones son opcionales):');
+  const txt = (await preguntar('🆘 Escribe tu clave de recuperación (los guiones son opcionales):'));
   if (txt === null) return false;
   const clave = _normalizarClaveRecuperacion(txt);
   if (!clave) { alert('❌ La clave debe tener 26 caracteres (letras y números).'); return false; }
@@ -121,13 +121,13 @@ async function recuperarConKit() {
     _b64DecodeArr(localStorage.getItem('finanzas_rec_iv')),
     await _kekRecuperacion(clave, _b64DecodeArr(localStorage.getItem('finanzas_rec_salt'))));
   if (!dek) { alert('❌ Clave de recuperación incorrecta.'); return false; }
-  const nuevo = prompt('✅ Clave correcta. Crea un PIN nuevo (' + PIN_MIN_DIGITOS + ' a 8 dígitos):');
+  const nuevo = (await preguntar('✅ Clave correcta. Crea un PIN nuevo (' + PIN_MIN_DIGITOS + ' a 8 dígitos):'));
   if (nuevo === null) return false;
   if (!new RegExp('^\\d{' + PIN_MIN_DIGITOS + ',8}$').test(nuevo)) { alert('❌ Debe tener entre ' + PIN_MIN_DIGITOS + ' y 8 números.'); return false; }
-  if (prompt('Confirma tu PIN nuevo:') !== nuevo) { alert('❌ Los PINs no coinciden.'); return false; }
+  if ((await preguntar('Confirma tu PIN nuevo:')) !== nuevo) { alert('❌ Los PINs no coinciden.'); return false; }
   await _guardarPINv2(nuevo, crypto.getRandomValues(new Uint8Array(16)), dek);
   if (typeof _registrarPINCorrecto === 'function') _registrarPINCorrecto();
-  alert('✅ PIN cambiado. Tus datos siguen intactos: entra con tu PIN nuevo.');
+  await avisar('✅ PIN cambiado. Tus datos siguen intactos: entra con tu PIN nuevo.');
   location.reload();
   return true;
 }
@@ -151,21 +151,21 @@ async function configurarPIN({ soloCambiar = false } = {}) {
   // Para cambiar o quitar un PIN hay que saber el actual: así nadie lo cambia
   // con el teléfono desbloqueado en la mano
   if (!esPrimerPIN && _sessionPIN) {
-    const actual = prompt('🔐 Escribe tu PIN actual:');
+    const actual = (await preguntar('🔐 Escribe tu PIN actual:'));
     if (actual === null) return;
     if (String(actual).trim() !== _sessionPIN) { alert('❌ Ese no es tu PIN actual. No se cambió nada.'); return; }
   }
-  const nuevoPIN = prompt((esPrimerPIN ? 'Crea' : 'Escribe tu nuevo') + ' PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar || esPrimerPIN ? '' : '\n\n(Déjalo en blanco solo si quieres QUITAR el PIN)'));
+  const nuevoPIN = (await preguntar((esPrimerPIN ? 'Crea' : 'Escribe tu nuevo') + ' PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar || esPrimerPIN ? '' : '\n\n(Déjalo en blanco solo si quieres QUITAR el PIN)')));
   if (nuevoPIN === null || ((soloCambiar || esPrimerPIN) && nuevoPIN === '')) return;
   
   if (nuevoPIN === '') {
     // ⚠️ Eliminar PIN cuando hay datos cifrados es DESTRUCTIVO
     if (!esPrimerPIN && _isStateEncrypted()) {
-      const confirma = confirm(
+      const confirma = (await confirmar(
         '⚠️ ADVERTENCIA: Si eliminas el PIN, tus datos quedarán SIN CIFRAR en este teléfono ' +
         'y cualquiera con acceso a él podrá verlos.\n\n' +
         '¿Estás SEGURO de eliminar el PIN?'
-      );
+      ));
       if (!confirma) return;
     }
     
@@ -195,7 +195,7 @@ async function configurarPIN({ soloCambiar = false } = {}) {
   // permite hasta 8 dígitos — mientras más largo, más seguro.
   if (!/^\d{6,8}$/.test(nuevoPIN)) { alert('❌ Debe tener entre 6 y 8 números'); return; }
   // Repetirlo: un error de dedo en un PIN nuevo te deja fuera de tus datos
-  const repetido = prompt('Repite el PIN para confirmarlo:');
+  const repetido = (await preguntar('Repite el PIN para confirmarlo:'));
   if (repetido === null) return;
   if (repetido !== nuevoPIN) { alert('❌ Los PIN no coinciden. No se cambió nada; vuelve a intentarlo.'); return; }
 
@@ -254,11 +254,11 @@ var verificarPIN = function(){ /* será sobrescrita por la versión async */ };
 // hay puerta trasera). Antes era un alert estéril; ahora ejecuta el reset
 // completo con doble confirmación (mismo flujo que resetApp).
 async function olvidePIN(){
-  if (tieneKitRecuperacion() && confirm('🆘 ¿Tienes tu clave de recuperación?\n\nCon ella creas un PIN nuevo sin perder tus datos.\n\n[Cancelar] = no la tengo (borrar todo)')) {
+  if (tieneKitRecuperacion() && (await confirmar('🆘 ¿Tienes tu clave de recuperación?\n\nCon ella creas un PIN nuevo sin perder tus datos.\n\n[Cancelar] = no la tengo (borrar todo)'))) {
     if (await recuperarConKit()) return;
-    if (!confirm('No se recuperó el acceso. ¿Quieres ver la opción de borrar todo?')) return;
+    if (!(await confirmar('No se recuperó el acceso. ¿Quieres ver la opción de borrar todo?'))) return;
   }
-  const c1 = confirm(
+  const c1 = (await confirmar(
     '🚨 BORRAR TODO Y EMPEZAR DE CERO\n\n' +
     'Tus datos están cifrados con AES-256 y NO se pueden recuperar sin tu PIN.\n\n' +
     'Si continúas, se BORRARÁ:\n' +
@@ -267,15 +267,15 @@ async function olvidePIN(){
     '• Metas de ahorro\n' +
     '• Tu PIN, datos personales y configuración\n\n' +
     '¿Quieres continuar?'
-  );
+  ));
   if (!c1) return;
   
-  const c2 = confirm(
+  const c2 = (await confirmar(
     '⚠️ ÚLTIMA ADVERTENCIA\n\n' +
     'Esta acción NO se puede deshacer.\n' +
     'Volverás al tutorial inicial como una instalación nueva.\n\n' +
     '¿Confirmar borrado total?'
-  );
+  ));
   if (!c2) return;
   
   // Limpiar localStorage
@@ -313,7 +313,7 @@ async function olvidePIN(){
     }
   } catch(e) {}
   
-  alert('✅ Todo borrado. La app se reiniciará al tutorial.');
+  await avisar('✅ Todo borrado. La app se reiniciará al tutorial.');
   setTimeout(() => location.reload(), 500);
 }
 function toggleRecordarPIN(){recordarPIN=document.getElementById('recordar-pin').checked;localStorage.setItem('finanzas_recordar',recordarPIN);}
@@ -343,12 +343,12 @@ async function finishOnboarding(){
   // ────────────────────────────────────────────────────────────
   const tienePIN = localStorage.getItem('finanzas_pin_hash');
   if (!tienePIN) {
-    const crearPIN = confirm(
+    const crearPIN = (await confirmar(
       '🔐 Para proteger tus datos, necesitas crear un PIN de 6 a 8 dígitos.\n\n' +
       'Tu PIN cifra todos tus movimientos con AES-256.\n' +
       'Sin el PIN, nadie puede acceder a tus datos.\n\n' +
       '¿Crear PIN ahora?'
-    );
+    ));
     if (!crearPIN) {
       alert('⚠️ No puedes continuar sin crear un PIN.');
       return;
@@ -357,13 +357,13 @@ async function finishOnboarding(){
     // Solicitar PIN. SEGURIDAD: 4 dígitos = solo 10,000 combinaciones,
     // forzable offline en minutos si alguien roba el localStorage. Se
     // permite hasta 8 — mientras más largo, más seguro.
-    const nuevoPIN = prompt('Crea tu PIN (6 a 8 dígitos — mientras más largo, más seguro):');
+    const nuevoPIN = (await preguntar('Crea tu PIN (6 a 8 dígitos — mientras más largo, más seguro):'));
     if (!nuevoPIN || !/^\d{6,8}$/.test(nuevoPIN)) {
       alert('❌ PIN inválido. Debe tener entre 6 y 8 números.');
       return;
     }
     
-    const confirmaPIN = prompt('Confirma tu PIN:');
+    const confirmaPIN = (await preguntar('Confirma tu PIN:'));
     if (nuevoPIN !== confirmaPIN) {
       alert('❌ Los PINs no coinciden.');
       return;

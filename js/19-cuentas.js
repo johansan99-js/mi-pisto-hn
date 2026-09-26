@@ -58,11 +58,11 @@ function sincronizarSelectsCuentas() {
 }
 /** Para los flujos que preguntaban "[Aceptar] = Ahorro / [Cancelar] = Efectivo":
     sin cuentas extra pregunta igual que antes; con cuentas extra, por número */
-function pedirCuenta(pregunta, opciones) {
+async function pedirCuenta(pregunta, opciones) {
   const extra = listaCuentas().filter(c => !c.base);
-  if (!extra.length) return confirm(pregunta + '\n\n' + (opciones || '[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo')) ? 'ahorro' : 'efectivo';
+  if (!extra.length) return (await confirmar(pregunta + '\n\n' + (opciones || '[Aceptar] = Cuenta de Ahorro\n[Cancelar] = Efectivo'))) ? 'ahorro' : 'efectivo';
   const todas = listaCuentas();
-  const r = prompt(pregunta + '\n\n' + todas.map((c, i) => (i + 1) + '. ' + nombreCompletoCuenta(c) + ' (' + fL(getCuentaBalance(c.id)) + ')').join('\n') + '\n\nEscribe el número:', '1');
+  const r = (await preguntar(pregunta + '\n\n' + todas.map((c, i) => (i + 1) + '. ' + nombreCompletoCuenta(c) + ' (' + fL(getCuentaBalance(c.id)) + ')').join('\n') + '\n\nEscribe el número:', '1'));
   if (r === null) return null;
   const c = todas[parseInt(r, 10) - 1];
   return c ? c.id : null;
@@ -243,12 +243,12 @@ function guardarCuenta() {
   }
   save(); closeModal('modal-cuenta'); renderAll(); renderMisCuentas();
 }
-function archivarCuenta() {
+async function archivarCuenta() {
   const c = (state.misCuentas || []).find(x => x.id === _cuentaEditando);
   if (!c) return;
   const saldo = getCuentaBalance(c.id);
   if (Math.abs(saldo) > 0.005) return alert('Esta cuenta tiene ' + fL(saldo) + '. Transfiere el dinero a otra cuenta (o ajusta el saldo a cero) antes de archivarla.');
-  if (!confirm('¿Archivar "' + nombreCompletoCuenta(c) + '"? Sus movimientos se quedan en tu historial y la puedes restaurar.')) return;
+  if (!(await confirmar('¿Archivar "' + nombreCompletoCuenta(c) + '"? Sus movimientos se quedan en tu historial y la puedes restaurar.'))) return;
   c.archivada = true;
   save(); closeModal('modal-cuenta'); renderAll(); renderMisCuentas();
 }
@@ -261,11 +261,11 @@ function desarchivarCuenta(id) {
 }
 
 // Ajustar el saldo al real (como la conciliación) y anotar intereses
-function ajustarSaldoCuenta(id) {
+async function ajustarSaldoCuenta(id) {
   const c = infoCuenta(id);
   if (!c) return;
   const usd = c.moneda === 'USD', actual = usd ? saldoUSDCuenta(id) : getCuentaBalance(id);
-  const real = leerMonto(prompt('¿Cuánto tienes de verdad en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?\nLa app registra ' + (usd ? fUSD(actual) : fL(actual)) + '.', actual.toFixed(2)));
+  const real = leerMonto((await preguntar('¿Cuánto tienes de verdad en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?\nLa app registra ' + (usd ? fUSD(actual) : fL(actual)) + '.', actual.toFixed(2))));
   if (real === null || isNaN(real)) return;
   const dif = _c2(real - actual);
   if (Math.abs(dif) < 0.01) return alert('✅ El saldo ya está correcto.');
@@ -274,11 +274,11 @@ function ajustarSaldoCuenta(id) {
   state.transactions.push(t);
   save(); renderAll(); renderMisCuentas();
 }
-function registrarRendimiento(id) {
+async function registrarRendimiento(id) {
   const c = infoCuenta(id);
   if (!c) return;
   const usd = c.moneda === 'USD';
-  const m = leerMonto(prompt('¿Cuánto te pagaron de intereses en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?', (usd ? rendimientoMensual(c) / tasaUSD('bid') : rendimientoMensual(c)).toFixed(2)));
+  const m = leerMonto((await preguntar('¿Cuánto te pagaron de intereses en ' + nombreCompletoCuenta(c) + (usd ? ' (en dólares)' : '') + '?', (usd ? rendimientoMensual(c) / tasaUSD('bid') : rendimientoMensual(c)).toFixed(2))));
   if (!(m > 0)) return;
   const t = { id: uid(), type: 'income', amount: _c2(m * (usd ? tasaUSD('bid') : 1)), cat: 'Intereses ganados', subcat: nombreCompletoCuenta(c), cuenta: id, tipo: 'extra', date: new Date().toISOString() };
   if (usd) Object.assign(t, { montoUSD: _c2(m), originalCurrency: 'USD', originalAmount: _c2(m), conversionRate: tasaUSD('bid') });

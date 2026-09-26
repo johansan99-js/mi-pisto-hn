@@ -119,7 +119,7 @@ const cloudSync = {
                 // FASE 3: dispositivo nuevo — ofrecer restaurar de la nube
                 const remInfo = await this.getRemoteInfo();
                 if (remInfo) {
-                  const ok = confirm(
+                  const ok = (await confirmar(
                     '☁️ Sesión iniciada como ' + this.user.email + '\n\n' +
                     '¡Bienvenido a un dispositivo nuevo!\n\n' +
                     'Encontramos datos en la nube:\n' +
@@ -128,7 +128,7 @@ const cloudSync = {
                     '• Desde: ' + (remInfo.device_name || 'otro dispositivo') + '\n\n' +
                     '¿Querés restaurar tus datos aquí?\n' +
                     '(Vas a necesitar tu PIN)'
-                  );
+                  ));
                   if (ok) {
                     if (typeof switchView === 'function') switchView('config');
                     setTimeout(() => { if (typeof abrirModalBajarCloud === 'function') abrirModalBajarCloud(); }, 300);
@@ -963,8 +963,8 @@ async function renderCloudSyncUI() {
 window.renderCloudSyncUI = renderCloudSyncUI;
 
 async function eliminarCuentaCloud() {
-  if (!confirm('🗑️ ELIMINAR TU CUENTA EN LA NUBE\n\nSe borrarán para siempre:\n• Tu cuenta (' + (cloudSync.user && cloudSync.user.email || '') + ')\n• Tus datos cifrados guardados en la nube\n• La lista de tus dispositivos\n\nLos datos de ESTE teléfono no se borran. Los otros teléfonos dejarán de sincronizar.\n\n¿Continuar?')) return;
-  if (!confirm('⚠️ Esta acción no se puede deshacer. ¿Eliminar la cuenta?')) return;
+  if (!(await confirmar('🗑️ ELIMINAR TU CUENTA EN LA NUBE\n\nSe borrarán para siempre:\n• Tu cuenta (' + (cloudSync.user && cloudSync.user.email || '') + ')\n• Tus datos cifrados guardados en la nube\n• La lista de tus dispositivos\n\nLos datos de ESTE teléfono no se borran. Los otros teléfonos dejarán de sincronizar.\n\n¿Continuar?'))) return;
+  if (!(await confirmar('⚠️ Esta acción no se puede deshacer. ¿Eliminar la cuenta?'))) return;
   const r = await cloudSync.eliminarCuenta();
   if (r.ok) alert('✅ Tu cuenta y tus datos de la nube fueron eliminados. Tus datos siguen en este teléfono.');
   else alert('❌ No se pudo eliminar la cuenta:\n\n' + r.error);
@@ -1002,7 +1002,7 @@ async function iniciarSesionConGoogle() {
 }
 
 async function cerrarSesionCloud() {
-  if (!confirm('¿Cerrar sesión en este dispositivo?\n\nTus datos locales (cifrados con tu PIN) NO se borrarán. Solo se desconectará la sincronización en la nube.')) return;
+  if (!(await confirmar('¿Cerrar sesión en este dispositivo?\n\nTus datos locales (cifrados con tu PIN) NO se borrarán. Solo se desconectará la sincronización en la nube.'))) return;
   await cloudSync.signOut();
   alert('🚪 Sesión cerrada. Tus datos locales siguen intactos.');
 }
@@ -1097,7 +1097,7 @@ function _mostrarBotonDeshacer() {
     'cursor:pointer;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,.4);white-space:nowrap';
   btn.textContent = '↩️ Deshacer merge (5 min)';
   btn.onclick = async function() {
-    if (!confirm('¿Deshacer el merge y volver a tus datos locales anteriores?\n\nLos datos de la nube que se combinaron se perderán.')) return;
+    if (!(await confirmar('¿Deshacer el merge y volver a tus datos locales anteriores?\n\nLos datos de la nube que se combinaron se perderán.'))) return;
     btn.remove();
     const ok = await _restorePreMergeBackup();
     if (ok) {
@@ -1149,7 +1149,7 @@ async function subirDatosCloud() {
         return;
       }
     } else if (!dl.noRemote) {
-      if (!confirm('⚠️ La nube tiene una versión más nueva (subida desde ' + (remoteInfo.device_name || 'otro dispositivo') + '), pero no se pudo bajar:\n\n' + dl.error + '\n\nSi subes ahora la reemplazarás y se perderán los cambios hechos en ese dispositivo. ¿Subir de todos modos?')) return;
+      if (!(await confirmar('⚠️ La nube tiene una versión más nueva (subida desde ' + (remoteInfo.device_name || 'otro dispositivo') + '), pero no se pudo bajar:\n\n' + dl.error + '\n\nSi subes ahora la reemplazarás y se perderán los cambios hechos en ese dispositivo. ¿Subir de todos modos?'))) return;
     }
     // Si diff vacío, subir normalmente
   }

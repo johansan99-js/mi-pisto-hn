@@ -54,7 +54,17 @@ async function crearEntorno() {
       await ctx.route(/cdn\.jsdelivr|cdn\.sheetjs|unpkg|er-api|exchangerate|supabase/, r => r.abort());
       // Rutas propias de la prueba (las registradas después tienen prioridad)
       if (antes) await antes(ctx);
+      // Las ventanas propias de la app (js/35-dialogos.js) se contestan con la misma cola
+      let pagina = null;
+      await ctx.exposeBinding('__dialogoPrueba', (_origen, tipo, mensaje, valor) => {
+        const r = pagina.respuestas.shift();
+        pagina.dialogos.push(mensaje);
+        if (tipo === 'prompt') return r === undefined ? '' : String(r);
+        if (tipo === 'confirm') return r !== false;
+        return undefined;
+      });
       const page = await ctx.newPage();
+      pagina = page;
       page.errores = [];
       page.dialogos = [];
       page.respuestas = [];

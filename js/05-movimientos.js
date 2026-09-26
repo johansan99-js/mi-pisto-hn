@@ -89,9 +89,9 @@ function _textoMargen(original, moneda, referencia, cobrado) {
     ' (' + (dif > 0 ? '+' : '') + pct.toFixed(1) + '%). Tasa del banco: 1 ' + esc(moneda) + ' = L. ' + tasa + '.';
 }
 // Un monto muy lejos de la referencia suele ser un error (se escribió en dólares)
-function _cobradoRazonable(cobrado, referencia) {
+async function _cobradoRazonable(cobrado, referencia) {
   return !(referencia > 0) || (cobrado >= referencia * 0.8 && cobrado <= referencia * 1.25) ||
-    confirm('Lo que te cobró el banco (' + fL(cobrado) + ') está muy lejos de la tasa de referencia (' + fL(referencia) + ').\n\n¿Está bien escrito en lempiras?');
+    (await confirmar('Lo que te cobró el banco (' + fL(cobrado) + ') está muy lejos de la tasa de referencia (' + fL(referencia) + ').\n\n¿Está bien escrito en lempiras?'));
 }
 // Reparte el nuevo total entre las partes de un gasto dividido, en proporción
 function _escalarSplits(splits, total) {
@@ -166,7 +166,7 @@ function renderMontoTx(t, signo, color) {
 
 // ========== GUARDAR GASTO CON FACTURA ADJUNTA ==========
 // opts (del registro rápido): { silencioso: sin alerta al guardar, fecha: Date del movimiento }
-function saveGasto(opts){
+async function saveGasto(opts){
     opts = opts || {};
     const montoInput = parseMonto(document.getElementById('gasto-monto').value),
           moneda = document.getElementById('gasto-moneda')?.value || 'HNL',
@@ -238,7 +238,7 @@ function saveGasto(opts){
     if (cobradoTxt) {
         const cobrado = parseMonto(cobradoTxt);
         if (!(cobrado > 0)) return alert('El monto que te cobró el banco no es válido.');
-        if (!_cobradoRazonable(cobrado, monto)) return;
+        if (!(await _cobradoRazonable(cobrado, monto))) return;
         monto = cobrado; cobradoBanco = true;
     }
     const splitsFinal = cobradoBanco ? _escalarSplits(splits, monto) : splits;
@@ -257,7 +257,7 @@ function saveGasto(opts){
     // Una cuenta en negativo casi siempre es un ingreso sin anotar: se avisa, no se bloquea
     if (cuentaImputacion) {
         const saldo = getCuentaBalance(cuentaImputacion);
-        if (monto > saldo + 0.005 && !confirm(`Tu ${nombreCuentaTexto(cuentaImputacion)} tiene ${fL(saldo)}: con este gasto quedaría en ${fL(saldo - monto)}.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = guardar el gasto de todos modos`)) return;
+        if (monto > saldo + 0.005 && !(await confirmar(`Tu ${nombreCuentaTexto(cuentaImputacion)} tiene ${fL(saldo)}: con este gasto quedaría en ${fL(saldo - monto)}.\n\n¿Te faltó anotar un ingreso o una transferencia?\n\n[Aceptar] = guardar el gasto de todos modos`))) return;
     }
 
     const transaction = {
@@ -616,15 +616,15 @@ function saveAbono(){
     setTimeout(()=>alert(`🎯 ¡Meta "${g.nombre}" completada!`),100);
   }
 }
-function deleteMeta(id){
+async function deleteMeta(id){
   const g=state.goals.find(x=>String(x.id)===String(id));
   if(!g)return;
   const pct=((g.actual/g.objetivo)*100).toFixed(0);
-  if(confirm(`¿Eliminar la meta "${g.nombre}"?\n\nProgreso actual: ${fL(g.actual)} de ${fL(g.objetivo)} (${pct}%)\n\nEsta acción no se puede deshacer. Los abonos ya registrados como transacciones permanecerán en tu historial.`)){
+  if((await confirmar(`¿Eliminar la meta "${g.nombre}"?\n\nProgreso actual: ${fL(g.actual)} de ${fL(g.objetivo)} (${pct}%)\n\nEsta acción no se puede deshacer. Los abonos ya registrados como transacciones permanecerán en tu historial.`))){
     // Lo abonado desde tus cuentas vuelve a una de ellas (si no, desaparecería de los saldos)
     const abonado=Math.round(state.transactions.filter(t=>!t.deletedAt&&t.metaId===g.id&&t.esTransferencia).reduce((a,t)=>a+(t.type==='expense'?t.amount:-t.amount),0)*100)/100;
     if(abonado>0){
-      const cuenta=confirm(`Devolver los ${fL(abonado)} abonados a "${g.nombre}".\n\n[Aceptar] = a la Cuenta de Ahorro\n[Cancelar] = a Efectivo`)?'ahorro':'efectivo';
+      const cuenta=(await confirmar(`Devolver los ${fL(abonado)} abonados a "${g.nombre}".\n\n[Aceptar] = a la Cuenta de Ahorro\n[Cancelar] = a Efectivo`))?'ahorro':'efectivo';
       state.transactions.push({id:uid(),type:'income',amount:abonado,cat:'Ahorros',subcat:`Retiro de meta: ${g.nombre}`,cuenta,metaId:g.id,esTransferencia:true,date:new Date().toISOString()});
     }
     state.goals=state.goals.filter(x=>String(x.id)!==String(id));

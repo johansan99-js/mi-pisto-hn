@@ -1424,7 +1424,7 @@ button.cuenta-fila{width:calc(100% + 12px);background:none;border-right:none;bor
 .inf-aviso-btns .btn{margin:0}
 .inf-ver{margin:4px 0 10px}
 /* Con la app bloqueada, nada se ve ni se toca detrás del PIN */
-body.app-bloqueada>*:not(#modal-pin):not(#bio-screen):not(script){visibility:hidden!important}
+body.app-bloqueada>*:not(#modal-pin):not(#bio-screen):not(#dialogo-app):not(#aviso-rapido):not(script){visibility:hidden!important}
 #modal-pin{z-index:2147483000!important}
 body.app-bloqueada #modal-pin{background:var(--bg)!important}
 
@@ -1445,3 +1445,15 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
   .reg-monto-txt{font-size:28px}
   .reg-monto-caja{min-height:56px}
 }
+
+/* ── Ventanas propias (35-dialogos.js) ── */
+.dlg-capa{position:fixed;inset:0;z-index:2147483100;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .15s ease}
+.dlg-caja{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:18px;width:100%;max-width:400px;max-height:calc(100dvh - 32px);overflow-y:auto;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.45);animation:dlgIn .18s cubic-bezier(.34,1.4,.64,1)}
+@keyframes dlgIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+.dlg-titulo{font-size:17px;font-weight:800;margin-bottom:8px;line-height:1.3}
+.dlg-texto{font-size:14px;line-height:1.5;color:var(--text2);white-space:pre-line;overflow-wrap:anywhere}
+.dlg-titulo+.dlg-texto{margin-top:2px}
+.dlg-input{margin:14px 0 0;font-size:16px}
+.dlg-botones{display:flex;gap:10px;margin-top:18px}
+.dlg-botones .btn{flex:1;margin:0;min-height:46px;white-space:normal;line-height:1.2}
+.dlg-peligro .dlg-titulo{color:var(--red)}
