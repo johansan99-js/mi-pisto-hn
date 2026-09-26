@@ -33,6 +33,7 @@ function consejos(ahora) {
 
   if (txs.filter(t => !t.esTransferencia).length < 5) {
     agregar({ id: 'empezar', icono: '📝', titulo: 'Anota unos días para recibir consejos', texto: 'Con tus gastos e ingresos de una o dos semanas, aquí te diremos dónde ahorrar, cómo salir más rápido de las deudas y cuánto guardar.', accion: ['Anotar un gasto', "abrirRegistro('gasto')"], impacto: 1 });
+    agregar({ id: 'guia', icono: '📘', titulo: '¿Sin tiempo para anotar?', texto: 'En la Guía hay trucos para llevar tus cuentas casi sin tocar la app: gastos de un toque, dictar, importar el estado de cuenta del banco y pagos que se anotan solos.', accion: ['Ver la guía', "switchView('guia')"], impacto: 0.9 });
     return lista;
   }
 
@@ -95,6 +96,12 @@ function consejos(ahora) {
     if (e.nivel === 'pasado') agregar({ id: 'presu-' + p.id, icono: '🚨', tono: 'rojo', titulo: `Te pasaste en ${nombre}`, texto: `Gastaste ${fL(e.gastado)} de ${fL(p.monto)}. Lo que gastes de más aquí sale de otra cosa: intenta no usar esta categoría hasta que empiece el siguiente periodo.`, accion: ['Ver presupuestos', "switchView('presupuestos')"], impacto: e.gastado - p.monto + 500 });
     else if (e.nivel === 'aviso') agregar({ id: 'presu-' + p.id, icono: '⏳', titulo: `Cuida ${nombre}`, texto: `Llevas el ${Math.round(e.pct)}% (${fL(e.gastado)} de ${fL(p.monto)}). Para llegar al final te quedan <strong>${fL(e.porDia)} por día</strong> durante ${e.dias} ${e.dias === 1 ? 'día' : 'días'}.`, accion: ['Ver presupuestos', "switchView('presupuestos')"], impacto: p.monto * 0.2 });
   });
+
+  // 6b) Sin presupuestos y con historial: armarlos en un toque
+  if (!(state.presupuestos || []).length && typeof presupuestosSugeridos === 'function') {
+    const sug = presupuestosSugeridos(hoy);
+    if (sug.length >= 2) agregar({ id: 'armar-presupuestos', icono: '📅', titulo: 'Arma tus presupuestos en un toque', texto: `Ya tengo tus últimos meses: en ${esc(sug[0].cat)} sueles gastar ${fL(sug[0].promedio)}. Con un toque te pongo topes un 5% más bajos en tus ${sug.length} categorías principales y te aviso antes de pasarte.`, accion: ['Armarlos', 'armarPresupuestosSolo()'], impacto: sug.reduce((a, x) => a + x.promedio, 0) * 0.05 });
+  }
 
   // 7) Gastos hormiga
   if (mes.hormiga.cantidad >= 8 && mes.hormiga.total >= 400) {
