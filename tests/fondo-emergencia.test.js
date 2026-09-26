@@ -78,6 +78,8 @@ describe('Fondo de emergencia guiado', () => {
     await page.evaluate(() => { openAbono('meta0001'); document.getElementById('abono-cuenta').value = 'ahorro'; document.getElementById('abono-monto').value = '2000'; saveAbono(); switchView('metas'); });
     page.respuestas = [true, true]; // eliminar; devolver a ahorro
     await page.click('#metas-list .goal-pro-btn.eliminar');
+    // Eliminar espera las dos respuestas (ventanas propias): se espera a que termine
+    await page.waitForFunction(() => state.goals.length === 0 && getCuentaBalance('ahorro') === 200000, null, { timeout: 5000 }).catch(() => {});
     assert.deepEqual(await page.evaluate(() => [state.goals.length, getCuentaBalance('ahorro')]), [0, 200000]);
   });
 
