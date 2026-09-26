@@ -151,64 +151,6 @@ async function marcarPagoRecurrente(id){
   save();renderAll();
 }
 
-// ========== CONCILIACIÓN v2 — ASIENTO COMPENSATORIO (Opción 3) ==========
-function previewConciliacion(){
-  // P0-4: leer saldo derivado en lugar de snapshot estático
-  const cuentaSel=document.getElementById('reconcile-cuenta')?.value||'efectivo';
-  const saldoActual=getCuentaBalance(cuentaSel);
-  const currentEl=document.getElementById('reconcile-current');
-  if(currentEl)currentEl.textContent=fL(saldoActual);
-  // parseMonto entiende "1,200.50"; parseFloat cortaba en la coma y dejaba el saldo en 1
-  const realInput=parseMonto(document.getElementById('reconcile-balance')?.value);
-  const preview=document.getElementById('reconcile-diff-preview');
-  const notaWrap=document.getElementById('reconcile-nota-wrap');
-  if(!preview)return;
-  if(realInput===null){preview.innerHTML='';if(notaWrap)notaWrap.style.display='none';return;}
-  const diff=realInput-saldoActual;
-  if(Math.abs(diff)<0.01){
-    preview.innerHTML=`<span style="color:var(--green)">✅ Saldo exacto — no se necesita ajuste</span>`;
-    if(notaWrap)notaWrap.style.display='none';
-  } else {
-    const tipo=diff>0?'Ingreso':'Gasto';
-    const color=diff>0?'var(--green)':'var(--red)';
-    const etiqueta=diff>0?'↑ Ajuste positivo (ingreso no registrado)':'↓ Ajuste negativo (gasto no registrado)';
-    preview.innerHTML=`<div style="color:${color};font-size:12px;font-weight:700">${etiqueta}</div><div style="font-size:13px;margin-top:4px">Diferencia: <strong style="color:${color}">${diff>0?'+':''}${fL(diff)}</strong></div>`;
-    if(notaWrap)notaWrap.style.display='block';
-  }
-}
-
-async function reconcileBalance(){
-  // P0-4: leer saldo derivado, no mutamos state.cuentas
-  const cuentaSel=document.getElementById('reconcile-cuenta')?.value||'efectivo';
-  const cuentaNombre=cuentaSel==='ahorro'?'Cuenta de Ahorro':cuentaSel==='efectivo'?'Efectivo':nombreCompletoCuenta(infoCuenta(cuentaSel));
-  const saldoActual=getCuentaBalance(cuentaSel);
-  const saldoReal=parseMonto(document.getElementById('reconcile-balance')?.value);
-  if(saldoReal===null)return alert('Ingresa el saldo real de tu '+cuentaNombre);
-  const diff=Math.round((saldoReal-saldoActual)*100)/100;
-  if(Math.abs(diff)<0.01)return alert('✅ El saldo ya está correcto. No se necesita ajuste.');
-  const nota=document.getElementById('reconcile-nota')?.value||`Conciliación ${cuentaNombre} — ajuste automático`;
-  if(!(await confirmar(`¿Confirmar ajuste de ${cuentaNombre}?\n\nSaldo registrado: ${fL(saldoActual)}\nSaldo real: ${fL(saldoReal)}\nDiferencia: ${fL(diff)}\n\nSe creará un asiento de ${diff>0?'ingreso':'gasto'} por esta diferencia.`)))return;
-  // Crear transacción de conciliación
-  state.transactions.push({
-    id:uid(),
-    type:diff>0?'income':'expense',
-    amount:Math.abs(diff),
-    cat:'Conciliación',
-    subcat:`Ajuste ${cuentaNombre}`,
-    cuenta:cuentaSel,
-    nota,
-    tipo:'fijo',
-    date:new Date().toISOString(),
-    esConciliacion:true
-  });
-  // P0-4: ya NO mutamos state.cuentas — el balance se recalcula desde transactions tras añadir el asiento
-  save();renderAll();
-  document.getElementById('reconcile-balance').value='';
-  document.getElementById('reconcile-diff-preview').innerHTML='';
-  if(document.getElementById('reconcile-nota'))document.getElementById('reconcile-nota').value='';
-  if(document.getElementById('reconcile-nota-wrap'))document.getElementById('reconcile-nota-wrap').style.display='none';
-  alert(`✅ Conciliación completada.\n${cuentaNombre}: ${fL(saldoReal)}`);
-}
 
 // Búsqueda simple sobre categoría, comercio/subcategoría, etiqueta, banco,
 // categorías de un gasto dividido y el monto (como texto).
@@ -330,8 +272,6 @@ function renderDashboard(){
     // P0-2: KPIs reales — excluyen transferencias internas Y conciliaciones (no son ingresos/gastos genuinos del mes)
     const realTx=state.transactions.filter(t=>!t.deletedAt && !t.esTransferencia && !t.esConciliacion);
     const income=realTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0);
-    const expense=realTx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0);
-    const extra=realTx.filter(t=>t.type==='expense'&&t.tipo==='extra').reduce((a,b)=>a+b.amount,0);
     // Balance global SÍ incluye conciliaciones (ajustes legítimos), pero NO transferencias (son neutras)
     const balanceTx=state.transactions.filter(t=>!t.deletedAt && !t.esTransferencia);
     const balanceIncome=balanceTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0);
@@ -350,67 +290,13 @@ function renderDashboard(){
     const debes=totalLoQueDebes();
     document.getElementById('balance-status').textContent=debes>0?`Debes ${fL(debes)} · Patrimonio neto ${fL(balance-debes)}`:(income>0?'Basado en tus movimientos':'Esperando movimientos');
     document.getElementById('balance-status').style.color=debes>0&&balance-debes<0?'var(--red)':'var(--green)';
-    document.getElementById('total-income').textContent=fL(income);
-    document.getElementById('total-expense').textContent=fL(expense);
-    document.getElementById('total-extra').textContent=fL(extra);
-    // Hoy según la fecha local del teléfono (no UTC: en Honduras, UTC-6,
-    // lo registrado después de las 6 p. m. caería en "mañana")
-    const esHoy=d=>{const x=new Date(d),h=new Date();return x.getFullYear()===h.getFullYear()&&x.getMonth()===h.getMonth()&&x.getDate()===h.getDate();};
-    const hoyTx=realTx.filter(t=>esHoy(t.date));
-    const cobradoEl=document.getElementById('cobrado-hoy'),pagadoEl=document.getElementById('pagado-hoy');
-    if(cobradoEl)cobradoEl.textContent=fL(hoyTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0));
-    if(pagadoEl)pagadoEl.textContent=fL(hoyTx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0));
-
     // Los movimientos del mes (por día) y el estado vacío: renderRegistrosMes (25-registros-del-mes.js)
     renderDashboardGoals();
-    updateSurvivalIndex(balance);
-    renderDoughnutChart();
 }
 
+// La vista Análisis (26-analisis.js); la vieja gráfica de "Evolución de mi
+// patrimonio" solo mostraba barras de ingresos y gastos, y ya no está
 function renderHistorico() {
-    const chartContainer = document.getElementById('history-chart');
-    if (!chartContainer) return;
-    const meses = {};
-    const ahora = new Date();
-    for (let i = 5; i >= 0; i--) {
-        const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-        const key = fecha.getFullYear() + '-' + String(fecha.getMonth() + 1).padStart(2, '0');
-        const nombreMes = fecha.toLocaleDateString('es-HN', { month: 'short', year: '2-digit' });
-        meses[key] = { nombre: nombreMes, ingresos: 0, gastos: 0 };
-    }
-    state.transactions.forEach(t => {
-        if (t.deletedAt) return;
-        // P0-2: excluir transferencias internas y conciliaciones del gráfico histórico
-        if (t.esTransferencia || t.esConciliacion) return;
-        const fecha = new Date(t.date);
-        const key = fecha.getFullYear() + '-' + String(fecha.getMonth() + 1).padStart(2, '0');
-        if (meses[key]) {
-            if (t.type === 'income') meses[key].ingresos += t.amount;
-            else if (t.type === 'expense') meses[key].gastos += t.amount;
-        }
-    });
-    let maxValor = 0;
-    Object.values(meses).forEach(m => {
-        if (m.ingresos > maxValor) maxValor = m.ingresos;
-        if (m.gastos > maxValor) maxValor = m.gastos;
-    });
-    if (maxValor === 0) {
-        chartContainer.innerHTML = '<p style="text-align:center;color:var(--text2);padding:20px">Sin datos para mostrar</p>';
-        return;
-    }
-    let html = '';
-    Object.values(meses).forEach(mes => {
-        const altIngresos = (mes.ingresos / maxValor) * 100;
-        const altGastos = (mes.gastos / maxValor) * 100;
-        html += '<div class="history-bar">';
-        html += '<div style="display:flex;gap:3px;align-items:flex-end;height:100px">';
-        html += '<div style="width:8px;height:' + altIngresos + 'px;background:var(--green);border-radius:2px 2px 0 0;min-height:2px" title="Ingresos: L.' + mes.ingresos.toFixed(2) + '"></div>';
-        html += '<div style="width:8px;height:' + altGastos + 'px;background:var(--red);border-radius:2px 2px 0 0;min-height:2px" title="Gastos: L.' + mes.gastos.toFixed(2) + '"></div>';
-        html += '</div>';
-        html += '<span style="font-size:10px;color:var(--text2);margin-top:5px">' + mes.nombre + '</span>';
-        html += '</div>';
-    });
-    chartContainer.innerHTML = html;
     if (typeof renderAnalisis === 'function') renderAnalisis();
 }
 
@@ -484,10 +370,9 @@ function ideasDelResumen(r) {
   const subida = r.top.filter(c => c.antes > 0 && c.monto - c.antes >= 200).sort((a, b) => (b.monto - b.antes) - (a.monto - a.antes))[0];
   if (subida && !r.enCurso) ideas.push('🔎 ' + subida.cat + ' subió ' + Math.round((subida.monto - subida.antes) / subida.antes * 100) + '%: ' + fL(subida.monto) + ' contra ' + fL(subida.antes) + ' en ' + nombrePrev + '.');
   if (r.hormiga.cantidad >= 5) ideas.push('🐜 Gastos hormiga: ' + r.hormiga.cantidad + ' compras de menos de ' + fL(GASTO_HORMIGA) + ' sumaron ' + fL(r.hormiga.total) + '.');
-  const reglas = state.budgetRules || { gastos: 65 };
   if (r.ingresos > 0 && r.fijo > 0) {
     const pct = Math.round(r.fijo / r.ingresos * 100);
-    ideas.push('🏠 Tus gastos fijos fueron el ' + pct + '% de tus ingresos' + (pct > reglas.gastos ? ', arriba de tu meta de ' + reglas.gastos + '%.' : ' (tu meta: hasta ' + reglas.gastos + '%).'));
+    ideas.push('🏠 Tus gastos fijos fueron el ' + pct + '% de tus ingresos.');
   }
   if (r.aMetas > 0) ideas.push('🎯 Guardaste ' + fL(r.aMetas) + ' en tus metas.');
   const fondo = typeof fondoEmergencia === 'function' && fondoEmergencia();
@@ -569,62 +454,6 @@ function verResumenMesPasado() {
   document.getElementById('resumen-mes-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function exportFullReport() {
-    try {
-        let csv = 'REPORTE FINANCIERO COMPLETO\n';
-        csv += 'Cliente: ' + (state.nombre || 'Usuario') + '\n';
-        csv += 'Fecha: ' + new Date().toLocaleDateString() + '\n\n';
-        const ingresos = state.transactions.filter(t => t.type === 'income' && !t.deletedAt).reduce((a,b) => a+b.amount, 0);
-        const gastos = state.transactions.filter(t => t.type === 'expense' && !t.deletedAt).reduce((a,b) => a+b.amount, 0);
-        const balance = state.saldoInicial + ingresos - gastos;
-        csv += 'RESUMEN\n';
-        csv += 'Saldo Inicial,L.' + state.saldoInicial.toFixed(2) + '\n';
-        csv += 'Total Ingresos,L.' + ingresos.toFixed(2) + '\n';
-        csv += 'Total Gastos,L.' + gastos.toFixed(2) + '\n';
-        csv += 'Balance Actual,L.' + balance.toFixed(2) + '\n\n';
-        csv += 'TRANSACCIONES\n';
-        csv += 'Fecha,Tipo,Categoria,Subcategoria,Monto,Banco/Tarjeta\n';
-        const txOrdenadas = state.transactions.filter(t => !t.deletedAt).sort((a, b) => new Date(b.date) - new Date(a.date));
-        txOrdenadas.forEach(t => {
-            const fecha = new Date(t.date).toLocaleDateString();
-            const tipo = t.type === 'income' ? 'INGRESO' : 'GASTO';
-            const cat = (t.cat || '').replace(/,/g, ';');
-            const subcat = (t.subcat || '').replace(/,/g, ';');
-            const monto = t.type === 'income' ? '+' + t.amount.toFixed(2) : '-' + t.amount.toFixed(2);
-            const banco = (t.banco || t.tarjetaNombre || '').replace(/,/g, ';');
-            csv += fecha + ',' + tipo + ',' + cat + ',' + subcat + ',' + monto + ',' + banco + '\n';
-        });
-        csv += '\n';
-        if (state.receivables && state.receivables.length > 0) {
-            csv += 'CUENTAS POR COBRAR\nPersona,Monto Total,Pagado,Pendiente\n';
-            state.receivables.forEach(r => {
-                const pendiente = r.monto - (r.pagado || 0);
-                csv += r.persona + ',' + r.monto.toFixed(2) + ',' + (r.pagado || 0).toFixed(2) + ',' + pendiente.toFixed(2) + '\n';
-            });
-            csv += '\n';
-        }
-        if (state.payables && state.payables.length > 0) {
-            csv += 'CUENTAS POR PAGAR\nAcreedor,Monto Total,Pagado,Pendiente\n';
-            state.payables.forEach(p => {
-                const pendiente = p.monto - (p.pagado || 0);
-                csv += p.creditor + ',' + p.monto.toFixed(2) + ',' + (p.pagado || 0).toFixed(2) + ',' + pendiente.toFixed(2) + '\n';
-            });
-            csv += '\n';
-        }
-        if (state.tarjetas && state.tarjetas.length > 0) {
-            csv += 'TARJETAS DE CREDITO\nNombre,Saldo,Limite,Tasa,Dia Corte,Dia Pago\n';
-            state.tarjetas.forEach(t => {
-                csv += t.nombre + ',' + (typeof deudaTarjetaL==='function'?deudaTarjetaL(t):t.saldo).toFixed(2) + ',' + (t.limite || 0).toFixed(2) + ',' + (t.tasaInteres || 0) + '%,' + t.corte + ',' + t.pago + '\n';
-            });
-        }
-        const BOM = '\uFEFF';
-        descargarArchivo(new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' }),
-          'Finanzas_' + (state.nombre || 'Usuario') + '_' + todayStr() + '.csv', '✅ Reporte CSV generado');
-    } catch (error) {
-        alert('❌ Error: ' + error.message);
-    }
-}
-function exportData(){const data=JSON.stringify(state);const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(data);a.download='backup.json';a.click();}
 // ═══════════════════════════════════════════════════════════════════════
 // P0-5: CIFRADO REAL con AES-GCM + PBKDF2 (Web Crypto API)
 // ─────────────────────────────────────────────────────────────────────

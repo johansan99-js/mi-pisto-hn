@@ -5,7 +5,6 @@ const path = require('node:path');
 const { crearEntorno } = require('./helpers');
 
 const CDN = [
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js',
 ];
@@ -49,7 +48,7 @@ describe('Service worker y modo sin conexión', () => {
       const tasas = await (await fetch('./tasas.json?d=2099-01-01')).json(); // un día que nunca se pidió
       return { libs, error: tasas.error || null, usd: typeof tasas.rates.USD };
     }, CDN);
-    assert.deepEqual(r, { libs: [200, 200, 200], error: null, usd: 'object' });
+    assert.deepEqual(r, { libs: CDN.map(() => 200), error: null, usd: 'object' });
   });
 
   it('la app abre sin conexión desde la caché', async () => {

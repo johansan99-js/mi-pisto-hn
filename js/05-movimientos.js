@@ -8,11 +8,6 @@
 //   Ingreso en USD → recibiste USD y los conviertes → banco te COMPRA USD → tasa BID
 // ═══════════════════════════════════════════════════════════════════════
 
-function _formatMoneda(amount, code) {
-  const cm = window.currencyManager;
-  if (cm && typeof cm.format === 'function') return cm.format(amount, code);
-  return code + ' ' + Number(amount).toFixed(2);
-}
 
 function _renderConversion(infoEl, monto, moneda, tipoTx) {
   if (!infoEl) return;
@@ -76,11 +71,6 @@ function actualizarConversionIngreso() {
 // diferencia con la referencia es el margen.
 const r2 = n => Math.round(n * 100) / 100;
 function referenciaHNL(t) { return r2((t.originalAmount || 0) * (t.conversionRate || 0)); }
-function margenDeTx(t) {
-  if (!t.cobradoBanco || !t.originalAmount || !t.conversionRate) return null;
-  const ref = referenciaHNL(t);
-  return { referencia: ref, cobrado: t.amount, margen: r2(t.amount - ref), pct: ref ? (t.amount - ref) / ref * 100 : 0, tasaBanco: t.amount / t.originalAmount };
-}
 function _textoMargen(original, moneda, referencia, cobrado) {
   const dif = r2(cobrado - referencia), pct = referencia ? dif / referencia * 100 : 0;
   const tasa = (cobrado / original).toFixed(4);

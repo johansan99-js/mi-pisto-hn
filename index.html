@@ -9,21 +9,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
 <!-- P1-6: Content Security Policy. unsafe-inline temporal mientras se migra a delegación de eventos.
-     Las CDNs listadas son las que carga la app: Chart.js (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
+     Las CDNs listadas son las que carga la app: Supabase (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://open.er-api.com https://api.exchangerate-api.com https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
 <title>Mi Pisto HN · Tu dinero, tu control</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<!-- DSS05.02: SRI real, calculado con sha384sum sobre el archivo servido por el
-     CDN el 2026-09-21. Si jsDelivr cambia el contenido de esta versión fijada
-     (no debería, es inmutable por versión), el navegador bloqueará la carga
-     en vez de ejecutar código no verificado. -->
-<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
-        integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4"
-        crossorigin="anonymous"></script>
 <!-- Tesseract: eliminado del head — se carga bajo demanda en procesarReciboOCR() -->
 <script src="js/00-config.js"></script>
-<!-- SheetJS para Excel — SRI calculado igual que Chart.js -->
+<!-- SheetJS para Excel — SRI real, calculado con sha384sum sobre el archivo del CDN -->
 <script defer src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
         integrity="sha384-QCIdq2UMVEoSRhR3ZWZwdz2/pivLowr+eokFMdYyukq7qI26VYRxFa4Nl6FKetmL"
         crossorigin="anonymous"></script>
@@ -265,10 +258,6 @@
     <!-- ── CONFIGURACIÓN DEL SISTEMA ── -->
     <div class="more-section-label" style="margin-top:6px">Configuración del Sistema</div>
 
-    <div class="hamburger-item" onclick="openModal('modal-budget-rules');toggleHamburger()">
-      <div class="hamburger-item-icon" style="background:rgba(var(--purple-rgb),.15)">📊</div>
-      <div><div>Reglas de Presupuesto</div><div style="font-size:11px;color:var(--text2);font-weight:400">Distribución 65/20/15</div></div>
-    </div>
     <div class="hamburger-item" onclick="switchView('categorias');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">🏷️</div>
       <div><div>Categorías</div><div style="font-size:11px;color:var(--text2);font-weight:400">Crea las tuyas con ícono y color</div></div>
@@ -281,32 +270,6 @@
   </div>
 </div>
 
-<div id="modal-budget-rules" class="modal" onclick="closeModalIfBg(event,'modal-budget-rules')">
-  <div class="modal-content">
-    <h3>📊 Reglas de Presupuesto Personalizado</h3>
-    <p style="font-size:12px;color:var(--text2);margin:10px 0">Configura tus porcentajes de distribución del ingreso</p>
-    <div style="margin:15px 0">
-      <label style="display:block;margin-bottom:5px;font-size:12px;color:var(--text2)">Gastos Necesarios (%)</label>
-      <input type="number" id="rule-gastos" class="input-field" placeholder="Ej: 65" min="0" max="100">
-      <p style="font-size:11px;color:var(--text2)">Vivienda, transporte, alimentación, servicios</p>
-    </div>
-    <div style="margin:15px 0">
-      <label style="display:block;margin-bottom:5px;font-size:12px;color:var(--text2)">Ahorro (%)</label>
-      <input type="number" id="rule-ahorro" class="input-field" placeholder="Ej: 20" min="0" max="100">
-      <p style="font-size:11px;color:var(--text2)">Fondo de emergencia, metas, jubilación</p>
-    </div>
-    <div style="margin:15px 0">
-      <label style="display:block;margin-bottom:5px;font-size:12px;color:var(--text2)">Gastos Personales/Extra (%)</label>
-      <input type="number" id="rule-extra" class="input-field" placeholder="Ej: 15" min="0" max="100">
-      <p style="font-size:11px;color:var(--text2)">Ocio, gustos, entretenimiento</p>
-    </div>
-    <div id="budget-total-warning" style="padding:10px;background:var(--bg4);border-radius:8px;margin:15px 0;text-align:center;display:none">
-      <span style="color:var(--red)">⚠️ El total debe ser 100%</span>
-    </div>
-    <button class="btn btn-primary" onclick="saveBudgetRules()">Guardar Reglas</button>
-    <button class="btn btn-secondary" onclick="closeModal('modal-budget-rules')">Cancelar</button>
-  </div>
-</div>
 
 <div id="pwa-banner" class="pwa-banner hidden">
   <div style="display:flex;align-items:center;gap:12px;flex:1">
@@ -500,73 +463,13 @@
 
   <div id="presupuestos-card" class="card" style="display:none"></div>
 
-  <div class="survival-box">
-      <span class="survival-label">Índice de Libertad Financiera</span>
-      <span id="survival-val" class="survival-number">0</span>
-      <span style="font-size:11px;color:var(--text2)">Días de supervivencia sin ingresos</span>
-      <div style="margin-top:8px">
-        <span id="survival-status" class="survival-status warning">🟡 Calculando…</span>
-      </div>
-  </div>
 
   <!-- WIDGET LIQUIDEZ 7 DÍAS (Opción 6) -->
   <div id="liquidez-7dias"></div>
 
   </div><!-- /desktop-grid-left -->
-  <div id="desktop-grid-right">
-  <div class="chart-wrapper">
-      <h4 style="font-size:12px; margin-bottom:10px; text-align:center">Distribución: Vital vs Ocio</h4>
-      <canvas id="mainChart" style="max-height: 180px; width: 100%;"></canvas>
-  </div>
-
-  <div class="budget-rule-display">
-    <h4>📊 Mi Distribución Personalizada</h4>
-    <div class="budget-percentages">
-      <div class="budget-item"><div class="budget-value budget-gasto" id="budget-gastos-val">65%</div><div class="budget-label">Gastos</div></div>
-      <div class="budget-item"><div class="budget-value budget-ahorro" id="budget-ahorro-val">20%</div><div class="budget-label">Ahorro</div></div>
-      <div class="budget-item"><div class="budget-value budget-extra" id="budget-extra-val">15%</div><div class="budget-label">Extra</div></div>
-    </div>
-    <button class="btn btn-secondary" style="margin-top:10px;padding:8px;font-size:11px" onclick="openModal('modal-budget-rules')">✏️ Editar Reglas</button>
-    <div id="budget-alerts" style="margin-top:10px"></div>
-    <div id="budget-progreso-mes" style="margin-top:10px"></div>
-  </div>
-
-  </div><!-- /desktop-grid-right -->
   </div><!-- /desktop-grid -->
-  <div class="reconcile-box">
-    <h4 style="margin-bottom:4px">🏦 Conciliación de Cuentas</h4>
-    <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Ajusta el saldo de cada cuenta al valor real. Se genera un asiento auditable.</p>
-    
-    <!-- Selector de cuenta a conciliar -->
-    <select id="reconcile-cuenta" class="input-field" onchange="previewConciliacion()" style="margin-bottom:10px">
-      <option value="efectivo">💵 Efectivo</option>
-      <option value="ahorro">🏦 Cuenta de Ahorro</option>
-    </select>
-    
-    <div style="background:var(--bg4);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
-      <span style="color:var(--text2)">Saldo registrado:</span>
-      <span id="reconcile-current" style="font-weight:700;color:var(--amber);float:right">L. 0.00</span>
-    </div>
-    
-    <div class="input-row">
-      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="reconcile-balance" class="input-field" placeholder="Saldo real (según banco/conteo)" style="margin:0" oninput="previewConciliacion()">
-      <button class="btn btn-secondary" onclick="reconcileBalance()" style="margin:0;height:fit-content;white-space:nowrap">Conciliar</button>
-    </div>
-    <div id="reconcile-diff-preview" class="conciliacion-diff"></div>
-    <div id="reconcile-nota-wrap" style="display:none;margin-top:8px">
-      <input type="text" id="reconcile-nota" class="input-field" placeholder="Nota: Ej: Cargo no registrado, comisión banco..." style="margin:0">
-    </div>
-  </div>
 
-  <div class="daily-summary">
-    <div class="daily-box"><div class="daily-label">💰 Cobrado hoy</div><div class="daily-value" id="cobrado-hoy" style="color:var(--green)">L. 0</div></div>
-    <div class="daily-box"><div class="daily-label">💸 Pagado hoy</div><div class="daily-value" id="pagado-hoy" style="color:var(--red)">L. 0</div></div>
-  </div>
-  <div class="summary-grid">
-    <div class="summary-box"><div class="summary-label">Ingresos</div><div class="summary-value" id="total-income" style="color:var(--green)">L. 0</div></div>
-    <div class="summary-box"><div class="summary-label">Gastos</div><div class="summary-value" id="total-expense" style="color:var(--red)">L. 0</div></div>
-    <div class="summary-box"><div class="summary-label">Extra</div><div class="summary-value" id="total-extra" style="color:var(--blue)">L. 0</div></div>
-  </div>
   
   <h3 style="margin:20px 0 10px;font-size:14px">🎯 Metas de Ahorro</h3>
   <div id="dashboard-goals"></div>
@@ -709,18 +612,9 @@
     <div id="resumen-mes-cuerpo"></div>
     <button class="btn btn-secondary" style="margin-top:10px" onclick="imprimirReporteMes()">📄 Guardar reporte del mes en PDF</button>
   </div>
-  <div class="card">
-    <h4 style="margin-bottom:10px">Evolución de mi Patrimonio</h4>
-    <div id="history-chart"></div>
-    <div style="display:flex;gap:15px;font-size:11px;justify-content:center;margin-top:10px">
-      <span style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;background:var(--green);border-radius:2px"></div> Ingresos</span>
-      <span style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;background:var(--red);border-radius:2px"></div> Gastos</span>
-    </div>
-  </div>
   <button class="btn btn-primary" onclick="exportToExcelPro()" style="background: #1D6F42; color: white; margin-top: 15px;">
     📊 Exportar reporte en Excel
   </button>
-  <button class="btn btn-secondary" onclick="exportFullReport()" style="margin-top: 10px;">📋 Exportar Reporte Completo (CSV)</button>
 </div>
 
 <div id="view-config" class="view">
@@ -1236,7 +1130,7 @@
     <button class="btn btn-secondary" onclick="closeModal('modal-abono-deuda')">Cancelar</button>
   </div>
 </div>
-<div id="modal-prestamo" class="modal" onclick="closeModalIfBg(event,'modal-prestamo')"><div class="modal-content"><h3>🏦 Nuevo Préstamo Bancario</h3><input type="text" id="prest-entidad" class="input-field" placeholder="Entidad (Ej. BAC, Ficohsa, Familiar)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="prest-monto" class="input-field" placeholder="Monto total del préstamo (L)"><input type="number" id="prest-tasa" class="input-field" placeholder="Tasa de interés anual (%)"><div class="input-row"><input type="number" id="prest-cuotas" class="input-field" placeholder="Número de cuotas"><input type="number" id="prest-cuota-calc" class="input-field" placeholder="Cuota calculada" readonly></div><input type="date" id="prest-fecha-pago" class="input-field"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="prest-pagado" class="input-field" placeholder="Ya pagado (L)" value="0"><div id="prest-breakdown" class="loan-breakdown hidden"></div><button class="btn btn-primary" onclick="calculateLoan();savePrestamo()">Calcular y Guardar</button></div></div>
+<div id="modal-prestamo" class="modal" onclick="closeModalIfBg(event,'modal-prestamo')"><div class="modal-content"><h3>🏦 Nuevo Préstamo Bancario</h3><input type="text" id="prest-entidad" class="input-field" placeholder="Entidad (Ej. BAC, Ficohsa, Familiar)"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="prest-monto" class="input-field" placeholder="Monto total del préstamo (L)"><input type="number" id="prest-tasa" class="input-field" placeholder="Tasa de interés anual (%)"><div class="input-row"><input type="number" id="prest-cuotas" class="input-field" placeholder="Número de cuotas"><input type="number" id="prest-cuota-calc" class="input-field" placeholder="Cuota calculada" readonly></div><div id="prest-breakdown" class="loan-breakdown hidden"></div><button class="btn btn-primary" onclick="calculateLoan();savePrestamo()">Calcular y Guardar</button></div></div>
 <div id="modal-tarjeta" class="modal" onclick="closeModalIfBg(event,'modal-tarjeta')">
   <div class="modal-content">
     <h3>💳 Nueva Tarjeta de Crédito</h3>
@@ -1598,7 +1492,6 @@
   <label id="pf-lbl-cuenta" class="ptc-label">¿Con qué se paga?</label>
   <select id="pf-cuenta" class="input-field" onchange="_renderAutoPagoFijo()"></select>
   <label class="tc-check"><input type="checkbox" id="pf-auto" checked onchange="_renderAutoPagoFijo()"> <span>🔁 Anotarlo solo cada mes<small id="pf-auto-nota"></small></span></label>
-  <select id="pago-alerta" class="input-field"><option value="5">Avisarme 5 días antes</option><option value="3" selected>Avisarme 3 días antes</option><option value="1">Avisarme 1 día antes</option></select>
   <button class="btn btn-primary" onclick="savePagoRecurrente()">Guardar</button>
   <button class="btn btn-secondary" onclick="closeModal('modal-pago-recurrente')">Cancelar</button>
 </div></div>

@@ -213,7 +213,6 @@ async function loadAndDecryptState() {
   return true;
 }
 if (state.transactions && state.transactions.length > 0) { state.transactions.forEach(t => { if (t.type === 'expense' && !t.tipo) { t.tipo = (t.cat === 'Vivienda' || t.cat === 'Alimentación' || t.cat === '🏠 Vivienda') ? 'fijo' : 'extra'; } }); }
-let mainChart = null;
 // P0-1: appPIN ahora almacena el HASH (no el PIN en crudo)
 // FIX SEGURIDAD: recordarPIN deshabilitado permanentemente — era un bypass
 // del cifrado AES-256 (entraba sin pedir PIN, leyendo state plano de IDB).

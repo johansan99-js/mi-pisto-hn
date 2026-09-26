@@ -1,9 +1,6 @@
 // Mi Pisto HN · 04-interfaz-y-kit.js
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
 // ========== LÓGICA DE NAVEGACIÓN Y UI ==========
-function toggleHamburger_legacy(){/* reemplazada por la v2 */}
-function saveBudgetRules(){const gastos=parseInt(document.getElementById('rule-gastos').value)||0;const ahorro=parseInt(document.getElementById('rule-ahorro').value)||0;const extra=parseInt(document.getElementById('rule-extra').value)||0;if(gastos+ahorro+extra!==100){document.getElementById('budget-total-warning').style.display='block';return}state.budgetRules={gastos,ahorro,extra};save();closeModal('modal-budget-rules');renderBudgetRules();alert(`✅ Reglas actualizadas`)}
-function renderBudgetRules(){const rules=state.budgetRules||{gastos:65,ahorro:20,extra:15};document.getElementById('budget-gastos-val').textContent=rules.gastos+'%';document.getElementById('budget-ahorro-val').textContent=rules.ahorro+'%';document.getElementById('budget-extra-val').textContent=rules.extra+'%';document.getElementById('rule-gastos').value=rules.gastos;document.getElementById('rule-ahorro').value=rules.ahorro;document.getElementById('rule-extra').value=rules.extra}
 
 let deferredPrompt=null,pwaDismissed=localStorage.getItem('pwa_banner_dismissed')==='true',isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 function isAppInstalled(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
@@ -316,7 +313,6 @@ async function olvidePIN(){
   await avisar('✅ Todo borrado. La app se reiniciará al tutorial.');
   setTimeout(() => location.reload(), 500);
 }
-function toggleRecordarPIN(){recordarPIN=document.getElementById('recordar-pin').checked;localStorage.setItem('finanzas_recordar',recordarPIN);}
 
 function syncObSaldo(){
   const ef=leerMonto(document.getElementById('ob-efectivo')?.value)||0;
@@ -412,7 +408,6 @@ async function finishOnboarding(){
   abrirTour(0);
 }
 
-function toggleFabMenu_legacy(){/* reemplazada por la v2 */}
 document.addEventListener('click_legacy',(e)=>{/* reemplazado por la v2 */});
 
 function calculateLoan(){const P=leerMonto(document.getElementById('prest-monto').value)||0,r=(leerMonto(document.getElementById('prest-tasa').value)||0)/100/12,n=parseInt(document.getElementById('prest-cuotas').value)||1;let cuota=r===0?P/n:P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);document.getElementById('prest-cuota-calc').value=fL(cuota);const interes=P*r,capital=cuota-interes;document.getElementById('prest-breakdown').classList.remove('hidden');document.getElementById('prest-breakdown').innerHTML=`<div class="loan-breakdown-row"><span>Cuota mensual:</span><strong>${fL(cuota)}</strong></div><div class="loan-breakdown-row"><span>→ Interés:</span><span style="color:var(--red)">${fL(interes)}</span></div>`;return cuota}

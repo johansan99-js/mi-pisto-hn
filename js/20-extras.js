@@ -36,8 +36,6 @@ function elegirTema(t) {
   try { localStorage.setItem('mph_tema', id); } catch (e) {}
   aplicarTema(id);
   renderConfigTema();
-  // La gráfica de dona lee los colores al dibujarse
-  if (typeof renderDoughnutChart === 'function' && state.setup) { try { renderDoughnutChart(); } catch (e) {} }
 }
 function renderConfigTema() {
   const oscuro = temaActual() === 'oscuro';
@@ -47,10 +45,6 @@ function renderConfigTema() {
 try {
   window.matchMedia && matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (!_temaGuardado()) { aplicarTema(temaActual()); renderConfigTema(); } });
 } catch (e) {}
-// Color de un token del tema para lo que no entiende var() (gráficas en canvas)
-function colorTema(nombre, respaldo) {
-  try { return getComputedStyle(document.documentElement).getPropertyValue('--' + nombre).trim() || respaldo; } catch (e) { return respaldo; }
-}
 
 // ═══ REPORTE DEL MES EN PDF ═══════════════════════════════════════════════
 // Sin librerías: se arma una página de reporte y se abre el diálogo de

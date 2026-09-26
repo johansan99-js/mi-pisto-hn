@@ -11,12 +11,12 @@ describe('Correcciones de la prueba exhaustiva', () => {
   before(async () => { env = await crearEntorno(); });
   after(async () => { await env.cerrar(); });
 
-  it('conciliar el efectivo entiende "1,200.50" y muestra el saldo registrado al abrir', async () => {
+  it('ajustar el efectivo (⚖️ en Mis cuentas) entiende "1,200.50" y muestra el saldo registrado', async () => {
     const page = await env.pagina();
     await sembrar(page, conSaldo());
-    assert.match(await page.textContent('#reconcile-current'), /L\. ?1,000\.00/, 'antes mostraba L. 0.00');
-    page.respuestas = [true];
-    await page.evaluate(() => { document.getElementById('reconcile-cuenta').value = 'efectivo'; document.getElementById('reconcile-balance').value = '1,200.50'; reconcileBalance(); });
+    page.respuestas = ['1,200.50'];
+    await page.evaluate(() => ajustarSaldoCuenta('efectivo'));
+    assert.match(page.dialogos[0], /La app registra L\. ?1,000\.00/);
     assert.equal(await page.evaluate(() => getCuentaBalance('efectivo')), 1200.5, 'antes dejaba el efectivo en 1');
   });
 
