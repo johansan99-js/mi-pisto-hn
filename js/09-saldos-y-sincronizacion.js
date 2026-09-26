@@ -699,32 +699,6 @@ verificarPIN = async function() {
         alert('❌ Error descifrando los datos. Contacta soporte o restaura desde backup.');
         return;
       }
-      
-      // Descifrar state desde localStorage
-      const loaded = await loadAndDecryptState();
-      if (!loaded) {
-        // No había LS cifrado → cargar desde IDB (usuario que solo tenía IDB)
-        if (typeof _completarCargaApp === 'function') {
-          await _completarCargaApp();
-          _bloquearVista(false);
-          document.getElementById('modal-pin').style.display='none';
-          document.getElementById('pin-input').value='';
-          document.getElementById('pin-error').style.display='none';
-          return;
-        }
-        alert('❌ Error cargando tus datos. Restaura desde backup cifrado.');
-        return;
-      }
-      
-      // Si la copia de IndexedDB es más nueva (localStorage lleno, recarga a
-      // medio guardar), manda ella
-      try { const idb = await loadStateFromDB(); if (idb && _copiaMasNueva(state, idb) === idb) _aplicarEstado(idb); } catch (e) { console.warn('Comparar copia de IDB:', e); }
-      // FIX SEGURIDAD: re-sincronizar IDB con el state descifrado.
-      // (Antes IDB tenía una copia plana que se cargaba sin PIN; ahora la
-      //  sobreescribimos con los datos descifrados y autoritativos.)
-      try { await saveStateToDB(state); } catch(e) { console.warn('Sync IDB tras unlock:', e); }
-      
-      console.log('🔓 Datos descifrados correctamente');
     } else {
       // No hay DEK cifrada → usuario legacy con state en plano
       // Necesitamos MIGRAR: generar DEK, cifrar state, guardar
@@ -743,29 +717,7 @@ verificarPIN = async function() {
       }
       await _migrarStatePlanoACifrado(intento, salt);
     }
-    _convertirFacturas(true).then(n => { if (n) console.log('🔐 ' + n + ' facturas cifradas'); });
-    // Subir a parámetros v2 una sola vez, ya con el PIN verificado
-    if (_sessionDEK && localStorage.getItem('finanzas_pin_kdf') !== 'v2') {
-      try { await _guardarPINv2(intento, salt, _sessionDEK); console.log('🔐 PIN actualizado a 600k iteraciones'); }
-      catch (e) { console.warn('No se pudo actualizar el PIN a v2:', e); }
-    }
-    
-    _bloquearVista(false);
-    document.getElementById('modal-pin').style.display='none';
-    document.getElementById('pin-input').value='';
-    document.getElementById('pin-error').style.display='none';
-    if (intento.length < PIN_MIN_DIGITOS && sessionStorage.getItem('pinCortoAvisado') !== '1') {
-      sessionStorage.setItem('pinCortoAvisado', '1');
-      setTimeout(async () => {
-        if ((await confirmar(`🔐 Tu PIN tiene ${intento.length} dígitos. Con tan pocos, alguien con acceso a tu teléfono puede adivinarlo probando todas las combinaciones.\n\n¿Cambiarlo ahora por uno de ${PIN_MIN_DIGITOS} a 8 dígitos?`))) configurarPIN({ soloCambiar: true });
-      }, 800);
-    }
-    
-    if (!state.setup) {
-      document.getElementById('onboarding').style.display='flex';
-    } else {
-      renderAll();
-    }
+    await _continuarDesbloqueo(intento, salt, !!dekData);
   } else {
     // ❌ PIN incorrecto
     _registrarIntentoFallidoPIN();
@@ -1181,4 +1133,59 @@ function ejecutarVerificacionesNuevas() {
     if (typeof verificarPagosAutomaticos === 'function') verificarPagosAutomaticos();
     verificarTransferenciasProgramadas();
   }, 200);
+}
+
+// Lo que sigue a tener la clave de los datos (_sessionDEK): cargar, mostrar y
+// dejar todo al día. Lo usan el PIN y la huella (intento = null con huella).
+async function _continuarDesbloqueo(intento, salt, conDEK) {
+  if (conDEK) {
+    // Descifrar state desde localStorage
+    const loaded = await loadAndDecryptState();
+    if (!loaded) {
+      // No había LS cifrado → cargar desde IDB (usuario que solo tenía IDB)
+      if (typeof _completarCargaApp === 'function') {
+        await _completarCargaApp();
+        _bloquearVista(false);
+        document.getElementById('modal-pin').style.display='none';
+        document.getElementById('pin-input').value='';
+        document.getElementById('pin-error').style.display='none';
+        return;
+      }
+      alert('❌ Error cargando tus datos. Restaura desde backup cifrado.');
+      return;
+    }
+    
+    // Si la copia de IndexedDB es más nueva (localStorage lleno, recarga a
+    // medio guardar), manda ella
+    try { const idb = await loadStateFromDB(); if (idb && _copiaMasNueva(state, idb) === idb) _aplicarEstado(idb); } catch (e) { console.warn('Comparar copia de IDB:', e); }
+    // FIX SEGURIDAD: re-sincronizar IDB con el state descifrado.
+    // (Antes IDB tenía una copia plana que se cargaba sin PIN; ahora la
+    //  sobreescribimos con los datos descifrados y autoritativos.)
+    try { await saveStateToDB(state); } catch(e) { console.warn('Sync IDB tras unlock:', e); }
+    
+    console.log('🔓 Datos descifrados correctamente');
+  }
+  _convertirFacturas(true).then(n => { if (n) console.log('🔐 ' + n + ' facturas cifradas'); });
+  // Subir a parámetros v2 una sola vez, ya con el PIN verificado
+  if (intento && _sessionDEK && localStorage.getItem('finanzas_pin_kdf') !== 'v2') {
+    try { await _guardarPINv2(intento, salt, _sessionDEK); console.log('🔐 PIN actualizado a 600k iteraciones'); }
+    catch (e) { console.warn('No se pudo actualizar el PIN a v2:', e); }
+  }
+  
+  _bloquearVista(false);
+  document.getElementById('modal-pin').style.display='none';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  if (intento && intento.length < PIN_MIN_DIGITOS && sessionStorage.getItem('pinCortoAvisado') !== '1') {
+    sessionStorage.setItem('pinCortoAvisado', '1');
+    setTimeout(async () => {
+      if ((await confirmar(`🔐 Tu PIN tiene ${intento.length} dígitos. Con tan pocos, alguien con acceso a tu teléfono puede adivinarlo probando todas las combinaciones.\n\n¿Cambiarlo ahora por uno de ${PIN_MIN_DIGITOS} a 8 dígitos?`))) configurarPIN({ soloCambiar: true });
+    }, 800);
+  }
+  
+  if (!state.setup) {
+    document.getElementById('onboarding').style.display='flex';
+  } else {
+    renderAll();
+  }
 }

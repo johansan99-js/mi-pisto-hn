@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { crearEntorno, sembrar, estadoBase, conectarNube } = require('./helpers');
+const { crearEntorno, sembrar, esperarCarga, desbloquear, estadoBase, conectarNube } = require('./helpers');
 
 const CLAVE = 'mi perro se llama Toby';
 
@@ -76,9 +76,9 @@ describe('Llevar los datos a la compu', () => {
     assert.match(page.dialogos.map(d => d.mensaje || d.message || String(d)).join('\n'), /Lo normal en un dispositivo nuevo es BAJAR/);
   });
 
-  it('si la nube tiene otros datos, se elige cuáles son los buenos', async () => {
+  it('si los dos dispositivos ya tenían datos, se juntan y quedan con la misma clave', async () => {
     const tmp = await env.pagina();
-    const fila = await filaDeOtroDispositivo(tmp, estadoBase({ nombre: 'Compu vacía' }));
+    const fila = await filaDeOtroDispositivo(tmp, estadoBase({ nombre: 'Ana', transactions: [{ id: 'tx0002', type: 'expense', amount: 80, cat: 'Taxi', cuenta: 'efectivo', date: '2026-09-02T10:00:00Z' }] }));
     const page = await env.pagina();
     await sembrar(page, estadoBase({ nombre: 'Ana', transactions: [{ id: 'tx0001', type: 'expense', amount: 50, cat: 'Comida', cuenta: 'efectivo', date: '2026-09-01T10:00:00Z' }] }));
     page.respuestas = ['123456', '123456', true];
@@ -88,13 +88,18 @@ describe('Llevar los datos a la compu', () => {
     await page.evaluate(() => { if (!document.getElementById('btn-cloud-upload')) document.body.insertAdjacentHTML('beforeend', '<button id="btn-cloud-upload"></button>'); window.__sub = subirDatosCloud(); });
     await page.waitForSelector('#modal-cloud-pass', { state: 'visible' });
     await page.fill('#cloud-pass-1', CLAVE);
-    page.respuestas = [false, true, true]; // los de este dispositivo · reemplazar · aviso final
+    page.respuestas = [true, true]; // juntar · aviso de subida
     await page.click('#btn-cloud-pass-ok');
     await page.evaluate(() => window.__sub);
     const r = await page.evaluate(async () => {
       const d = await _decryptState(__store.row.ciphertext, _sessionDEK);
-      return { nombre: d && d.nombre, version: __store.row.version };
+      return { ids: d.transactions.map(t => t.id).sort(), local: state.transactions.length, version: __store.row.version, mismaClave: __store.row.dek_ciphertext === localStorage.getItem('mph_cloud_dek') };
     });
-    assert.deepEqual(r, { nombre: 'Ana', version: 4 });
+    assert.deepEqual(r, { ids: ['tx0001', 'tx0002'], local: 2, version: 4, mismaClave: true });
+    // Con el PIN de siempre se sigue entrando (la clave nueva quedó protegida con él)
+    await page.reload();
+    await esperarCarga(page);
+    await desbloquear(page, '123456');
+    assert.equal(await page.evaluate(() => state.transactions.length), 2);
   });
 });

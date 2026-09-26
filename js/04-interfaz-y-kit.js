@@ -147,10 +147,13 @@ async function configurarPIN({ soloCambiar = false } = {}) {
   
   // Para cambiar o quitar un PIN hay que saber el actual: así nadie lo cambia
   // con el teléfono desbloqueado en la mano
-  if (!esPrimerPIN && _sessionPIN) {
+  // (si se entró con la huella no hay PIN en memoria: se compara con el guardado)
+  if (!esPrimerPIN && (_sessionPIN || _sessionDEK)) {
     const actual = (await preguntar('🔐 Escribe tu PIN actual:'));
     if (actual === null) return;
-    if (String(actual).trim() !== _sessionPIN) { alert('❌ Ese no es tu PIN actual. No se cambió nada.'); return; }
+    const ok = _sessionPIN ? String(actual).trim() === _sessionPIN
+      : await _hashPIN(String(actual).trim(), _b64DecodeArr(localStorage.getItem('finanzas_pin_salt') || '')) === localStorage.getItem('finanzas_pin_hash');
+    if (!ok) { alert('❌ Ese no es tu PIN actual. No se cambió nada.'); return; }
   }
   const nuevoPIN = (await preguntar((esPrimerPIN ? 'Crea' : 'Escribe tu nuevo') + ' PIN de 6 a 8 dígitos (mientras más largo, más seguro):' + (soloCambiar || esPrimerPIN ? '' : '\n\n(Déjalo en blanco solo si quieres QUITAR el PIN)')));
   if (nuevoPIN === null || ((soloCambiar || esPrimerPIN) && nuevoPIN === '')) return;
@@ -405,6 +408,8 @@ async function finishOnboarding(){
   document.getElementById('onboarding').style.display='none';
   renderAll();
   renderWelcome();
+  // Antes del recorrido: ¿respaldar en la nube? (si dice que sí, va a Google y vuelve)
+  if (typeof ofrecerNubeAlEmpezar === 'function' && await ofrecerNubeAlEmpezar()) return;
   abrirTour(0);
 }
 

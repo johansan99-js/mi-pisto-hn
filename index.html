@@ -190,6 +190,7 @@
       </label>
       <button class="dt-icono btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" aria-label="Ocultar montos">👁️</button>
       <button class="dt-icono" onclick="elegirTema(temaActual() === 'oscuro' ? 'claro' : 'oscuro')" title="Cambiar a tema claro u oscuro" aria-label="Cambiar tema"><span class="dt-tema-luna">🌙</span><span class="dt-tema-sol">☀️</span></button>
+      <button class="dt-icono btn-actualizar-nube" onclick="actualizarDesdeNube()" title="Actualizar con tu cuenta" aria-label="Actualizar con tu cuenta">🔄</button>
       <button class="dt-icono" onclick="bloquearAhora()" title="Bloquear la app" aria-label="Bloquear la app">🔒</button>
     </div>
   </div>
@@ -226,6 +227,14 @@
     <!-- ── OPERACIONES DIARIAS ── -->
     <div class="more-section-label">Operaciones</div>
 
+    <div class="hamburger-item" onclick="toggleHamburger();actualizarDesdeNube()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--green-rgb),.15)">🔄</div>
+      <span>Actualizar con mi cuenta</span>
+    </div>
+    <div class="hamburger-item" onclick="toggleHamburger();abrirEnLaComputadora()">
+      <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">💻</div>
+      <span>Abrir en la computadora</span>
+    </div>
     <div class="hamburger-item" onclick="switchView('guia');toggleHamburger()">
       <div class="hamburger-item-icon" style="background:rgba(var(--blue-rgb),.15)">📘</div>
       <div><div>Guía</div><div style="font-size:11px;color:var(--text2);font-weight:400">Trucos para no perder tiempo</div></div>
@@ -449,7 +458,7 @@
     <p id="ob-traer-estado" style="display:none;font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5"></p>
     <p style="font-size:11px;color:var(--text2);margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" style="stroke:var(--green)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Tus datos se guardan SOLO en este dispositivo
+      Tus datos se guardan cifrados. La nube es opcional
     </p>
   </div>
 </div>
@@ -733,6 +742,7 @@
       Sincroniza tus datos entre <strong>celular y laptop</strong> con cifrado de extremo a extremo.
       <strong style="color:var(--green)">Nadie puede ver tus datos</strong>, ni siquiera nosotros — solo se sube un blob cifrado con tu PIN.
     </p>
+    <button type="button" class="btn btn-secondary" onclick="abrirEnLaComputadora()" style="margin:0 0 12px">💻 Abrir en la computadora</button>
     <div id="cloud-sync-status-container">
       <!-- Renderizado dinámico por renderCloudSyncUI() -->
       <div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">Cargando...</div>
@@ -1262,7 +1272,7 @@
   <div class="modal-content">
     <h3 style="margin-bottom:6px" id="cloud-pass-titulo">🔑 Contraseña de la nube</h3>
     <p id="cloud-pass-intro" style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
-    <input type="password" id="cloud-pass-1" class="input-field" placeholder="Contraseña (mínimo 12 caracteres)" autocomplete="new-password">
+    <input type="password" id="cloud-pass-1" class="input-field" placeholder="Contraseña (mínimo 10 caracteres)" autocomplete="new-password">
     <input type="password" id="cloud-pass-2" class="input-field" placeholder="Repite la contraseña" autocomplete="new-password">
     <div id="cloud-pass-error" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
     <p id="cloud-pass-nota" style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5"></p>
@@ -1655,5 +1665,6 @@
 <script src="js/38-un-toque.js"></script>
 <script src="js/39-importar-banco.js"></script>
 <script src="js/40-guia.js"></script>
+<script src="js/41-acceso-y-nube.js"></script>
 </body>
 </html>
