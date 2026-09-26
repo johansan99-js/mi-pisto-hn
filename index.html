@@ -26,6 +26,7 @@
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
         integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"
         crossorigin="anonymous"></script>
+<link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -41,12 +42,12 @@
   </div>
 
   <!-- Botón acción rápida -->
-  <button class="sidebar-fab" onclick="toggleFabMenu()">
+  <button class="sidebar-fab" onclick="abrirRegistro('gasto')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Nueva Transacción
+    Nuevo movimiento <kbd class="sb-kbd">N</kbd>
   </button>
 
-  <!-- Nav principal -->
+  <!-- Nav principal, en grupos -->
   <div class="sidebar-section-label">Principal</div>
   <div class="sidebar-item active" id="sb-dashboard" onclick="switchView('dashboard');setSidebarActive('sb-dashboard')">
     <div class="si-icon">
@@ -64,40 +65,16 @@
     <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">📅</div>
     Presupuestos
   </div>
-  <div class="sidebar-item" id="sb-tarjetas" onclick="switchView('tarjetas');setSidebarActive('sb-tarjetas')">
-    <div class="si-icon">
-      <svg width="17" height="17" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="20" height="3.5" fill="currentColor" opacity=".7"/><rect x="5" y="15" width="5" height="2" rx="1" fill="currentColor" opacity=".8"/></svg>
-    </div>
-    Tarjetas (TC)
-  </div>
-
-  <!-- Nav finanzas -->
-  <div class="sidebar-section-label">Finanzas</div>
-  <div class="sidebar-item" id="sb-cobrar" onclick="switchView('cobrar');setSidebarActive('sb-cobrar')">
-    <div class="si-icon" style="background:rgba(var(--green-rgb),.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    </div>
-    Dinero que me deben
-  </div>
-  <div class="sidebar-item" id="sb-pagar" onclick="switchView('pagar');setSidebarActive('sb-pagar')">
-    <div class="si-icon" style="background:rgba(var(--red-rgb),.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--red)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    </div>
-    Dinero que debo
-  </div>
+  <div class="sidebar-section-label">Mi dinero</div>
   <div class="sidebar-item" id="sb-cuentas" onclick="switchView('cuentas');setSidebarActive('sb-cuentas')">
     <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">🏦</div>
     Mis cuentas
   </div>
-  <div class="sidebar-item" id="sb-grupos" onclick="switchView('grupos');setSidebarActive('sb-grupos')">
-    <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">👨‍👩‍👧</div>
-    Gastos compartidos
-  </div>
-  <div class="sidebar-item" id="sb-prestamos" onclick="switchView('prestamos');setSidebarActive('sb-prestamos')">
-    <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--amber)"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+  <div class="sidebar-item" id="sb-tarjetas" onclick="switchView('tarjetas');setSidebarActive('sb-tarjetas')">
+    <div class="si-icon">
+      <svg width="17" height="17" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="20" height="3.5" fill="currentColor" opacity=".7"/><rect x="5" y="15" width="5" height="2" rx="1" fill="currentColor" opacity=".8"/></svg>
     </div>
-    Préstamos
+    Tarjetas
   </div>
   <div class="sidebar-item" id="sb-metas" onclick="switchView('metas');setSidebarActive('sb-metas')">
     <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">
@@ -105,15 +82,40 @@
     </div>
     Metas de ahorro
   </div>
+  <div class="sidebar-item" id="sb-remesas" onclick="switchView('remesas');setSidebarActive('sb-remesas')">
+    <div class="si-icon">🌎</div>
+    Remesas
+  </div>
+  <div class="sidebar-section-label">Deudas y pagos</div>
   <div class="sidebar-item" id="sb-pagos" onclick="switchView('pagos');setSidebarActive('sb-pagos')">
     <div class="si-icon" style="background:rgba(var(--purple-rgb),.15)">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--purple)"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
     </div>
-    Pagos recurrentes
+    Pagos fijos
   </div>
-
-  <!-- Config -->
-  <div class="sidebar-section-label">Cuenta</div>
+  <div class="sidebar-item" id="sb-prestamos" onclick="switchView('prestamos');setSidebarActive('sb-prestamos')">
+    <div class="si-icon" style="background:rgba(var(--amber-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--amber)"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+    </div>
+    Préstamos
+  </div>
+  <div class="sidebar-item" id="sb-pagar" onclick="switchView('pagar');setSidebarActive('sb-pagar')">
+    <div class="si-icon" style="background:rgba(var(--red-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--red)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    </div>
+    Lo que debo
+  </div>
+  <div class="sidebar-item" id="sb-cobrar" onclick="switchView('cobrar');setSidebarActive('sb-cobrar')">
+    <div class="si-icon" style="background:rgba(var(--green-rgb),.15)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    </div>
+    Me deben
+  </div>
+  <div class="sidebar-item" id="sb-grupos" onclick="switchView('grupos');setSidebarActive('sb-grupos')">
+    <div class="si-icon" style="background:rgba(var(--blue-rgb),.15)">👨‍👩‍👧</div>
+    Compartidos
+  </div>
+  <div class="sidebar-section-label">Movimientos</div>
   <div class="sidebar-item" id="sb-gastos" onclick="switchView('gastos');setSidebarActive('sb-gastos')">
     <div class="si-icon" style="background:rgba(var(--red-rgb),.12)">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--red)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -125,6 +127,15 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--green)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
     </div>
     Ingresos
+  </div>
+  <div class="sidebar-item" id="sb-papelera" onclick="abrirPapelera();setSidebarActive('sb-papelera')">
+    <div class="si-icon">🗑️</div>
+    Papelera <span id="sb-papelera-cuenta" class="sb-cuenta"></span>
+  </div>
+  <div class="sidebar-section-label">Ajustes</div>
+  <div class="sidebar-item" id="sb-categorias" onclick="switchView('categorias');setSidebarActive('sb-categorias')">
+    <div class="si-icon">🏷️</div>
+    Categorías
   </div>
   <div class="sidebar-item" id="sb-config" onclick="switchView('config');setSidebarActive('sb-config')">
     <div class="si-icon">
@@ -156,12 +167,18 @@
   <!-- TOPBAR DESKTOP -->
   <div id="desktop-topbar">
     <div class="topbar-greeting">
-      <div class="topbar-greeting-sub" id="dt-greeting-sub">Bienvenido a Mi Pisto HN</div>
-      <div class="topbar-greeting-name" id="dt-greeting-name" style="background:var(--grad-texto);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Cargando...</div>
+      <div class="topbar-greeting-name" id="dt-greeting-name">Cargando...</div>
+      <div class="topbar-greeting-sub"><span id="dt-greeting-sub">Bienvenido a Mi Pisto HN</span> · <span id="dt-date"></span></div>
     </div>
-    <div class="topbar-actions" style="display:flex;align-items:center;gap:12px">
-      <button class="hamburger-btn btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" style="font-size:20px">👁️</button>
-      <div id="dt-date" style="font-size:12px;color:var(--text2);text-align:right;line-height:1.5"></div>
+    <div class="topbar-actions">
+      <label class="dt-buscar" title="Buscar (tecla /)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input type="search" id="dt-buscar" placeholder="Buscar movimientos, montos, cuentas…" autocomplete="off" aria-label="Buscar movimientos" oninput="buscarDesdeBarra(this.value)">
+        <kbd>/</kbd>
+      </label>
+      <button class="dt-icono btn-modo-discreto" onclick="toggleModoDiscreto()" title="Ocultar montos" aria-label="Ocultar montos">👁️</button>
+      <button class="dt-icono" onclick="elegirTema(temaActual() === 'oscuro' ? 'claro' : 'oscuro')" title="Cambiar a tema claro u oscuro" aria-label="Cambiar tema"><span class="dt-tema-luna">🌙</span><span class="dt-tema-sol">☀️</span></button>
+      <button class="dt-icono" onclick="bloquearAhora()" title="Bloquear la app" aria-label="Bloquear la app">🔒</button>
     </div>
   </div>
 <div class="hamburger-menu">
@@ -419,7 +436,7 @@
   <div id="auto-anotados" class="card auto-anotados" style="display:none"></div>
   <div id="aviso-cuadre" class="card" style="display:none;border-color:rgba(var(--blue-rgb),.45)"></div>
   <div id="racha-card" class="card" style="display:none"></div>
-  <div class="balance-card">
+  <div class="balance-card" id="balance-card">
     <div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Dinero disponible</div>
       <div class="balance-amount" id="balance-amount">L. 0.00</div>
@@ -471,17 +488,25 @@
   </div><!-- /desktop-grid -->
 
   
+  <div id="bloque-metas" class="bloque-inicio">
   <h3 style="margin:20px 0 10px;font-size:14px">🎯 Metas de Ahorro</h3>
   <div id="dashboard-goals"></div>
+  </div>
+  <div id="bloque-alertas-tc" class="bloque-inicio">
   <h3 style="margin:20px 0 10px;font-size:14px">🔔 Alertas de Tarjetas</h3>
   <div id="card-alerts"></div>
   <p id="no-card-alerts" style="text-align:center;color:var(--text2);font-size:12px;padding:10px">✅ Sin alertas próximas</p>
+  </div>
+  <div id="bloque-proximos-pagos" class="bloque-inicio">
   <h3 style="margin:20px 0 10px;font-size:14px">🔔 Próximos Pagos (7 días)</h3>
   <div id="upcoming-payments"></div>
   <p id="no-upcoming-payments" style="text-align:center;color:var(--text2);font-size:12px;padding:10px;display:none">✅ Sin pagos próximos en los próximos 7 días</p>
+  </div>
+  <div id="bloque-proximos-cobros" class="bloque-inicio">
   <h3 style="margin:20px 0 10px;font-size:14px">💰 Próximos Cobros (7 días)</h3>
   <div id="upcoming-receivables"></div>
   <p id="no-upcoming-receivables" style="text-align:center;color:var(--text2);font-size:12px;padding:10px;display:none">✅ Sin cobros próximos en los próximos 7 días</p>
+  </div>
 </div>
 
 <div id="view-cobrar" class="view">
@@ -1581,5 +1606,6 @@
 <script src="js/33-sin-esfuerzo.js"></script>
 <script src="js/34-informe-mes.js"></script>
 <script src="js/35-dialogos.js"></script>
+<script src="js/36-escritorio.js"></script>
 </body>
 </html>

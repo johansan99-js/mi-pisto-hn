@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v78-fase3-limpieza';
+const VERSION = 'v79-escritorio';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -103,6 +103,8 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/33-sin-esfuerzo.js',
   BASE_PATH + 'js/34-informe-mes.js',
   BASE_PATH + 'js/35-dialogos.js',
+  BASE_PATH + 'js/36-escritorio.js',
+  BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];
 

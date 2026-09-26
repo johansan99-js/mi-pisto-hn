@@ -17,6 +17,9 @@
       const isEmpty = container.children.length === 0 || container.innerHTML.trim() === '';
       const heading = container.previousElementSibling;
       const emptyMsg = s.e ? document.getElementById(s.e) : null;
+      // El bloque que las envuelve (en la computadora es una tarjeta) también se oculta
+      const bloque = container.parentElement && container.parentElement.classList.contains('bloque-inicio') ? container.parentElement : null;
+      if (bloque) bloque.style.display = isEmpty ? 'none' : '';
       if (isEmpty) {
         if (heading && heading.tagName === 'H3') heading.style.display = 'none';
         if (emptyMsg) emptyMsg.style.display = 'none';
@@ -181,89 +184,6 @@
     /* no-op */
   }
 
-  /* 4. Hamburguesa desktop */
-  function buildDesktopHamburger() {
-    if (document.getElementById('desktop-hamburger-btn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'desktop-hamburger-btn';
-    btn.className = 'desktop-hamburger';
-    btn.setAttribute('aria-label','Abrir menú');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>`;
-    document.body.appendChild(btn);
-
-    const menu = document.createElement('div');
-    menu.id = 'desktop-hamburger-menu';
-    menu.className = 'desktop-hamburger-menu';
-    menu.innerHTML = `
-      <div class="hb-menu-section">Acciones rápidas</div>
-      <div class="hb-menu-item" data-fab="ingreso">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--green)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-        Nuevo ingreso
-      </div>
-      <div class="hb-menu-item" data-fab="gasto">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--red)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        Nuevo gasto
-      </div>
-      <div class="hb-menu-item" data-fab="transferir">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--amber)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Transferir
-      </div>
-      <div class="hb-menu-divider"></div>
-      <div class="hb-menu-section">Navegación</div>
-      <div class="hb-menu-item" data-view="dashboard">
-        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2" opacity=".6"/><rect x="3" y="13" width="8" height="8" rx="2" opacity=".6"/><rect x="13" y="13" width="8" height="8" rx="2" opacity=".35"/></svg>
-        Inicio
-      </div>
-      <div class="hb-menu-item" data-view="metas">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke:var(--blue)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" style="fill:var(--blue)"/></svg>
-        Metas de ahorro
-      </div>
-      <div class="hb-menu-item" data-view="historico">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 3.05A9 9 0 1 0 20.95 13H11z" opacity=".55"/><path d="M13 2.05V11h8.95A9 9 0 0 0 13 2.05z"/></svg>
-        Análisis
-      </div>
-      <div class="hb-menu-item" data-view="tarjetas">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        Tarjetas
-      </div>
-      <div class="hb-menu-divider"></div>
-      <div class="hb-menu-item" data-view="config">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        Configuración
-      </div>`;
-    document.body.appendChild(menu);
-
-    btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
-    document.addEventListener('click', e => {
-      if (!menu.contains(e.target) && !btn.contains(e.target)) menu.classList.remove('open');
-    });
-    menu.addEventListener('click', e => {
-      const item = e.target.closest('.hb-menu-item');
-      if (!item) return;
-      menu.classList.remove('open');
-      const view = item.dataset.view;
-      const fabAction = item.dataset.fab;
-      if (view && typeof window.switchView === 'function') {
-        window.switchView(view);
-        if (typeof window.setSidebarActive === 'function') window.setSidebarActive('sb-' + view);
-      }
-      if (fabAction) {
-        const map = {
-          ingreso:    ['modal-ingreso','modal-income'],
-          gasto:      ['modal-gasto','modal-expense'],
-          transferir: ['modal-transferir','modal-transfer']
-        };
-        const candidatos = map[fabAction] || [];
-        for (const id of candidatos) {
-          if (document.getElementById(id) && typeof window.openModal === 'function') {
-            window.openModal(id); return;
-          }
-        }
-        if (typeof window.toggleFabMenu === 'function') window.toggleFabMenu();
-      }
-    });
-  }
-
   /* Hook al renderDashboard para ocultar secciones vacías cada vez que se renderiza */
   function hookRenderDashboard() {
     if (typeof window.renderDashboard !== 'function') { setTimeout(hookRenderDashboard, 300); return; }
@@ -281,7 +201,6 @@
     fixEmptyStateButton();
     enhanceMetasRendering();
     hookAbonoParaConfeti();
-    buildDesktopHamburger();
     if (typeof window.switchView === 'function') {
       const orig = window.switchView;
       window.switchView = function () {

@@ -1,3 +1,6 @@
+/* Space Grotesk (SIL Open Font License, fonts/OFL.txt): viene con la app, así se ve igual
+   en todos los teléfonos y computadoras, también sin internet */
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url(../fonts/space-grotesk.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 :root{--bg:#000000;--bg2:#0D0F0E;--bg3:#161A18;--bg4:#202622;--amber:#22C55E;--text:#F2F5F3;--text2:#9AA5A0;--green:#22C55E;--red:#FF5A5F;--blue:#4DA3FF;--purple:#F5B544;--border:#232A26;--r:12px;--amber-rgb:34,197,94;--red-rgb:255,90,95;--green-rgb:34,197,94;--blue-rgb:77,163,255;--purple-rgb:245,181,68;--aviso:#F5B544;--aviso-rgb:245,181,68;--tinta-rgb:255,255,255;--acento-txt:#03210F;--bg-hondo:#050706;--grad-boton:linear-gradient(135deg,#22C55E,#16A34A);--grad-texto:linear-gradient(90deg,#F2F5F3,#22C55E);--grad-balance:linear-gradient(90deg,#F2F5F3,#22C55E,#F2F5F3);color-scheme:dark}
 
 /* ── ANIMACIONES GLOBALES ── */
@@ -101,6 +104,7 @@
 /* ── NAV FAB ── */
 .nav-fab{background:var(--grad-boton) !important;box-shadow:0 4px 20px rgba(var(--amber-rgb),.4) !important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font-family:inherit}
 body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;padding-bottom:100px;overflow-x:hidden}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:15px;margin-bottom:15px}
 .card-debt{border-left:4px solid var(--red)}
@@ -625,19 +629,14 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
     flex: 1 !important;
     height: 100vh !important;
     overflow-y: auto !important;
-    padding: 0 32px 40px !important;
-    max-width: 1200px !important;
+    padding: 0 28px 48px !important;
     width: 100% !important;
   }
 
   /* mobile-welcome: ocultar en desktop */
   .mobile-welcome { display: none !important; }
 
-  /* Dashboard grid 2 columnas */
-  /* Las tarjetas del Inicio en dos columnas (la Fase 4 trae el diseño completo) */
-  #desktop-grid { display: block !important; }
-  #desktop-grid-left { display: block !important; columns: 2; column-gap: 20px; }
-  #desktop-grid-left > * { break-inside: avoid; margin-top: 0; margin-bottom: 16px; }
+  #desktop-grid, #desktop-grid-left { display: block !important; }
 
   /* Balance card horizontal */
   .balance-card { padding: 28px 24px; }
@@ -852,28 +851,6 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 /* Confeti — desactivado (mantenemos los selectores por compatibilidad pero ocultos) */
 #confetti-canvas { display:none !important }
 .celebration-toast { display:none !important }
-
-/* Hamburguesa desktop */
-.desktop-hamburger { display:none;position:fixed;top:18px;right:24px;width:44px;height:44px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;cursor:pointer;z-index:1001;align-items:center;justify-content:center;transition:all .2s }
-.desktop-hamburger:hover { background:var(--bg3);border-color:var(--amber);transform:scale(1.05) }
-.desktop-hamburger svg { width:22px;height:22px;stroke:var(--text);transition:stroke .2s }
-.desktop-hamburger:hover svg { stroke:var(--amber) }
-.desktop-hamburger-menu { display:none;position:fixed;top:70px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:8px;min-width:240px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:1000;animation:hbMenuIn .2s ease-out }
-.desktop-hamburger-menu.open { display:block }
-@keyframes hbMenuIn { from{opacity:0;transform:translateY(-8px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
-.hb-menu-item { display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;color:var(--text);transition:background .15s;user-select:none }
-.hb-menu-item:hover { background:var(--bg3);color:var(--amber) }
-.hb-menu-item svg { width:18px;height:18px;flex-shrink:0 }
-.hb-menu-divider { height:1px;background:var(--border);margin:6px 8px }
-.hb-menu-section { font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px;padding:8px 14px 4px }
-
-@media (min-width:1024px) {
-  .desktop-hamburger { display:flex }
-  #desktop-fab-btn   { display:none !important }
-}
-@media (max-width:1023px) {
-  .desktop-hamburger,.desktop-hamburger-menu { display:none !important }
-}
 
 .btn-empty-cta-pro { width:100%;padding:16px;border-radius:12px;border:none;font-weight:800;font-size:15px;cursor:pointer;background:linear-gradient(135deg,var(--amber),var(--purple));color:var(--bg);margin-top:16px;box-shadow:0 4px 16px rgba(var(--amber-rgb),.3);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px }
 .btn-empty-cta-pro:hover { filter:brightness(1.1);transform:translateY(-1px) }
@@ -1397,3 +1374,93 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 .dlg-botones{display:flex;gap:10px;margin-top:18px}
 .dlg-botones .btn{flex:1;margin:0;min-height:46px;white-space:normal;line-height:1.2}
 .dlg-peligro .dlg-titulo{color:var(--red)}
+
+/* ══════════ COMPUTADORA (Fase 4) ══════════
+   768 px: menú lateral y barra de arriba · 1024 px: Inicio en columnas con la
+   fila de datos clave y el registro en dos partes · 1600 px: tres columnas */
+#esc-kpis, #esc-grid { display: none; }
+@media (min-width: 768px) {
+  :root { --sidebar-w: 240px; }
+  .view, #desktop-topbar { max-width: 1560px; margin-left: auto; margin-right: auto; }
+  #desktop-fab-btn { display: none !important; }
+  /* Barra de arriba */
+  #desktop-topbar { gap: 16px; padding: 18px 0 14px; }
+  .topbar-greeting { min-width: 0; }
+  .topbar-greeting-name { font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-greeting-sub { font-size: 13px; color: var(--text2); margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .dt-buscar { display: flex; align-items: center; gap: 8px; height: 42px; width: clamp(200px, 26vw, 380px); padding: 0 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; color: var(--text2); cursor: text; }
+  .dt-buscar:focus-within { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(var(--amber-rgb), .15); }
+  .dt-buscar input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text); font-size: 14px; }
+  .dt-buscar input::-webkit-search-cancel-button { display: none; }
+  .dt-buscar kbd, .sb-kbd { font: inherit; font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border); color: var(--text2); }
+  .dt-icono { width: 42px; height: 42px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+  .dt-icono:hover { border-color: var(--amber); }
+  html[data-tema="claro"] .dt-tema-sol, html:not([data-tema="claro"]) .dt-tema-luna { display: none; }
+  /* Menú lateral más compacto: cabe completo en una laptop */
+  .sidebar-logo { padding: 18px 18px 14px; margin-bottom: 6px; }
+  .sidebar-fab { margin: 6px 12px 4px; width: calc(100% - 24px); padding: 11px 14px; white-space: nowrap; font-size: 13.5px; }
+  .sidebar-fab .sb-kbd { margin-left: 6px; border-color: rgba(0, 0, 0, .2); color: inherit; opacity: .75; }
+  .sidebar-section-label { padding: 14px 20px 4px; }
+  .sidebar-item { gap: 10px; padding: 7px 12px; margin: 1px 10px; font-size: 13.5px; }
+  .si-icon { width: 28px; height: 28px; border-radius: 8px; font-size: 14px; }
+  .si-icon svg { width: 15px; height: 15px; }
+  .sb-cuenta { margin-left: auto; font-size: 11px; color: var(--text2); }
+  .sidebar-user { padding: 12px 18px; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --sidebar-w: 212px; }
+  #main-scroll-area { padding: 0 20px 40px !important; }
+  .dt-buscar { width: 190px; }
+  .dt-buscar kbd { display: none; }
+}
+@media (min-width: 1024px) {
+  /* Fila de datos clave */
+  #esc-kpis { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+  .esc-kpi { min-width: 0; padding: 18px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; }
+  .esc-kpi-t { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .esc-kpi-v { margin: 8px 0 4px; font-size: clamp(20px, 1.7vw, 28px); font-weight: 700; letter-spacing: -.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .esc-kpi.grande .esc-kpi-v { font-size: clamp(24px, 2.1vw, 34px); }
+  .esc-kpi-s { font-size: 12.5px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Columnas del Inicio */
+  #esc-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .esc-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .esc-col:empty { display: none; }
+  .esc-col > * { margin: 0 !important; }
+  .bloque-inicio { padding: 16px 18px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; }
+  .bloque-inicio h3 { margin: 0 0 10px !important; }
+  /* El total ya está en la fila de arriba: aquí quedan las cuentas */
+  #esc-grid .balance-card { padding: 18px; }
+  #esc-grid .balance-card > div:first-child { display: none; }
+  #esc-grid .balance-card::before { content: 'Tus cuentas'; display: block; font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text2); }
+  #esc-grid #cuentas-widget { margin-top: 10px !important; }
+  /* Registro: los datos a la izquierda y el teclado a la derecha */
+  #modal-registro .reg-hoja {
+    width: 840px; max-width: calc(100vw - 48px) !important; position: relative;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 24px; align-content: start;
+    grid-template-areas: "top top" "tabs tabs" "elegir monto" "presu teclado" "remesa teclado" "nota teclado" "fecha teclado" "extras teclado";
+    grid-template-rows: auto auto auto auto auto auto auto 1fr;
+  }
+  #modal-registro .reg-top { grid-area: top; }
+  #modal-registro .reg-tabs { grid-area: tabs; }
+  #modal-registro .reg-elegir { grid-area: elegir; }
+  #modal-registro .reg-presu { grid-area: presu; }
+  #modal-registro .reg-remesa { grid-area: remesa; }
+  #modal-registro .reg-nota { grid-area: nota; align-self: start; }
+  #modal-registro .reg-monto-caja { grid-area: monto; }
+  #modal-registro .reg-teclado { grid-area: teclado; }
+  #modal-registro .reg-fecha { grid-area: fecha; }
+  #modal-registro .reg-extras { grid-area: extras; align-self: start; }
+  /* Análisis: los gráficos y el resumen del mes lado a lado */
+  #view-historico { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  #view-historico > h2 { grid-column: 1 / -1; margin-bottom: 0 !important; }
+  #view-historico > #analisis { grid-row: span 3; }
+  #view-historico > .card, #view-historico > .btn { margin: 0 !important; }
+  /* Listas de tarjetas, metas y cuentas en cuadrícula */
+  #metas-list, #tarjetas-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; align-items: start; }
+  #metas-list > *, #tarjetas-list > * { margin: 0 !important; }
+  .modal-content { max-width: 560px !important; }
+}
+@media (min-width: 1600px) {
+  #esc-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); }
+}
