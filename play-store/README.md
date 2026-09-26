@@ -84,7 +84,7 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 **Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
 
 **Imágenes (en esta carpeta):**
-- **Ícono:** `../icon-512.png` (512×512).
+- **Ícono:** `icono-512.png` (512×512, cuadrado y sin transparencia: Google le pone las esquinas). Todos los íconos salen de `node play-store/generar-icono.js` (una flecha verde que sube, dibujo propio).
 - **Gráfico destacado:** `grafico-destacado.png` (1024×500), en el verde de la app con la guacamaya y la pantalla de Análisis. Se rehace con `node play-store/generar-grafico-destacado.js`. `grafico-destacado-quincenas.png` es del diseño anterior (vino y dorado); la idea detrás de ese diseño está en `filosofia-diseno.md`.
 - **Capturas de teléfono:** `capturas-ficha/` (1080×1920, en orden). Cada una tiene un título arriba y la pantalla real de la app debajo, con datos de ejemplo:
   1. Tu mes, día por día · 2. Anota en 3 toques (el teclado) · 3. Análisis con la dona · 4. Presupuesto por quincena · 5. Cuentas y tarjetas · 6. El dólar de tu banco · 7. Plan para salir de deudas · 8. Claro u oscuro.
