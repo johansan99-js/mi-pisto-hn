@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_fondo"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="4dp">
+
+    <TextView
+        android:id="@+id/widget_dictar_solo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_boton"
+        android:gravity="center"
+        android:text="@string/widget_dictar_solo"
+        android:textColor="@color/widget_texto"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</LinearLayout>

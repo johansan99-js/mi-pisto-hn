@@ -1,0 +1,27 @@
+<!--
+  Pegar DENTRO de <application> ... </application> en app/src/main/AndroidManifest.xml,
+  por ejemplo justo antes de </application>.
+-->
+<receiver
+    android:name="hn.mipisto.app.MiPistoWidget"
+    android:exported="false"
+    android:label="Mi Pisto HN">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+    </intent-filter>
+    <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/widget_mipisto_info" />
+</receiver>
+
+<receiver
+    android:name="hn.mipisto.app.MiPistoWidgetDictar"
+    android:exported="false"
+    android:label="Dictar gasto">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+    </intent-filter>
+    <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/widget_mipisto_dictar_info" />
+</receiver>
