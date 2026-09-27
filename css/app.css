@@ -1563,3 +1563,15 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 .edit-factura-cargando{display:block;color:var(--text2);font-size:12px;padding:10px}
 .edit-factura-botones{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .edit-factura-botones .btn{margin:0;cursor:pointer;font-size:12px}
+
+/* Descripción y factura en Me deben, Debo y Préstamos */
+.adj-bloque{margin:4px 0 12px}
+.adj-label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+.adj-desc-input{resize:vertical;min-height:54px;font-family:inherit}
+.adj-foto-btn{display:block;width:100%;margin:0;cursor:pointer;text-align:center}
+.adj-estado{font-size:11px;color:var(--text2);margin:6px 0 0;line-height:1.5;min-height:0}
+.adj-prev{width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:2px solid var(--amber);margin-top:8px}
+.adj-info{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.adj-desc{font-size:12px;color:var(--text);line-height:1.5;margin:0 0 8px;word-break:break-word}
+.adj-acciones{display:flex;flex-wrap:wrap;gap:6px}
+.adj-acciones button{flex:1 1 auto;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font:inherit;font-size:11px;font-weight:600;cursor:pointer}

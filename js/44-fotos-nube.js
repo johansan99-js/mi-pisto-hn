@@ -66,7 +66,10 @@ async function sincronizarFotos() {
   let subidas = 0;
   try {
     const listas = _fotosListas();
-    const ids = [...new Set((state.transactions || []).filter(t => t.facturaImagenId && !t.deletedAt).map(t => t.facturaImagenId))];
+    // Gastos, y también lo que me deben, lo que debo y los préstamos
+    const conFoto = (state.transactions || []).filter(t => !t.deletedAt)
+      .concat(state.receivables || [], state.payables || [], state.prestamos || []);
+    const ids = [...new Set(conFoto.map(x => x.facturaImagenId).filter(Boolean))];
     for (const id of ids) {
       if (listas.has(id)) continue;
       if (!navigator.onLine) break;

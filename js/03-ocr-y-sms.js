@@ -219,21 +219,12 @@ async function _adjuntarFotoFactura(file) {
     return !!_tempFacturaId;
 }
 
-async function procesarReciboOCR(event) {
-    const fileOriginal = event.target.files[0];
-    if (!fileOriginal) return;
-    const statusEl = document.getElementById('ocr-status');
-    const montoInput = document.getElementById('gasto-monto');
-    statusEl.style.display = 'block';
-    statusEl.style.color = 'var(--amber)';
-    const updateStatus = (msg, color) => { statusEl.textContent = msg; if (color) statusEl.style.color = color; };
-    let worker = null, conFoto = false;
-
+/** Lee el texto de la foto de una factura con Tesseract (español). Se usa en
+    los gastos y en las deudas. updateStatus(msg, color) va contando el avance. */
+async function _leerTextoFactura(file, updateStatus) {
+    updateStatus = updateStatus || (() => {});
+    let worker = null;
     try {
-        updateStatus('🗜️ Optimizando imagen...');
-        const file = await _comprimirImagenParaOCR(fileOriginal);
-        // La foto se guarda PRIMERO: aunque no se pueda leer el total, queda con el gasto
-        conFoto = await _adjuntarFotoFactura(file);
         updateStatus('📥 Cargando el lector de facturas...');
         await _cargarTesseractLib();
         if (typeof Tesseract === 'undefined') throw new Error('El lector de facturas no cargó.');
@@ -253,6 +244,28 @@ async function procesarReciboOCR(event) {
         const imageUrl = URL.createObjectURL(file);
         const { data: { text } } = await worker.recognize(imageUrl);
         URL.revokeObjectURL(imageUrl);
+        return text;
+    } finally {
+        if (worker) { try { await worker.terminate(); } catch (e) {} }
+    }
+}
+
+async function procesarReciboOCR(event) {
+    const fileOriginal = event.target.files[0];
+    if (!fileOriginal) return;
+    const statusEl = document.getElementById('ocr-status');
+    const montoInput = document.getElementById('gasto-monto');
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--amber)';
+    const updateStatus = (msg, color) => { statusEl.textContent = msg; if (color) statusEl.style.color = color; };
+    let conFoto = false;
+
+    try {
+        updateStatus('🗜️ Optimizando imagen...');
+        const file = await _comprimirImagenParaOCR(fileOriginal);
+        // La foto se guarda PRIMERO: aunque no se pueda leer el total, queda con el gasto
+        conFoto = await _adjuntarFotoFactura(file);
+        const text = await _leerTextoFactura(file, updateStatus);
 
         const mayorMonto = _montoDeFactura(text);
         const { categoriaAsignada, subcatAsignada, tipoAsignado } = _comercioDeFactura(text);
@@ -276,7 +289,6 @@ async function procesarReciboOCR(event) {
             ? '⚠️ No se pudo leer la factura (revisa tu internet la primera vez). Escribe el monto: la foto igual queda guardada con el gasto.'
             : '❌ No se pudo usar la foto. Intenta de nuevo.', conFoto ? 'var(--aviso)' : 'var(--red)');
     } finally {
-        if (worker) { try { await worker.terminate(); } catch (e) {} }
         event.target.value = '';
     }
 }
