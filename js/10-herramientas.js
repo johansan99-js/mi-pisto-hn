@@ -643,7 +643,14 @@ async function loadStateFromDB() {
 // ==========================================
 let hasUnsavedModalData = false;
 
+// Solo avisa si todavía hay una ventana abierta con lo escrito: el PIN, la
+// bienvenida o una ventana que se cerró por otro camino no cuentan
+function _hayModalConDatos() {
+  return [...document.querySelectorAll('.modal')].some(m =>
+    m.id !== 'modal-pin' && m.id !== 'onboarding' && getComputedStyle(m).display !== 'none' && m.querySelector('.modal-content'));
+}
 window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedModalData && !_hayModalConDatos()) hasUnsavedModalData = false;
   if (hasUnsavedModalData) {
     e.preventDefault();
     e.returnValue = '¿Seguro? Tienes datos sin guardar en pantalla.';
