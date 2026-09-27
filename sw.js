@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v92-facturas-deudas';
+const VERSION = 'v93-privacidad';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW

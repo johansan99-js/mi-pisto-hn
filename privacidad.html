@@ -27,19 +27,20 @@
 <body>
 <main>
   <h1>Política de privacidad</h1>
-  <p class="sub">Mi Pisto HN · Última actualización: 25 de septiembre de 2026</p>
+  <p class="sub">Mi Pisto HN · Última actualización: 27 de septiembre de 2026</p>
 
   <div class="card">
-    <strong>En resumen:</strong> tus datos financieros se guardan en tu teléfono, cifrados con tu PIN. No hay anuncios, no hay analítica y no vendemos ni compartimos datos. La sincronización en la nube es opcional y lo que sube va cifrado antes de salir del teléfono: nosotros no podemos leerlo.
+    <strong>En resumen:</strong> tus datos financieros se guardan en tu teléfono, cifrados con tu PIN. No hay anuncios, no hay analítica y no vendemos ni compartimos datos. La sincronización en la nube es opcional y todo lo que sube —tus datos y las fotos de tus facturas— va cifrado antes de salir del teléfono: nosotros no podemos leerlo.
   </div>
 
   <h2>1. Qué datos maneja la app y dónde quedan</h2>
   <table>
     <tr><th>Dato</th><th>Dónde se guarda</th></tr>
     <tr><td>Movimientos, cuentas, tarjetas, préstamos, metas, nombre y demás información que registras</td><td>Solo en tu teléfono (almacenamiento del navegador). Con PIN, cifrado con AES-256.</td></tr>
-    <tr><td>Fotos de facturas que adjuntas</td><td>Solo en tu teléfono, cifradas con tu PIN. El reconocimiento de texto (OCR) se hace en el teléfono; las imágenes no se envían a ningún servidor.</td></tr>
+    <tr><td>Fotos de facturas, recibos o pagarés que adjuntas (a un gasto, a lo que te deben, a lo que debes o a un préstamo)</td><td>En tu teléfono, cifradas con tu PIN. Si activas la sincronización, también se guarda en la nube una copia más liviana, cifrada en el teléfono antes de subir (ver punto 2). La lectura del total y del comercio (OCR) se hace en el teléfono: la imagen no se envía a ningún servicio para leerla.</td></tr>
     <tr><td>PIN</td><td>No se guarda. Se guarda un derivado (PBKDF2 con 600,000 iteraciones) que sirve para verificarlo.</td></tr>
-    <tr><td>Huella o rostro (opcional)</td><td>Lo gestiona el sistema de tu teléfono; la app nunca recibe tus datos biométricos. Solo confirma que eres tú: para descifrar tus datos siempre se necesita el PIN.</td></tr>
+    <tr><td>Huella o rostro (opcional)</td><td>Lo gestiona el sistema de tu teléfono; la app nunca recibe tus datos biométricos. Si tu teléfono lo permite, al verificarte el sistema le entrega a la app un secreto que solo sale con tu huella o tu rostro, y con él se abre una copia cifrada de la clave de tus datos, guardada en tu teléfono. Si tu teléfono no lo permite, se sigue entrando con el PIN. El PIN siempre sirve como respaldo.</td></tr>
+    <tr><td>Gastos o ingresos anotados sin desbloquear (opcional)</td><td>Desde los atajos del ícono o la pantalla del PIN puedes anotar sin poner el PIN. Lo anotado se guarda en tu teléfono cifrado con una llave que solo se abre con tu PIN, y pasa a tus movimientos cuando entras a la app. Se puede apagar en Configuración → Seguridad.</td></tr>
     <tr><td>Tu voz, si usas el dictado (🎤, opcional)</td><td>Solo mientras tocas el micrófono. El reconocimiento de voz lo hace el servicio de tu teléfono (en Android, el de Google): el audio se envía a ese servicio para convertirlo en texto, según su propia política de privacidad. La app solo recibe el texto de la frase, lo usa para llenar el movimiento y no guarda ni envía el audio. Si no quieres usarlo, puedes escribir la frase o usar el teclado de siempre.</td></tr>
     <tr><td>Imagen de "Tu mes" que compartes</td><td>Se crea en tu teléfono y solo lleva porcentajes, sin montos. Solo sale del teléfono si tú la compartes.</td></tr>
   </table>
@@ -47,18 +48,22 @@
   <h2>2. Sincronización en la nube (opcional)</h2>
   <p>Si la activas iniciando sesión con Google, la app usa <a href="https://supabase.com/privacy" rel="noopener">Supabase</a> para guardar:</p>
   <ul>
-    <li><strong>Tu correo y un identificador de cuenta</strong>, que da Google al iniciar sesión.</li>
-    <li><strong>Una copia cifrada de tus datos.</strong> Se cifra en el teléfono con una contraseña que solo tú conoces; sin ella nadie puede leerla, ni nosotros.</li>
+    <li><strong>Tu correo, tu nombre y un identificador de cuenta</strong>, que da Google al iniciar sesión. Solo se puede entrar con Google; la app no pide ni guarda contraseñas de correo.</li>
+    <li><strong>Una copia cifrada de tus datos.</strong> Se cifra en el teléfono con una contraseña de la nube que solo tú conoces; sin ella nadie puede leerla, ni nosotros.</li>
+    <li><strong>Las fotos de tus facturas, cifradas.</strong> Cada foto se cifra en el teléfono con la misma clave de tus datos antes de subir, y se guarda en una carpeta privada de tu cuenta. Al servidor solo llegan datos ilegibles. En tus otros dispositivos, la foto se descarga y se descifra cuando abres ese movimiento.</li>
     <li><strong>Datos técnicos de cada dispositivo:</strong> un identificador aleatorio, el nombre del dispositivo, el navegador y la fecha del último uso, para mostrarte tu lista de dispositivos.</li>
   </ul>
+  <p><strong>Sincronización en tiempo real:</strong> mientras la app está abierta, mantiene una conexión con Supabase para enterarse al momento cuando tu copia cambia desde otro de tus dispositivos. Solo recibe avisos de tu propia cuenta, y lo que baja sigue cifrado hasta llegar a tu teléfono.</p>
+  <p>Cada cuenta solo puede leer y modificar sus propios datos y sus propias fotos: así lo imponen las reglas de acceso del servidor.</p>
   <p>Si no activas la sincronización, ningún dato tuyo sale del teléfono.</p>
 
   <h2>3. Servicios externos</h2>
   <ul>
+    <li><strong>Inicio de sesión:</strong> si activas la nube, entras con tu cuenta de Google, según la <a href="https://policies.google.com/privacy" rel="noopener">política de privacidad de Google</a>. Google le comparte a la app tu nombre, tu correo y tu foto de perfil; nada más.</li>
     <li><strong>Tasas de cambio:</strong> la app descarga tasas públicas (de este mismo sitio y, como respaldo, de open.er-api.com o exchangerate-api.com). No se envía ningún dato tuyo.</li>
     <li><strong>Dictado por voz:</strong> si tocas 🎤, el audio lo procesa el reconocimiento de voz de tu teléfono (Google en Android) para convertirlo en texto. Mi Pisto no recibe ni guarda el audio.</li>
     <li><strong>Compras en la app (cuando existan):</strong> las procesa Google Play. Nosotros no vemos tu tarjeta ni tus datos de pago; la app solo recibe de Google Play si tu suscripción está vigente.</li>
-    <li><strong>Librerías:</strong> gráficas, exportación a Excel y OCR se descargan de CDNs públicos (jsDelivr, SheetJS, unpkg y los datos de idioma de Tesseract).</li>
+    <li><strong>Librerías:</strong> gráficas, exportación a Excel, la conexión con Supabase y el lector de facturas (Tesseract y su idioma español) se descargan de CDNs públicos (jsDelivr, SheetJS, unpkg y tessdata.projectnaptha.com). Solo se descarga el programa; tus fotos no se envían ahí.</li>
     <li><strong>Alojamiento:</strong> la app se sirve desde GitHub Pages.</li>
   </ul>
   <p>Como cualquier sitio web, estos servicios pueden registrar datos técnicos de la conexión, como la dirección IP, según sus propias políticas.</p>
@@ -74,7 +79,8 @@
 
   <h2 id="eliminar">5. Cómo eliminar tu cuenta y tus datos</h2>
   <div class="card">
-    <p><strong>Datos de la nube y cuenta:</strong> en la app, ve a <em>Config → Sincronización en la nube → 🗑️ Eliminar mi cuenta y mis datos de la nube</em>. Se borran tu cuenta, tu copia cifrada y tu lista de dispositivos, de inmediato y para siempre.</p>
+    <p><strong>Datos de la nube y cuenta:</strong> en la app, ve a <em>Config → Sincronización en la nube → 🗑️ Eliminar mi cuenta y mis datos de la nube</em>. Se borran tu cuenta, tu copia cifrada, las fotos de tus facturas guardadas en la nube y tu lista de dispositivos, de inmediato y para siempre.</p>
+    <p><strong>Una foto:</strong> al quitar la foto de un movimiento o de una cuenta, o al borrar una cuenta por cobrar, deuda o préstamo, se borra también de la nube. Si borras un movimiento, va primero a la papelera; su foto se borra cuando el movimiento se elimina de la papelera.</p>
     <p><strong>Datos del teléfono:</strong> en <em>Config → Borrar Todo y Volver al Tutorial</em>, o desinstalando la app.</p>
     <p><strong>Sin la app:</strong> escríbenos a <span class="pendiente"><a href="mailto:mipistohn@gmail.com">mipistohn@gmail.com</a></span> desde el correo con el que iniciaste sesión, con el asunto "Eliminar mi cuenta". La borramos en un máximo de 30 días y te confirmamos por correo.</p>
   </div>
