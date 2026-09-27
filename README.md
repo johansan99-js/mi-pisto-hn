@@ -131,3 +131,9 @@ Cubren: arranque, montos y saldos; PIN, cifrado, kit de recuperación y respaldo
 - Pérdida de información por no hacer respaldos
 
 Al usar esta app, usted acepta estos términos.
+
+## Licencia
+
+© 2026 Johand Sanchez (JS Apps HN). **Todos los derechos reservados.**
+
+El código es público para que la app se publique en GitHub Pages y cualquiera pueda revisar cómo trata los datos, pero verlo no da permiso de copiarlo, modificarlo ni publicarlo. Los detalles y las licencias de los componentes de terceros están en [`LICENSE`](LICENSE). Para pedir permisos: mipistohn@gmail.com.

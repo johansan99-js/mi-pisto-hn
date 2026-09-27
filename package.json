@@ -1,6 +1,7 @@
 {
   "name": "mi-pisto-hn",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Pruebas automáticas de Mi Pisto HN (la app no tiene build: es index.html + sw.js)",
   "scripts": {
     "test": "node --test --test-concurrency=2 \"tests/*.test.js\""
