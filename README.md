@@ -2,7 +2,7 @@
 
 **Registro contable y control de finanzas personales para Honduras.** 100% privado, con opción de sincronización cifrada en la nube, y usable sin internet.
 
-🔗 App en vivo: https://johansan99-js.github.io/mi-pisto-hn/
+🔗 App en vivo: https://mipistohn.github.io/
 
 ---
 
@@ -68,7 +68,7 @@ Aplica el concepto de contabilidad de doble entrada: cada ingreso o gasto se imp
 
 ## Cómo se usa
 
-1. Abre https://johansan99-js.github.io/mi-pisto-hn/ (o instala la app Android desde el paquete generado con PWABuilder)
+1. Abre https://mipistohn.github.io/ (o instala la app Android desde el paquete generado con PWABuilder)
 2. Configura tu nombre y saldo inicial (efectivo/ahorro)
 3. Crea un PIN de 6 a 8 dígitos — tus datos se cifran con eso
 4. Registra tus movimientos; el dashboard, las estadísticas y las alertas se calculan solos

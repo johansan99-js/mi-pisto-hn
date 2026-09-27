@@ -7,7 +7,7 @@ La app es una PWA. Para Play Store se empaqueta como **TWA** (Trusted Web Activi
 - [x] **Correo de contacto:** `mipistohn@gmail.com` (ya está en `privacidad.html`; úsalo también en la ficha de Play).
 - [ ] **Paquete Android:** generarlo con PWABuilder (paso 2).
 - [ ] **Cuenta de desarrollador:** crearla en Play Console (pago único de US$25).
-- [ ] **Digital Asset Links:** publicar `assetlinks.json` en `johansan99-js.github.io` (paso 4). Sin esto, la app muestra la barra de direcciones de Chrome.
+- [ ] **Digital Asset Links:** publicar `.well-known/assetlinks.json` en este repositorio (paso 4). Sin esto, la app muestra la barra de direcciones de Chrome.
 - [ ] **Prueba cerrada:** 12 testers durante 14 días (obligatoria para cuentas personales nuevas).
 - [ ] **Ficha, formularios y solicitud de producción** (pasos 5 y 6).
 
@@ -19,12 +19,12 @@ Ya está listo en el repositorio:
 
 ## 1. Antes de empaquetar
 
-1. Confirma que `https://johansan99-js.github.io/mi-pisto-hn/` carga la última versión y que `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html` abre.
+1. Confirma que `https://mipistohn.github.io/` carga la última versión y que `https://mipistohn.github.io/privacidad.html` abre.
 2. Ten a mano el correo de contacto y un nombre de paquete definitivo, por ejemplo `hn.mipisto.app`. **El nombre de paquete no se puede cambiar después de publicar.**
 
 ## 2. Generar el paquete con PWABuilder
 
-1. Entra a <https://www.pwabuilder.com>, pega `https://johansan99-js.github.io/mi-pisto-hn/` y toca **Start**.
+1. Entra a <https://www.pwabuilder.com>, pega `https://mipistohn.github.io/` y toca **Start**.
 2. **Package for stores → Android → Generate Package**. En las opciones:
    - **Package ID:** `hn.mipisto.app` (o el que elegiste).
    - **App name:** `Mi Pisto HN` · **Launcher name:** `Mi Pisto HN`.
@@ -48,11 +48,11 @@ Ya está listo en el repositorio:
 
 ## 4. Digital Asset Links (la huella de la app en tu sitio)
 
-Android verifica que la app y el sitio son del mismo dueño leyendo `https://johansan99-js.github.io/.well-known/assetlinks.json`. Tiene que estar en la **raíz del dominio**, no dentro de `/mi-pisto-hn/`, así que va en el repositorio `johansan99-js/johansan99-js.github.io`:
+Android verifica que la app y el sitio son del mismo dueño leyendo `https://mipistohn.github.io/.well-known/assetlinks.json`. Tiene que estar en la **raíz del dominio**. Como la app ahora vive en la raíz (`mipistohn/mipistohn.github.io`), va en **este mismo repositorio**:
 
 ```
 .well-known/assetlinks.json
-.nojekyll          ← archivo vacío; sin él GitHub Pages ignora las carpetas que empiezan con punto
+.nojekyll          ← ya está; sin él GitHub Pages ignora las carpetas que empiezan con punto
 ```
 
 Contenido de `assetlinks.json`, con las dos huellas del paso 3:
@@ -81,7 +81,7 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
 **Descripción breve (72 de 80):** `Anota tus gastos en segundos y controla tus lempiras, tarjetas y deudas.`
 
-**Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html`
+**Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://mipistohn.github.io/privacidad.html`
 
 **Imágenes (en esta carpeta):**
 - **Ícono:** `icono-512.png` (512×512, cuadrado y sin transparencia: Google le pone las esquinas). Todos los íconos salen de `node play-store/generar-icono.js` (una flecha verde que sube, dibujo propio).
@@ -104,7 +104,7 @@ El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 | Audio → Grabaciones de voz o sonido | Recopilado · Opcional · **Procesado de forma efímera** (no se guarda) · Funcionalidad de la app · No se comparte. Solo mientras el usuario toca 🎤 para dictar; el reconocimiento lo hace el servicio de voz de Google del teléfono y la app solo recibe el texto. |
 | Información financiera → Historial de compras | **Solo cuando actives Premium.** Recopilado · Opcional · Funcionalidad de la app (el comprobante de Google Play para saber si la suscripción sigue vigente). Mientras Premium esté apagado, no lo marques. |
 | ¿Datos cifrados en tránsito? | Sí (HTTPS) |
-| ¿El usuario puede pedir que se borren? | Sí. En la app (Config → Sincronización → Eliminar mi cuenta) y en `https://johansan99-js.github.io/mi-pisto-hn/privacidad.html#eliminar` |
+| ¿El usuario puede pedir que se borren? | Sí. En la app (Config → Sincronización → Eliminar mi cuenta) y en `https://mipistohn.github.io/privacidad.html#eliminar` |
 
 Notas para el formulario:
 - **Permisos de Android:** el paquete de PWABuilder no pide el permiso de micrófono; lo pide Chrome la primera vez que alguien toca 🎤 y la persona puede negarlo (la app deja escribir la frase).

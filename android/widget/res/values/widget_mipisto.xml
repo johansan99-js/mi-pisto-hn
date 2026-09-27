@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dirección de la app. Si cambia (p. ej. a https://mipistohn.github.io/), se cambia solo aquí. -->
-    <string name="widget_url_app" translatable="false">https://johansan99-js.github.io/mi-pisto-hn/</string>
+    <!-- Dirección de la app. Si cambia, se cambia solo aquí. -->
+    <string name="widget_url_app" translatable="false">https://mipistohn.github.io/</string>
 
     <string name="widget_titulo">Mi Pisto HN</string>
     <string name="widget_gasto">➖\nGasto</string>

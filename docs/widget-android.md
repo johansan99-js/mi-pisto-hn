@@ -43,14 +43,14 @@ Abre una terminal (en Windows: *PowerShell*) y escribe:
 npm install -g @bubblewrap/cli
 mkdir mipisto-android
 cd mipisto-android
-bubblewrap init --manifest=https://johansan99-js.github.io/mi-pisto-hn/manifest.json
+bubblewrap init --manifest=https://mipistohn.github.io/manifest.json
 ```
 
 Te hará preguntas. Las importantes:
 
 | Pregunta | Qué responder |
 |---|---|
-| Domain | `johansan99-js.github.io` (o la dirección nueva, si ya la cambiaste) |
+| Domain | `mipistohn.github.io` |
 | Application ID | **`hn.mipisto.app`**, exactamente igual que en Play Store |
 | Starting version code | Un número **mayor** que el versionCode actual de Play Store |
 | Key store location | La ruta a tu `signing.keystore` del ZIP de PWABuilder |
