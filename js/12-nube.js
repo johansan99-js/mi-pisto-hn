@@ -625,7 +625,12 @@ const cloudSync = {
     const icons  = { synced:'☁️✓', pending:'☁️…', uploading:'☁️⬆', error:'☁️⚠', offline:'☁️✗' };
     const labels = { synced:'Sincronizado', pending:'Guardando…', uploading:'Subiendo…', error:'Error sync', offline:'Offline', hidden:'' };
     if (st === 'hidden') { el.style.display = 'none'; return; }
-    el.innerHTML = (icons[st]||'☁️') + ' ' + (msg || labels[st]);
+    el.style.display = '';
+    // En pantallas angostas solo se ve el ícono (así no tapa el nombre); al tocarlo sale el texto
+    const texto = msg || labels[st];
+    el.title = texto;
+    el.innerHTML = '<span class="csi-ico">' + (icons[st]||'☁️') + '</span><span class="csi-txt">' + esc(texto) + '</span>';
+    el.onclick = () => { if (typeof avisoRapido === 'function') avisoRapido((icons[st]||'☁️') + ' ' + texto, 2500); };
   },
 
   _scheduleAutoSync() {
@@ -699,9 +704,16 @@ const cloudSync = {
     const banner = document.createElement('div');
     banner.id = 'cloud-newer-banner';
     banner.className = 'cloud-banner';
+    // Un dispositivo sin movimientos no tiene nada que combinar: lo que toca es traer los datos
+    const vacio = !(state.transactions || []).length;
+    window._cloudBannerInfo = info;
+    const desde = '<strong>' + esc(info.device_name||'otro dispositivo') + '</strong>';
     banner.innerHTML =
-      '<span>☁️ Datos nuevos en la nube (' + cuando + ', desde <strong>' + esc(info.device_name||'otro dispositivo') + '</strong>)</span>' +
-      '<button onclick="window._onCloudBannerDownload()">⬇️ Combinar</button>' +
+      (vacio
+        ? '<span>☁️ Tu cuenta tiene datos de ' + desde + ' (' + cuando + ')</span>' +
+          '<button onclick="window._onCloudBannerDownload(true)">⬇️ Traer mis datos</button>'
+        : '<span>☁️ Datos nuevos en la nube (' + cuando + ', desde ' + desde + ')</span>' +
+          '<button onclick="window._onCloudBannerDownload()">⬇️ Combinar</button>') +
       '<button onclick="document.getElementById(\'cloud-newer-banner\')?.remove()" style="background:rgba(255,255,255,.1)">✕</button>';
     document.body.appendChild(banner);
     setTimeout(() => banner.remove(), 20000);
@@ -1288,8 +1300,9 @@ async function confirmarEstrategiaMerge(strategy) {
 window.confirmarEstrategiaMerge = confirmarEstrategiaMerge;
 
 // Handler del banner flotante "Hay datos nuevos en la nube"
-window._onCloudBannerDownload = function() {
+window._onCloudBannerDownload = function(traer) {
   document.getElementById('cloud-newer-banner')?.remove();
+  if (traer) { abrirModalBajarCloud(window._cloudBannerInfo || null); return; }
   if (typeof switchView === 'function') switchView('config');
   setTimeout(() => { if (typeof subirDatosCloud === 'function') subirDatosCloud(); }, 300);
 };

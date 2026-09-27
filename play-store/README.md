@@ -5,9 +5,9 @@ La app es una PWA. Para Play Store se empaqueta como **TWA** (Trusted Web Activi
 ## Lista de pendientes
 
 - [x] **Correo de contacto:** `mipistohn@gmail.com` (ya está en `privacidad.html`; úsalo también en la ficha de Play).
-- [ ] **Paquete Android:** generarlo con PWABuilder (paso 2).
-- [ ] **Cuenta de desarrollador:** crearla en Play Console (pago único de US$25).
-- [ ] **Digital Asset Links:** publicar `.well-known/assetlinks.json` en este repositorio (paso 4). Sin esto, la app muestra la barra de direcciones de Chrome.
+- [x] **Paquete Android:** generado con PWABuilder, paquete `hn.mipisto.app` (la llave está respaldada fuera del repositorio).
+- [x] **Cuenta de desarrollador:** creada (cuenta personal "JS Apps HN"); falta que Google termine de verificar la identidad y el teléfono.
+- [~] **Digital Asset Links:** `.well-known/assetlinks.json` ya está publicado con la huella de la clave de subida (la del ZIP de PWABuilder). Falta agregar la huella de la **clave de firma de apps de Play** cuando se suba el primer `.aab` (paso 4). Sin las dos, la app de Play muestra la barra de direcciones de Chrome.
 - [ ] **Prueba cerrada:** 12 testers durante 14 días (obligatoria para cuentas personales nuevas).
 - [ ] **Ficha, formularios y solicitud de producción** (pasos 5 y 6).
 
