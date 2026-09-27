@@ -1579,3 +1579,5 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 .adj-desc{font-size:12px;color:var(--text);line-height:1.5;margin:0 0 8px;word-break:break-word}
 .adj-acciones{display:flex;flex-wrap:wrap;gap:6px}
 .adj-acciones button{flex:1 1 auto;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+/* "¿Nos ayudas en Google Play?" (js/46-calificar.js) */
+.cal-comentar{display:block;margin:12px auto 0;background:none;border:none;color:var(--text2);font-size:12px;text-decoration:underline;cursor:pointer}
