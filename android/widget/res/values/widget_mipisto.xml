@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dirección de la app. Si cambia (p. ej. a https://mipistohn.github.io/), se cambia solo aquí. -->
+    <string name="widget_url_app" translatable="false">https://johansan99-js.github.io/mi-pisto-hn/</string>
+
+    <string name="widget_titulo">Mi Pisto HN</string>
+    <string name="widget_gasto">➖\nGasto</string>
+    <string name="widget_ingreso">➕\nIngreso</string>
+    <string name="widget_dictar">🎤\nDictar</string>
+    <string name="widget_fijo">🔁\nPago fijo</string>
+    <string name="widget_dictar_solo">🎤\nDictar</string>
+    <string name="widget_descripcion">Anota un gasto, un ingreso o un pago fijo sin buscar la app</string>
+    <string name="widget_descripcion_dictar">Un toque y dicta tu gasto</string>
+
+    <color name="widget_fondo">#F2FFFFFF</color>
+    <color name="widget_verde">#1E8E4E</color>
+    <color name="widget_texto">#FFFFFF</color>
+
+    <style name="WidgetBoton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">3dp</item>
+        <item name="android:layout_marginEnd">3dp</item>
+        <item name="android:background">@drawable/widget_boton</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/widget_texto</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLines">2</item>
+    </style>
+</resources>

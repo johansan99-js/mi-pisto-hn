@@ -71,8 +71,10 @@ describe('Tiempo real entre dispositivos', () => {
     const page = await compuConectada(env);
     await page.evaluate(async () => { cloudSync.setLocalSyncVersion(5); localStorage.setItem(CLOUD_SYNC_CONFIG.enabledKey, 'true'); state.transactions.push({ id: 'tx0100', type: 'expense', amount: 30, cat: 'Café', cuenta: 'efectivo', date: new Date().toISOString() }); await save(); });
     assert.ok(await page.evaluate(() => !!cloudSync._autoSyncTimer), 'quedó esperando para subir');
-    await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
-    await page.waitForFunction(() => __store.row.version === 6, null, { timeout: 1000 });
+    // Al salir no se espera el temporizador: se cancela y se sube en ese momento
+    const esperaCancelada = await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); return cloudSync._autoSyncTimer === null && cloudSync._isSyncing === true; });
+    assert.equal(esperaCancelada, true);
+    await page.waitForFunction(() => __store.row.version === 6, null, { timeout: 8000 });
     const subidos = await page.evaluate(async () => (await _decryptState(__store.row.ciphertext, _sessionDEK)).transactions.map(t => t.id).sort());
     assert.deepEqual(subidos, ['tx0001', 'tx0100']);
   });
