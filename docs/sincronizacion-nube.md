@@ -70,6 +70,7 @@ Hay tres claves distintas:
 - A la nube (Supabase, tabla `encrypted_states`) sube un **bloque cifrado con AES-256**. El servidor no puede leerlo, y nosotros tampoco.
 - Junto al bloque va la clave de los datos (DEK), cifrada con la contraseña de la nube (PBKDF2, 600 000 iteraciones).
 - Las reglas de acceso (RLS) de Supabase solo dejan que cada usuario lea y escriba **su propia fila**. Nadie puede ver los datos de otra persona.
+- **Las fotos de las facturas no van a la nube todavía:** se quedan cifradas en el dispositivo donde se tomaron (IndexedDB). El gasto sí se sincroniza; en el otro dispositivo aparece sin la foto.
 - La contraseña de la nube pide **10 caracteres o más y no solo números**. Diez dígitos solos se pueden adivinar en días con una computadora potente, porque quien tenga el bloque cifrado puede probar sin límite.
 
 ## "No conecta": causas y soluciones

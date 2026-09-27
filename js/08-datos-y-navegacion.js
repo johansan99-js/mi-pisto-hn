@@ -326,8 +326,11 @@ async function verFactura(id) {
         return;
     }
     
+    document.getElementById('visor-factura')?.remove();
     const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;justify-content:center;align-items:center;padding:20px';
+    modal.id = 'visor-factura';
+    // Por encima de cualquier ventana (se abre también desde "Editar movimiento")
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100000;display:flex;justify-content:center;align-items:center;padding:20px';
     modal.innerHTML = `
         <div style="position:relative;max-width:90%;max-height:90%">
             <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-40px;right:0;background:var(--red);color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer">✕ Cerrar</button>

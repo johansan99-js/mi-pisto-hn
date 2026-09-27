@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v89-widget';
+const VERSION = 'v90-facturas';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -48,6 +48,8 @@ const CACHE_NAME = `mipistohn-${VERSION}`;
 const SCOPE = self.registration ? self.registration.scope : self.location.href.replace(/sw\.js.*$/, '');
 const BASE_PATH = new URL(SCOPE).pathname;
 const FICHA_CACHE = 'mph-recordatorio';  // la comparte index.html; no se borra al actualizar  // ej: "/mi-pisto-hn/"
+// El lector de facturas pesa varios MB: se guarda aparte y no se borra al actualizar la app
+const OCR_CACHE = 'mipisto-lector-facturas-v1';
 
 console.log(`📍 [SW ${VERSION}] Base path detectado: ${BASE_PATH}`);
 
@@ -110,6 +112,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/40-guia.js',
   BASE_PATH + 'js/41-acceso-y-nube.js',
   BASE_PATH + 'js/42-anotar-rapido.js',
+  BASE_PATH + 'js/43-facturas.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];
@@ -191,7 +194,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames
-          .filter(name => name !== CACHE_NAME && name !== FICHA_CACHE)
+          .filter(name => name !== CACHE_NAME && name !== FICHA_CACHE && name !== OCR_CACHE)
           .map(name => {
             console.log('🗑️ Eliminando caché antiguo:', name);
             return caches.delete(name);
@@ -269,7 +272,28 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Resto de externos (Tesseract, API de Supabase, etc.): solo red
+  // Lector de facturas (Tesseract y el idioma español, varios MB): sin límite
+  // de tiempo —con 7 s se cortaba la descarga en datos móviles y el escaneo
+  // fallaba siempre— y guardado para que la próxima vez funcione al instante
+  if (/^https:\/\/cdn\.jsdelivr\.net\/npm\/tesseract\.js(-core)?@/.test(url.href) || url.hostname === 'tessdata.projectnaptha.com') {
+    event.respondWith((async () => {
+      const cached = await caches.match(event.request, { ignoreVary: true });
+      if (cached) return cached;
+      try {
+        const resp = await fetch(event.request);
+        if (resp && (resp.ok || resp.type === 'opaque')) {
+          const clone = resp.clone();
+          caches.open(OCR_CACHE).then(c => c.put(event.request, clone).catch(() => {}));
+        }
+        return resp;
+      } catch (e) {
+        return new Response('', { status: 503, statusText: 'Offline — lector de facturas no disponible' });
+      }
+    })());
+    return;
+  }
+
+  // Resto de externos (API de Supabase, etc.): solo red
   const isExternal = url.origin !== self.location.origin;
   if (isExternal) {
     event.respondWith(
