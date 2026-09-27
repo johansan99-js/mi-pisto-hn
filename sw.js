@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v96-calificar';
+const VERSION = 'v97-guardar-foto';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -116,6 +116,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/44-fotos-nube.js',
   BASE_PATH + 'js/45-adjuntos-deudas.js',
   BASE_PATH + 'js/46-calificar.js',
+  BASE_PATH + 'js/47-guardar-foto.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];
