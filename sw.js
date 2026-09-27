@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v90-facturas';
+const VERSION = 'v91-fotos-nube';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -113,6 +113,7 @@ const ASSETS_REQUIRED = [
   BASE_PATH + 'js/41-acceso-y-nube.js',
   BASE_PATH + 'js/42-anotar-rapido.js',
   BASE_PATH + 'js/43-facturas.js',
+  BASE_PATH + 'js/44-fotos-nube.js',
   BASE_PATH + 'fonts/space-grotesk.woff2',
   BASE_PATH + 'css/app.css'
 ];

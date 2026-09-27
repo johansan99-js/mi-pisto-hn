@@ -70,7 +70,7 @@ Hay tres claves distintas:
 - A la nube (Supabase, tabla `encrypted_states`) sube un **bloque cifrado con AES-256**. El servidor no puede leerlo, y nosotros tampoco.
 - Junto al bloque va la clave de los datos (DEK), cifrada con la contraseña de la nube (PBKDF2, 600 000 iteraciones).
 - Las reglas de acceso (RLS) de Supabase solo dejan que cada usuario lea y escriba **su propia fila**. Nadie puede ver los datos de otra persona.
-- **Las fotos de las facturas no van a la nube todavía:** se quedan cifradas en el dispositivo donde se tomaron (IndexedDB). El gasto sí se sincroniza; en el otro dispositivo aparece sin la foto.
+- **Las fotos de las facturas** también van a la nube, a Supabase Storage (carpeta privada `facturas/<usuario>/`). Se cifran en el teléfono con la misma clave de los datos y se suben en versión liviana (1280 px). Cada cuenta solo puede leer y escribir en su propia carpeta. En otro dispositivo, la foto se baja la primera vez que abres el gasto. Si quitas la foto o eliminas la cuenta, se borra también de la nube.
 - La contraseña de la nube pide **10 caracteres o más y no solo números**. Diez dígitos solos se pueden adivinar en días con una computadora potente, porque quien tenga el bloque cifrado puede probar sin límite.
 
 ## "No conecta": causas y soluciones
@@ -108,7 +108,8 @@ Hay tres claves distintas:
   - huella con PRF: `registrarBiometria`, `_desbloquearConHuella`, `_olvidarHuella`;
   - `ofrecerNubeAlEmpezar`, `actualizarDesdeNube`, `abrirEnLaComputadora` (QR con `js/vendor/qrcode.js`, licencia MIT);
   - tiempo real: `_escucharNube()` se suscribe a `postgres_changes` de `encrypted_states` filtrado por `user_id`, y `traerDeLaNube()` baja, junta y avisa. También trae lo nuevo al volver a la app y antes de exportar a Excel, y sube lo pendiente al salir.
-- **Base de datos:** `supabase/migraciones/2026-09-26_tiempo_real_encrypted_states.sql` agrega la tabla a la publicación `supabase_realtime`.
+- **Base de datos:** `supabase/migraciones/2026-09-26_tiempo_real_encrypted_states.sql` agrega la tabla a la publicación `supabase_realtime`, y `2026-09-27_fotos_facturas_storage.sql` crea el bucket privado `facturas` con sus 4 políticas.
+- **`js/44-fotos-nube.js`:** `sincronizarFotos()` sube las fotos que faltan después de cada sincronización. `_obtenerFactura()` baja de la nube la foto que no está en el dispositivo. `_recifrarFacturasLocales()` vuelve a cifrar las fotos del teléfono cuando cambia la clave de los datos.
 - **`js/09-saldos-y-sincronizacion.js`:** `_continuarDesbloqueo()` es el camino común después de tener la DEK, sea por PIN o por huella.
 - **Pruebas:**
   - `tests/sincronizacion.test.js`, `tests/nube-compu.test.js`, `tests/huella-y-nube.test.js` y `tests/tiempo-real.test.js`;
