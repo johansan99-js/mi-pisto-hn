@@ -1,0 +1,35 @@
+Mi Pisto HN
+Copyright (c) 2026 Johand Sanchez (JS Apps HN)
+Todos los derechos reservados. / All rights reserved.
+
+El código fuente, el diseño, los textos, los íconos y las imágenes de Mi Pisto HN
+son propiedad de su autor. El repositorio es público solo para que la app se pueda
+publicar en GitHub Pages y para que cualquiera pueda revisar cómo trata los datos.
+Poder verlo no da ningún permiso de uso.
+
+Sin autorización previa y por escrito del autor, no está permitido copiar,
+modificar, distribuir, publicar, sublicenciar ni vender este software, en todo o
+en parte, ni usarlo para crear otra app o servicio.
+
+Sí está permitido usar la app publicada en https://mipistohn.github.io/ y en
+Google Play para llevar tus finanzas personales.
+
+Para pedir permisos: mipistohn@gmail.com
+
+El software se entrega "tal cual", sin garantías de ningún tipo. El autor no es
+responsable por daños o pérdidas que resulten de su uso.
+
+--------------------------------------------------------------------------------
+Componentes de terceros
+
+Estas piezas no son del autor y conservan su propia licencia, que se respeta:
+
+- qrcode-generator 1.4.4 (Kazuhiko Arase), en js/vendor/qrcode.js: licencia MIT.
+- Supabase JS 2.45.4, que se carga desde cdn.jsdelivr.net: licencia MIT.
+- Tesseract.js 4.0.2 y su modelo de idioma español (tessdata), que se cargan
+  desde CDN: licencia Apache 2.0.
+- SheetJS Community Edition 0.20.1 (exportación a Excel), que se carga desde
+  cdn.sheetjs.com: licencia Apache 2.0.
+- Fuente Space Grotesk, en fonts/: SIL Open Font License 1.1 (fonts/OFL.txt).
+- Fuente Outfit, en play-store/fuentes/: SIL Open Font License 1.1
+  (play-store/fuentes/Outfit-OFL.txt).
