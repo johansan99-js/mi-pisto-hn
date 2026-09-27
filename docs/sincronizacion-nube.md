@@ -86,13 +86,13 @@ Hay tres claves distintas:
 
 ## La dirección de la app
 
-- **Hoy:** `https://johansan99-js.github.io/mi-pisto-hn/`.
-- **Plan:** una organización gratis de GitHub llamada `mipistohn`, con el repositorio `mipistohn.github.io`. La dirección quedaría `https://mipistohn.github.io/`.
-- **Hacerlo antes de publicar en Play Store**, por tres razones:
-  - la app de Play Store queda amarrada a la dirección;
-  - los datos locales pertenecen a cada dirección, así que quien ya tiene datos en la dirección vieja los pasa con la nube;
-  - la huella hay que activarla otra vez.
+- **Desde el 27 de septiembre de 2026:** `https://mipistohn.github.io/`. Es el repositorio `mipistohn/mipistohn.github.io`, de la organización gratis `mipistohn` en GitHub.
+- **Antes:** `https://johansan99-js.github.io/mi-pisto-hn/`, que ya no se publica. Los datos locales pertenecen a cada dirección: quien usaba la dirección vieja con la nube conectada solo entra con Google en la nueva y recupera todo. La huella hay que activarla otra vez.
 - El repositorio es **público** (GitHub Pages gratis lo exige): se ve el código, **no** los datos de nadie. En el código no hay claves secretas; la "anon key" de Supabase es pública a propósito.
+- Si la dirección cambia otra vez, hay que actualizar:
+  - Supabase → Authentication → URL Configuration (Site URL y Redirect URLs);
+  - Google Auth Platform → Información de la marca (página principal, privacidad y dominios autorizados);
+  - `android/widget/res/values/widget_mipisto.xml`, `assetlinks.json` y el paquete de Play Store.
 
 ## Para el desarrollador
 
