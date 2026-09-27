@@ -437,7 +437,11 @@ function masOpcionesRegistro(accion) {
     openModal('modal-gasto');
     if (accion === 'recibo') document.getElementById('ocr-input')?.click();
     else if (accion === 'sms' && typeof abrirModalSMS === 'function') abrirModalSMS();
-  } else if (t === 'ingreso') openModal('modal-ingreso');
+  } else if (t === 'ingreso') {
+    openModal('modal-ingreso');
+    // El comprobante casi siempre llega por WhatsApp o Telegram: se abre la galería
+    if (accion === 'comprobante') document.getElementById('ingreso-foto-gal')?.click();
+  }
   else openTransferirCuentas();
 }
 

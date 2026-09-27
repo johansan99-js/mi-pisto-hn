@@ -59,9 +59,13 @@ describe('Descripción y factura en Me deben, Debo y Préstamos', () => {
     page.respuestas = ['Para la moto'];
     await page.click('#prestamos-list .adj-acciones button:has-text("Agregar descripción")');
     await page.waitForFunction(() => state.prestamos[0].descripcion === 'Para la moto');
-    const chooser = page.waitForEvent('filechooser');
+    // Pregunta de dónde sale la foto: "Subir imagen" abre la galería (sin forzar la cámara)
     await page.click('#prestamos-list .adj-acciones button:has-text("Adjuntar factura")');
+    await page.waitForSelector('#dlg-origen-foto');
+    const chooser = page.waitForEvent('filechooser');
+    await page.click('#dlg-origen-foto button[data-o="galeria"]');
     await (await chooser).setFiles(foto);
+    assert.equal(await page.evaluate(() => document.getElementById('adj-cuenta-foto').hasAttribute('capture')), false);
     await page.waitForFunction(() => !!state.prestamos[0].facturaImagenId, null, { timeout: 5000 });
     assert.match(await page.textContent('#prestamos-list .adj-info'), /Para la moto[\s\S]*Ver factura/);
   });
