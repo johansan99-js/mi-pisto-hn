@@ -219,6 +219,62 @@ async function _adjuntarFotoFactura(file) {
     return !!_tempFacturaId;
 }
 
+/** Dos maneras de poner una foto: 📷 con la cámara o 🖼️ una imagen que ya está en
+    el teléfono o la compu (la que te mandaron por WhatsApp o Telegram, una captura).
+    Con capture="environment" el teléfono abre solo la cámara, así que van dos entradas. */
+function _htmlBotonesFoto(id, onchange, textos, clase) {
+    textos = textos || {};
+    return `<input type="file" id="${id}" accept="image/*" capture="environment" style="display:none" onchange="${onchange}">` +
+        `<input type="file" id="${id}-gal" accept="image/*" style="display:none" onchange="${onchange}">` +
+        `<div class="foto-origen${clase ? ' ' + clase : ''}">` +
+        `<label for="${id}" class="btn btn-secondary">📷 ${textos.camara || 'Tomar foto'}</label>` +
+        `<label for="${id}-gal" class="btn btn-secondary">🖼️ ${textos.galeria || 'Subir imagen'}</label></div>`;
+}
+
+/** Pregunta de dónde sale la foto. Devuelve 'camara', 'galeria' o null */
+function elegirOrigenFoto(titulo) {
+    return new Promise(resolver => {
+        const capa = document.createElement('div');
+        capa.id = 'dlg-origen-foto';
+        capa.className = 'dlg-capa';
+        capa.setAttribute('role', 'dialog');
+        capa.setAttribute('aria-modal', 'true');
+        capa.innerHTML = `<div class="dlg-caja">
+            <div class="dlg-titulo">${esc(titulo || '¿De dónde sale la foto?')}</div>
+            <div class="foto-origen foto-origen-col">
+              <button type="button" class="btn btn-primary" data-o="camara">📷 Tomar foto</button>
+              <button type="button" class="btn btn-secondary" data-o="galeria">🖼️ Subir imagen (galería o archivos)</button>
+              <button type="button" class="btn btn-secondary" data-o="">Cancelar</button>
+            </div></div>`;
+        const cerrar = o => { capa.remove(); resolver(o || null); };
+        capa.querySelectorAll('button').forEach(b => { b.onclick = () => cerrar(b.dataset.o); });
+        capa.addEventListener('click', e => { if (e.target === capa) cerrar(null); });
+        document.body.appendChild(capa);
+    });
+}
+
+/** El monto de un comprobante de depósito o transferencia (dice "Monto", "Valor",
+    "Depósito"… en vez de "Total"). Si nada de eso aparece, el de factura. */
+function _montoDeComprobante(text) {
+    const num = '(\\d{1,3}(?:,\\d{3})*(?:\\.\\d{2})|\\d+\\.\\d{2})';
+    const claves = new RegExp('(MONTO|VALOR|IMPORTE|CANTIDAD|DEP[OÓ]SITO|TRANSFERENCIA|TOTAL|CR[EÉ]DITO|ABONO|ACREDITADO)[^\\n\\d]{0,30}?(?:L\\.?|LPS\\.?|HNL|\\$|USD)?\\s*' + num, 'gi');
+    let mayor = 0;
+    for (const m of String(text || '').matchAll(claves)) {
+        const v = parseFloat(m[2].replace(/,/g, ''));
+        if (v > 0 && v < 10000000 && v > mayor) mayor = v;
+    }
+    if (mayor) return mayor;
+    const deFactura = _montoDeFactura(text);
+    if (deFactura) return deFactura;
+    // Último recurso: el monto más grande que venga con su moneda (L. 1,500.00)
+    const conMoneda = new RegExp('(?:L\\.|LPS\\.?|HNL|\\$)\\s*' + num, 'gi');
+    for (const m of String(text || '').matchAll(conMoneda)) {
+        const v = parseFloat(m[1].replace(/,/g, ''));
+        if (v > 0 && v < 10000000 && v > mayor) mayor = v;
+    }
+    return mayor;
+}
+
 /** Lee el texto de la foto de una factura con Tesseract (español). Se usa en
     los gastos y en las deudas. updateStatus(msg, color) va contando el avance. */
 async function _leerTextoFactura(file, updateStatus) {

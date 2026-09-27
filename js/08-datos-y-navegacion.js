@@ -335,7 +335,7 @@ async function verFactura(id) {
         <div style="position:relative;max-width:90%;max-height:90%">
             <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-40px;right:0;background:var(--red);color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer">✕ Cerrar</button>
             <img src="${imagenBase64}" style="max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
-            <div style="position:absolute;bottom:-40px;left:0;color:var(--text2);font-size:12px">Factura #${esc(gasto.numeroFactura || 'N/A')} • ${new Date(gasto.date).toLocaleDateString()}</div>
+            <div style="position:absolute;bottom:-40px;left:0;color:var(--text2);font-size:12px">${gasto.type === 'income' ? '🧾 Comprobante' : gasto.numeroFactura ? 'Factura #' + esc(gasto.numeroFactura) : '🧾 Factura'}${gasto.nota ? ' · ' + esc(gasto.nota) : ''} • ${new Date(gasto.date).toLocaleDateString('es-HN')}</div>
         </div>
     `;
     document.body.appendChild(modal);

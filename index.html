@@ -954,6 +954,7 @@
       <button type="button" class="dic-btn" onclick="abrirDictado()">🎤 Dictar</button>
       <button type="button" class="solo-gasto" onclick="masOpcionesRegistro('recibo')">📸 Recibo</button>
       <button type="button" class="solo-gasto" onclick="masOpcionesRegistro('sms')">💬 SMS</button>
+      <button type="button" class="solo-ingreso" onclick="masOpcionesRegistro('comprobante')">🧾 Comprobante</button>
       <button type="button" onclick="masOpcionesRegistro()">⚙️ Más opciones</button>
     </div>
     <div id="reg-selector" class="reg-selector"></div>
@@ -1041,11 +1042,13 @@
     </div>
 
     <div style="background: var(--bg4); padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-        <p style="font-size: 11px; color: var(--text2); margin-bottom: 8px;">Extrae el total de tu factura automáticamente:</p>
-        <label for="ocr-input" class="btn btn-secondary" style="display: inline-block; width: 100%; margin: 0; cursor: pointer;">
-            📸 Escanear Recibo / Factura
-        </label>
+        <p style="font-size: 11px; color: var(--text2); margin-bottom: 8px;">Foto de la factura o el recibo (la app lee el total):</p>
         <input type="file" id="ocr-input" accept="image/*" capture="environment" style="display: none;" onchange="procesarReciboOCR(event)">
+        <input type="file" id="ocr-input-gal" accept="image/*" style="display: none;" onchange="procesarReciboOCR(event)">
+        <div class="foto-origen">
+            <label for="ocr-input" class="btn btn-secondary">📷 Tomar foto</label>
+            <label for="ocr-input-gal" class="btn btn-secondary">🖼️ Subir imagen</label>
+        </div>
         <div id="ocr-status" style="font-size: 11px; color: var(--amber); margin-top: 8px; display: none;">Analizando imagen...</div>
         <button type="button" class="btn btn-secondary" onclick="abrirModalSMS()" style="width:100%;margin:8px 0 0">💬 Pegar SMS del banco</button>
     </div>
@@ -1160,6 +1163,17 @@
       <option value="ahorro">🏦 Depositado en Cuenta</option>
     </select>
     <input type="text" id="ingreso-nota" class="input-field" placeholder="Nota (opcional: Ej. quincena enero)">
+    <div id="ingreso-comprobante" class="adj-bloque">
+      <label class="adj-label">🧾 Comprobante (depósito, transferencia, recibo)</label>
+      <input type="file" id="ingreso-foto" accept="image/*" capture="environment" style="display:none" onchange="_ingresoElegirFoto(event)">
+      <input type="file" id="ingreso-foto-gal" accept="image/*" style="display:none" onchange="_ingresoElegirFoto(event)">
+      <div class="foto-origen">
+        <label for="ingreso-foto" class="btn btn-secondary">📷 Tomar foto</label>
+        <label for="ingreso-foto-gal" class="btn btn-secondary">🖼️ Subir imagen</label>
+      </div>
+      <p id="ingreso-foto-estado" class="adj-estado"></p>
+      <img id="ingreso-foto-prev" class="adj-prev" alt="Comprobante adjunto" style="display:none">
+    </div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-secondary" onclick="closeModal('modal-ingreso')" style="flex:1">Cancelar</button>
       <button class="btn btn-primary" onclick="saveIngreso()" style="flex:2">Registrar Ingreso</button>
@@ -1674,5 +1688,6 @@
 <script src="js/45-adjuntos-deudas.js"></script>
 <script src="js/46-calificar.js"></script>
 <script src="js/47-guardar-foto.js"></script>
+<script src="js/48-comprobantes.js"></script>
 </body>
 </html>

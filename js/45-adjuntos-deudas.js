@@ -31,8 +31,8 @@ function _adjBloque(k) {
   div.className = 'adj-bloque';
   div.innerHTML = `<label for="adj-${k}-desc" class="adj-label">📝 Descripción (¿de qué es?)</label>
     <textarea id="adj-${k}-desc" class="input-field adj-desc-input" maxlength="200" rows="2" placeholder="${esc(_ADJ[k].ejemplo)}"></textarea>
-    <input type="file" id="adj-${k}-foto" accept="image/*" capture="environment" style="display:none" onchange="_adjElegirFoto('${k}', event)">
-    <label for="adj-${k}-foto" class="btn btn-secondary adj-foto-btn">📸 Foto del recibo, pagaré o factura</label>
+    <label class="adj-label">📸 Foto del recibo, pagaré, comprobante o factura</label>
+    ${_htmlBotonesFoto('adj-' + k + '-foto', `_adjElegirFoto('${k}', event)`)}
     <p id="adj-${k}-estado" class="adj-estado"></p>
     <img id="adj-${k}-prev" class="adj-prev" alt="Foto adjunta" style="display:none">`;
   antes.before(div);
@@ -63,7 +63,7 @@ async function _adjElegirFoto(k, event) {
   // Leer el total y el comercio, como en los gastos
   try {
     const texto = await _leerTextoFactura(foto, (t, c) => decir(t, c));
-    const monto = _montoDeFactura(texto);
+    const monto = _montoDeComprobante(texto);
     const { subcatAsignada } = _comercioDeFactura(texto);
     const campo = document.getElementById(_ADJ[k].monto);
     const llenado = monto > 0 && campo && !leerMonto(campo.value);
@@ -114,16 +114,19 @@ async function _adjEditarDescripcion(k, id) {
   renderAll();
 }
 
-function _adjFotoDeCuenta(k, id) {
+async function _adjFotoDeCuenta(k, id) {
+  const origen = await elegirOrigenFoto('📸 Foto del recibo, pagaré o comprobante');
+  if (!origen) return;
   let input = document.getElementById('adj-cuenta-foto');
   if (!input) {
     input = document.createElement('input');
     input.type = 'file'; input.accept = 'image/*'; input.id = 'adj-cuenta-foto';
-    input.setAttribute('capture', 'environment');
     input.style.display = 'none';
     input.onchange = e => _adjGuardarFotoDeCuenta(e);
     document.body.appendChild(input);
   }
+  // Con la cámara, el teléfono la abre directo; sin "capture" deja elegir de la galería o los archivos
+  if (origen === 'camara') input.setAttribute('capture', 'environment'); else input.removeAttribute('capture');
   input.dataset.k = k;
   input.dataset.id = id;
   input.click();

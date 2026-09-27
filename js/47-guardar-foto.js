@@ -6,14 +6,14 @@
 // "⬇️ Descargar" la guarda en los archivos. La foto sale del teléfono sin
 // cifrar: solo cuando la persona toca uno de los dos botones.
 
-/** Nombre del archivo: Factura-2026-09-27-Comercio.jpg */
-function _nombreArchivoFoto(dataURL, fecha, detalle) {
+/** Nombre del archivo: Factura-2026-09-27-Comercio.jpg (Comprobante-… en un ingreso) */
+function _nombreArchivoFoto(dataURL, fecha, detalle, prefijo) {
   const tipo = (String(dataURL).match(/^data:image\/([a-z0-9.+-]+);/i) || [, 'jpeg'])[1].toLowerCase();
   const ext = tipo === 'jpeg' ? 'jpg' : tipo.replace(/[^a-z0-9]/g, '') || 'jpg';
   const d = fecha ? new Date(fecha) : new Date();
   const dia = isNaN(d) ? fechaLocal() : fechaLocal(d);
   const limpio = String(detalle || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-  return 'Factura-' + dia + (limpio ? '-' + limpio : '') + '.' + ext;
+  return (prefijo || 'Factura') + '-' + dia + (limpio ? '-' + limpio : '') + '.' + ext;
 }
 
 function _archivoDeFoto(dataURL, nombre) {
@@ -74,7 +74,7 @@ if (typeof verFactura === 'function') {
     const t = (state.transactions || []).find(x => String(x.id) === String(id)) || {};
     visor.style.flexDirection = 'column';
     visor.style.gap = '48px';
-    _botonesDeFoto(visor, img.getAttribute('src'), _nombreArchivoFoto(img.getAttribute('src'), t.date, t.nota || t.etiqueta || t.cat));
+    _botonesDeFoto(visor, img.getAttribute('src'), _nombreArchivoFoto(img.getAttribute('src'), t.date, t.nota || t.etiqueta || t.cat, t.type === 'income' ? 'Comprobante' : 'Factura'));
   };
 }
 
