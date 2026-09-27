@@ -40,7 +40,7 @@ Ya está listo en el repositorio:
 ## 3. Crear la app en Play Console
 
 1. <https://play.google.com/console> → **Crear app**:
-   - **Nombre:** `Mi Pisto HN: Finanzas Honduras`.
+   - **Nombre:** `Mi Pisto: Control de Gastos` (ver `ficha.md`).
    - **Idioma:** Español (Latinoamérica).
    - **Tipo:** App · **Gratis**.
 2. **Probar y publicar → Prueba cerrada → Crear versión:** sube el `.aab`. Acepta **Firma de apps de Play**.
@@ -77,9 +77,9 @@ Compruébalo con <https://developers.google.com/digital-asset-links/tools/genera
 
 El texto completo, listo para copiar, está en [`ficha.md`](ficha.md).
 
-**Nombre (30):** `Mi Pisto HN: Finanzas y Gastos`
+**Nombre (27 de 30):** `Mi Pisto: Control de Gastos` (hay otras opciones en `ficha.md`)
 
-**Descripción breve (72 de 80):** `Anota tus gastos en segundos y controla tus lempiras, tarjetas y deudas.`
+**Descripción breve (75 de 80):** `Controla tus gastos, presupuesto y flujo de caja en lempiras. Sin anuncios.`
 
 **Categoría:** Finanzas · **Correo:** `mipistohn@gmail.com` · **Política de privacidad:** `https://mipistohn.github.io/privacidad.html`
 
