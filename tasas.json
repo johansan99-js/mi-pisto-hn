@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-26T23:14:29.593Z",
+  "updated_at": "2026-09-27T15:59:29.915Z",
   "base": "HNL",
   "format_version": 2,
   "note": "format_version 2: cada moneda tiene { bid, ask, mid }. bid=tasa compra del banco (cuando TÚ vendes esa moneda), ask=tasa venta (cuando TÚ compras). USD es la mediana de los bancos de \"bancos\" (o el BCH si ninguno responde); el resto deriva de la referencia internacional con spread 0.5%.",
@@ -11,12 +11,12 @@
       "mid": 26.9607
     },
     "EUR": {
-      "bid": 30.5282,
-      "ask": 30.6812,
-      "mid": 30.6047
+      "bid": 30.5208,
+      "ask": 30.6738,
+      "mid": 30.5973
     },
     "GTQ": {
-      "bid": 3.5074,
+      "bid": 3.5075,
       "ask": 3.525,
       "mid": 3.5162
     },
@@ -26,9 +26,9 @@
       "mid": 0.7293
     },
     "MXN": {
-      "bid": 1.5155,
-      "ask": 1.5231,
-      "mid": 1.5193
+      "bid": 1.5138,
+      "ask": 1.5214,
+      "mid": 1.5176
     },
     "CRC": {
       "bid": 0.059,
@@ -65,10 +65,10 @@
   },
   "_legacy_rates_for_compat": {
     "USD": 26.9607,
-    "EUR": 30.6047,
+    "EUR": 30.5973,
     "GTQ": 3.5162,
     "NIO": 0.7293,
-    "MXN": 1.5193,
+    "MXN": 1.5176,
     "CRC": 0.0592,
     "PAB": 26.9607
   }
