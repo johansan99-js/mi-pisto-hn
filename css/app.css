@@ -1553,3 +1553,13 @@ body.app-bloqueada #modal-pin{background:var(--bg)!important}
 #rap-mic.escuchando{background:rgba(var(--red-rgb),.15);border-color:var(--red)}
 .rap-estado{font-size:12px;color:var(--text2);min-height:18px;margin:10px 0 4px;text-align:center}
 .rap-entrar{display:block;margin:4px auto 0;background:none;border:none;color:var(--text2);text-decoration:underline;font:inherit;font-size:12px;cursor:pointer}
+
+/* Foto de la factura dentro del gasto (editar) */
+.edit-factura{margin:4px 0 12px}
+.edit-factura-agregar{display:block;width:100%;margin:0;cursor:pointer;text-align:center}
+.edit-factura-caja{border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--bg3);text-align:center}
+.edit-factura-img{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;cursor:zoom-in}
+.edit-factura-caja small{display:block;color:var(--text2);font-size:11px;margin:6px 0}
+.edit-factura-cargando{display:block;color:var(--text2);font-size:12px;padding:10px}
+.edit-factura-botones{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.edit-factura-botones .btn{margin:0;cursor:pointer;font-size:12px}

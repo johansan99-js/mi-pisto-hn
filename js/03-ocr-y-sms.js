@@ -13,7 +13,7 @@ function _cargarTesseractLib() {
     if (_tesseractLibPromise) return _tesseractLibPromise;
     _tesseractLibPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js'; // igual que _TESS_VER
         script.integrity = 'sha384-p0lyrUSwAXKW8+KUuu0G96F+bX2fnB1MGFTx5X/Y/99IjrwU1BnTzW+H71bs1Vrn';
         script.crossOrigin = 'anonymous';
         script.onload = () => resolve();
@@ -50,6 +50,175 @@ async function _comprimirImagenParaOCR(file, maxDim = 1800, calidad = 0.85) {
     }
 }
 
+// Versión del motor de lectura: la librería, el worker y el núcleo van iguales
+const _TESS_VER = '4.0.2';
+
+/** Monto total de la factura (0 si no se encontró) */
+function _montoDeFactura(text) {
+    const lineas = text.split('\n');
+    let mayorMonto = 0;
+
+    // 1. Patrones Específicos por Tipo de Comercio
+    const patronesEspecificos = [
+        // Little Caesars / Restaurantes
+        /PICK-?UP\s+TO\s+L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /PICK-?UP\s+TOP\s+L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /PICK\s*UP\s*:?\s*L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /SON\s*:?\s*[A-Z\s]*L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i,
+        // Generales
+        /TOTAL\s+L\.?\s*:?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /TOTAL\s+A\s+PAGAR\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /IMPORTE\s+TOTAL\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /A\s+PAGAR\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i
+    ];
+    for (const patron of patronesEspecificos) {
+        const matches = text.matchAll(new RegExp(patron.source, 'gi'));
+        for (const match of matches) {
+            const valorStr = match[1] || match[0];
+            const valor = parseFloat(valorStr.replace(/,/g, ''));
+            if (!isNaN(valor) && valor > 0 && valor < 1000000) { if (valor > mayorMonto) mayorMonto = valor; }
+        }
+    }
+
+    // 2. Búsqueda línea por línea para casos donde el monto está en la línea siguiente
+    if (mayorMonto === 0) {
+        for (let i = 0; i < lineas.length; i++) {
+            const linea = lineas[i].trim();
+            if (linea.match(/TOTAL|IMPORTE|A\s+PAGAR|PICK-?UP|PICKUP/i)) {
+                const matchMismaLinea = linea.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/);
+                if (matchMismaLinea) { const valor = parseFloat(matchMismaLinea[1].replace(/,/g, '')); if (valor > mayorMonto) mayorMonto = valor; }
+                if (i + 1 < lineas.length) {
+                    const siguienteLinea = lineas[i + 1].trim();
+                    const matchSiguienteLinea = siguienteLinea.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/);
+                    if (matchSiguienteLinea) { const valor = parseFloat(matchSiguienteLinea[1].replace(/,/g, '')); if (valor > mayorMonto) mayorMonto = valor; }
+                }
+            }
+        }
+    }
+
+    // 3. Respaldo: el número más grande con formato de moneda
+    if (mayorMonto === 0) {
+        const todosLosNumeros = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d{2})/g) || [];
+        const numeros = todosLosNumeros.map(n => parseFloat(n.replace(/,/g, ''))).filter(n => n > 10 && n < 1000000);
+        if (numeros.length > 0) {
+            numeros.sort((a, b) => b - a);
+            mayorMonto = numeros[0];
+            console.log('💰 Usando el número más grande como respaldo:', mayorMonto);
+        }
+    }
+    
+    return mayorMonto;
+}
+
+/** Comercio conocido en el texto de la factura (con el nombre del comercio como subcategoría) */
+function _comercioDeFactura(text) {
+    const textLower = text.toLowerCase();
+    let categoriaAsignada = '';
+    let subcatAsignada = '';
+    let tipoAsignado = 'fijo'; // Por defecto es fijo
+    
+    // Función auxiliar para verificar si una frase está presente
+    const contiene = (frase) => textLower.includes(frase);
+
+    // SUPERMERCADOS
+    if (contiene('pricesmart')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'PriceSmart'; }
+    else if (contiene('los andes')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Los Andes'; }
+    else if (contiene('la colonia')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'La Colonia'; }
+    else if (contiene('colonial')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Colonial'; }
+    else if (contiene('maxi despensa')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Maxi Despensa'; }
+    else if (contiene('el faro')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'El Faro'; }
+    else if (contiene('walmart')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Walmart'; }
+    else if (contiene('paiz')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Paiz'; }
+    else if (contiene('despensa familiar')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Despensa Familiar'; }
+    else if (contiene('supermercado')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Supermercado'; }
+
+    // RESTAURANTES Y COMIDA RÁPIDA
+    else if (contiene('little caesars') || contiene('little') && contiene('caesars') || contiene('intur')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Little Caesars'; tipoAsignado = 'extra'; }
+    else if (contiene('pizza hut')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Pizza Hut'; tipoAsignado = 'extra'; }
+    else if (contiene('domino\'s pizza') || contiene('dominos')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Domino\'s Pizza'; tipoAsignado = 'extra'; }
+    else if (contiene('mcdonald\'s') || contiene('mcdonalds')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'McDonald\'s'; tipoAsignado = 'extra'; }
+    else if (contiene('burger king')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Burger King'; tipoAsignado = 'extra'; }
+    else if (contiene('wendy\'s') || contiene('wendys')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Wendy\'s'; tipoAsignado = 'extra'; }
+    else if (contiene('kfc')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'KFC'; tipoAsignado = 'extra'; }
+    else if (contiene('popeyes')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Popeyes'; tipoAsignado = 'extra'; }
+    else if (contiene('church\'s chicken') || contiene('churchs')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Church\'s Chicken'; tipoAsignado = 'extra'; }
+    else if (contiene('dunkin')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Dunkin\''; tipoAsignado = 'extra'; }
+    else if (contiene('starbucks')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Starbucks'; tipoAsignado = 'extra'; }
+    else if (contiene('espresso americano')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Espresso Americano'; tipoAsignado = 'extra'; }
+    else if (contiene('restaurante') || contiene('comida')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Restaurante'; tipoAsignado = 'extra'; }
+
+    // GASOLINERAS
+    else if (contiene('shell')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Shell'; }
+    else if (contiene('texaco')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Texaco'; }
+    else if (contiene('puma')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Puma'; }
+    else if (/\buno\b.*(gasolin|combustible|servicentro)|(gasolin|combustible|servicentro).*\buno\b/.test(textLower)) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Uno'; }
+    else if (contiene('gasolinera')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Combustible'; }
+
+    // FARMACIAS
+    else if (contiene('farmacia')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia'; }
+    else if (contiene('siman')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia Simán'; }
+    else if (contiene('cruz verde')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia Cruz Verde'; }
+    else if (contiene('farmavalue')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmavalue'; }
+    else if (contiene('ahorro farmacia')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia El Ahorro'; }
+
+    // TIENDAS DE CONVENIENCIA
+    else if (contiene('circle k')) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Circle K'; tipoAsignado = 'extra'; }
+    else if (contiene('pronto')) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Pronto'; tipoAsignado = 'extra'; }
+
+    // MANTENIMIENTO Y REPUESTOS
+    else if (contiene('nechos') || contiene('lubricantes')) { categoriaAsignada = 'Mantenimiento'; subcatAsignada = 'NECHOS LUBRICANTES'; }
+    else if (contiene('repuestos') || contiene('autopartes') || contiene('auto partes')) { categoriaAsignada = 'Mantenimiento'; subcatAsignada = 'Repuestos'; }
+
+    // TIENDAS POR DEPARTAMENTO / ROPA
+    else if (contiene('lady lee')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Lady Lee'; tipoAsignado = 'extra'; }
+    else if (contiene('carrion')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Carrión'; tipoAsignado = 'extra'; }
+    else if (contiene('liverpool')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Liverpool'; tipoAsignado = 'extra'; }
+    else if (contiene('zara')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Zara'; tipoAsignado = 'extra'; }
+
+    // TECNOLOGÍA
+    else if (contiene('radio shack')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'RadioShack'; tipoAsignado = 'extra'; }
+    else if (contiene('la curacao')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'La Curacao'; tipoAsignado = 'extra'; }
+    else if (contiene('elektra')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'Elektra'; tipoAsignado = 'extra'; }
+    else if (contiene('jetstereo')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'Jetstereo'; tipoAsignado = 'extra'; }
+
+    // OTROS
+    else if (contiene('cinemark') || /\bcines?\b/.test(textLower)) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Cinemark'; tipoAsignado = 'extra'; }
+    else if (contiene('gimnasio') || /\bgym\b/.test(textLower)) { categoriaAsignada = 'Salud'; subcatAsignada = 'Gimnasio'; tipoAsignado = 'extra'; }
+
+    return { categoriaAsignada, subcatAsignada, tipoAsignado };
+}
+
+/** Las categorías viejas del lector (Alimentación, Mantenimiento…) llevadas a las de la app.
+    Si la persona ya anotó ese comercio antes, manda la categoría que usó. */
+function _categoriaAppDeFactura(comercio, vieja, tipo) {
+    const aprendida = typeof categoriaAprendida === 'function' ? categoriaAprendida(comercio, 'gasto') : null;
+    if (aprendida) return aprendida;
+    if (comercio === 'Circle K' || comercio === 'Pronto') return 'Día a día';
+    if (vieja === 'Alimentación') return tipo === 'extra' ? 'Comida' : 'Supermercado';
+    if (vieja === 'Transporte') return 'Gasolina';
+    return { 'Salud': 'Salud', 'Ropa': 'Ropa', 'Ocio': 'Salidas', 'Mantenimiento': 'Transporte', 'Tecnología': 'Hogar' }[vieja] || 'Otros';
+}
+
+/** Guarda la foto (comprimida) para adjuntarla al gasto y la muestra en el formulario */
+async function _adjuntarFotoFactura(file) {
+    const dataURL = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+    });
+    if (!dataURL) return false;
+    _tempFacturaId = await _guardarTempFactura(dataURL);
+    window._tempFacturaDataURL = dataURL;
+    window.tempFacturaImagen = !!_tempFacturaId;
+    let previewEl = document.getElementById('ocr-preview');
+    if (!previewEl) {
+        previewEl = document.createElement('div');
+        previewEl.id = 'ocr-preview';
+        previewEl.style.cssText = 'margin-top:10px;border-radius:8px;overflow:hidden;max-height:140px;border:2px solid var(--amber);position:relative';
+        previewEl.innerHTML = `<img id="ocr-preview-img" src="" alt="Foto de la factura" style="width:100%;max-height:140px;object-fit:cover;display:block">
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--amber);font-size:10px;padding:4px 8px;font-weight:700">🧾 Foto adjunta — se guardará con el gasto</div>`;
+        document.getElementById('ocr-status').after(previewEl);
+    }
+    document.getElementById('ocr-preview-img').src = dataURL;
+    previewEl.style.display = _tempFacturaId ? 'block' : 'none';
+    return !!_tempFacturaId;
+}
+
 async function procesarReciboOCR(event) {
     const fileOriginal = event.target.files[0];
     if (!fileOriginal) return;
@@ -57,212 +226,61 @@ async function procesarReciboOCR(event) {
     const montoInput = document.getElementById('gasto-monto');
     statusEl.style.display = 'block';
     statusEl.style.color = 'var(--amber)';
-    const updateStatus = (msg, isError = false) => { statusEl.textContent = msg; if (isError) statusEl.style.color = 'var(--red)'; };
+    const updateStatus = (msg, color) => { statusEl.textContent = msg; if (color) statusEl.style.color = color; };
+    let worker = null, conFoto = false;
 
     try {
         updateStatus('🗜️ Optimizando imagen...');
         const file = await _comprimirImagenParaOCR(fileOriginal);
-        updateStatus('📥 Cargando motor OCR...');
+        // La foto se guarda PRIMERO: aunque no se pueda leer el total, queda con el gasto
+        conFoto = await _adjuntarFotoFactura(file);
+        updateStatus('📥 Cargando el lector de facturas...');
         await _cargarTesseractLib();
-        if (typeof Tesseract === 'undefined') throw new Error('Tesseract no está cargado. Recarga la página.');
-        const workerOptions = {
+        if (typeof Tesseract === 'undefined') throw new Error('El lector de facturas no cargó.');
+        worker = await Tesseract.createWorker({
             logger: m => {
-                console.log('Tesseract:', m);
-                if (m.status === 'loading language traineddata') { updateStatus('📥 Descargando idioma español (30MB - solo primera vez)...'); statusEl.style.color = 'var(--blue)'; }
-                else if (m.status === 'initializing api') { updateStatus('⚙️ Inicializando reconocimiento...'); }
-                else if (m.status === 'recognizing text') { const progress = m.progress ? Math.round(m.progress * 100) : 0; updateStatus(`🔍 Analizando imagen... ${progress}%`); }
+                if (m.status === 'loading language traineddata') updateStatus('📥 Descargando el idioma español (solo la primera vez, puede tardar un minuto)...', 'var(--blue)');
+                else if (m.status === 'initializing api') updateStatus('⚙️ Preparando el lector...');
+                else if (m.status === 'recognizing text') updateStatus(`🔍 Leyendo la factura... ${m.progress ? Math.round(m.progress * 100) : 0}%`);
             },
-            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/worker.min.js',
+            workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${_TESS_VER}/dist/worker.min.js`,
             langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@4/tesseract-core.wasm.js'
-        };
-        updateStatus('🚀 Iniciando motor OCR...');
-        const worker = await Tesseract.createWorker(workerOptions);
-        updateStatus('🌐 Cargando idioma español...');
+            corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${_TESS_VER}/tesseract-core.wasm.js`
+        });
         await worker.loadLanguage('spa');
         await worker.initialize('spa');
-        updateStatus('📸 Procesando imagen...');
+        updateStatus('📸 Leyendo la factura...');
         const imageUrl = URL.createObjectURL(file);
         const { data: { text } } = await worker.recognize(imageUrl);
-        // P0-2: Guardar imagen en IndexedDB (no localStorage) para evitar QuotaExceededError
-        await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                _tempFacturaId = await _guardarTempFactura(e.target.result);
-                window._tempFacturaDataURL = e.target.result; // solo para preview en modal
-                resolve();
-            };
-            reader.onerror = () => resolve();
-            reader.readAsDataURL(file);
-        });
         URL.revokeObjectURL(imageUrl);
-        
-        console.log('✅ Texto completo detectado:', text);
-        
-        // ========== NUEVA LÓGICA DE EXTRACCIÓN DE MONTO (MÁS ROBUSTA) ==========
-        const lineas = text.split('\n');
-        let mayorMonto = 0;
-        
-        // 1. Patrones Específicos por Tipo de Comercio
-        const patronesEspecificos = [
-            // Little Caesars / Restaurantes
-            /PICK-?UP\s+TO\s+L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /PICK-?UP\s+TOP\s+L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /PICK\s*UP\s*:?\s*L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /SON\s*:?\s*[A-Z\s]*L\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i,
-            // Generales
-            /TOTAL\s+L\.?\s*:?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /TOTAL\s+A\s+PAGAR\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /IMPORTE\s+TOTAL\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i, /A\s+PAGAR\s*[:\s]*L?\.?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/i
-        ];
-        for (const patron of patronesEspecificos) {
-            const matches = text.matchAll(new RegExp(patron.source, 'gi'));
-            for (const match of matches) {
-                const valorStr = match[1] || match[0];
-                const valor = parseFloat(valorStr.replace(/,/g, ''));
-                if (!isNaN(valor) && valor > 0 && valor < 1000000) { if (valor > mayorMonto) mayorMonto = valor; }
-            }
-        }
 
-        // 2. Búsqueda línea por línea para casos donde el monto está en la línea siguiente
-        if (mayorMonto === 0) {
-            for (let i = 0; i < lineas.length; i++) {
-                const linea = lineas[i].trim();
-                if (linea.match(/TOTAL|IMPORTE|A\s+PAGAR|PICK-?UP|PICKUP/i)) {
-                    const matchMismaLinea = linea.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/);
-                    if (matchMismaLinea) { const valor = parseFloat(matchMismaLinea[1].replace(/,/g, '')); if (valor > mayorMonto) mayorMonto = valor; }
-                    if (i + 1 < lineas.length) {
-                        const siguienteLinea = lineas[i + 1].trim();
-                        const matchSiguienteLinea = siguienteLinea.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{2}))/);
-                        if (matchSiguienteLinea) { const valor = parseFloat(matchSiguienteLinea[1].replace(/,/g, '')); if (valor > mayorMonto) mayorMonto = valor; }
-                    }
-                }
-            }
+        const mayorMonto = _montoDeFactura(text);
+        const { categoriaAsignada, subcatAsignada, tipoAsignado } = _comercioDeFactura(text);
+        const guardada = conFoto ? ' La foto queda guardada con el gasto.' : '';
+        if (mayorMonto > 0) montoInput.value = mayorMonto.toFixed(2);
+        // La categoría, con las de la app (antes quedaba "Alimentación", que no existe en la app)
+        if (subcatAsignada) {
+            const cat = _categoriaAppDeFactura(subcatAsignada, categoriaAsignada, tipoAsignado);
+            if (cat) document.getElementById('gasto-cat').value = cat;
+            document.getElementById('gasto-subcat').value = subcatAsignada;
+            document.getElementById('gasto-tipo').value = tipoAsignado;
         }
-
-        // 3. Respaldo: el número más grande con formato de moneda
-        if (mayorMonto === 0) {
-            const todosLosNumeros = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d{2})/g) || [];
-            const numeros = todosLosNumeros.map(n => parseFloat(n.replace(/,/g, ''))).filter(n => n > 10 && n < 1000000);
-            if (numeros.length > 0) {
-                numeros.sort((a, b) => b - a);
-                mayorMonto = numeros[0];
-                console.log('💰 Usando el número más grande como respaldo:', mayorMonto);
-            }
-        }
-        
-        await worker.terminate();
-
         if (mayorMonto > 0) {
-            montoInput.value = mayorMonto.toFixed(2);
-            updateStatus(`✅ Total detectado: L. ${mayorMonto.toFixed(2)}`);
-            statusEl.style.color = 'var(--green)';
-            
-            // ========== BASE DE DATOS LOCAL DE COMERCIOS (DETECCIÓN AVANZADA) ==========
-            const textLower = text.toLowerCase();
-            let categoriaAsignada = '';
-            let subcatAsignada = '';
-            let tipoAsignado = 'fijo'; // Por defecto es fijo
-            
-            // Función auxiliar para verificar si una frase está presente
-            const contiene = (frase) => textLower.includes(frase);
-
-            // SUPERMERCADOS
-            if (contiene('pricesmart')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'PriceSmart'; }
-            else if (contiene('los andes')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Los Andes'; }
-            else if (contiene('la colonia')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'La Colonia'; }
-            else if (contiene('colonial')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Colonial'; }
-            else if (contiene('maxi despensa')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Maxi Despensa'; }
-            else if (contiene('el faro')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'El Faro'; }
-            else if (contiene('walmart')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Walmart'; }
-            else if (contiene('paiz')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Paiz'; }
-            else if (contiene('despensa familiar')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Despensa Familiar'; }
-            else if (contiene('supermercado')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Supermercado'; }
-
-            // RESTAURANTES Y COMIDA RÁPIDA
-            else if (contiene('little caesars') || contiene('little') && contiene('caesars') || contiene('intur')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Little Caesars'; tipoAsignado = 'extra'; }
-            else if (contiene('pizza hut')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Pizza Hut'; tipoAsignado = 'extra'; }
-            else if (contiene('domino\'s pizza') || contiene('dominos')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Domino\'s Pizza'; tipoAsignado = 'extra'; }
-            else if (contiene('mcdonald\'s') || contiene('mcdonalds')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'McDonald\'s'; tipoAsignado = 'extra'; }
-            else if (contiene('burger king')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Burger King'; tipoAsignado = 'extra'; }
-            else if (contiene('wendy\'s') || contiene('wendys')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Wendy\'s'; tipoAsignado = 'extra'; }
-            else if (contiene('kfc')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'KFC'; tipoAsignado = 'extra'; }
-            else if (contiene('popeyes')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Popeyes'; tipoAsignado = 'extra'; }
-            else if (contiene('church\'s chicken') || contiene('churchs')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Church\'s Chicken'; tipoAsignado = 'extra'; }
-            else if (contiene('dunkin')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Dunkin\''; tipoAsignado = 'extra'; }
-            else if (contiene('starbucks')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Starbucks'; tipoAsignado = 'extra'; }
-            else if (contiene('espresso americano')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Espresso Americano'; tipoAsignado = 'extra'; }
-            else if (contiene('restaurante') || contiene('comida')) { categoriaAsignada = 'Alimentación'; subcatAsignada = 'Restaurante'; tipoAsignado = 'extra'; }
-
-            // GASOLINERAS
-            else if (contiene('shell')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Shell'; }
-            else if (contiene('texaco')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Texaco'; }
-            else if (contiene('puma')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Puma'; }
-            else if (contiene('uno')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Uno'; }
-            else if (contiene('gasolinera')) { categoriaAsignada = 'Transporte'; subcatAsignada = 'Combustible'; }
-
-            // FARMACIAS
-            else if (contiene('farmacia')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia'; }
-            else if (contiene('siman')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia Simán'; }
-            else if (contiene('cruz verde')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia Cruz Verde'; }
-            else if (contiene('farmavalue')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmavalue'; }
-            else if (contiene('ahorro farmacia')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Farmacia El Ahorro'; }
-
-            // TIENDAS DE CONVENIENCIA
-            else if (contiene('circle k')) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Circle K'; tipoAsignado = 'extra'; }
-            else if (contiene('pronto')) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Pronto'; tipoAsignado = 'extra'; }
-
-            // MANTENIMIENTO Y REPUESTOS
-            else if (contiene('nechos') || contiene('lubricantes')) { categoriaAsignada = 'Mantenimiento'; subcatAsignada = 'NECHOS LUBRICANTES'; }
-            else if (contiene('repuestos') || contiene('auto')) { categoriaAsignada = 'Mantenimiento'; subcatAsignada = 'Repuestos'; }
-
-            // TIENDAS POR DEPARTAMENTO / ROPA
-            else if (contiene('lady lee')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Lady Lee'; tipoAsignado = 'extra'; }
-            else if (contiene('carrion')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Carrión'; tipoAsignado = 'extra'; }
-            else if (contiene('liverpool')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Liverpool'; tipoAsignado = 'extra'; }
-            else if (contiene('zara')) { categoriaAsignada = 'Ropa'; subcatAsignada = 'Zara'; tipoAsignado = 'extra'; }
-
-            // TECNOLOGÍA
-            else if (contiene('radio shack')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'RadioShack'; tipoAsignado = 'extra'; }
-            else if (contiene('la curacao')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'La Curacao'; tipoAsignado = 'extra'; }
-            else if (contiene('elektra')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'Elektra'; tipoAsignado = 'extra'; }
-            else if (contiene('jetstereo')) { categoriaAsignada = 'Tecnología'; subcatAsignada = 'Jetstereo'; tipoAsignado = 'extra'; }
-
-            // OTROS
-            else if (contiene('cinemark') || contiene('cine')) { categoriaAsignada = 'Ocio'; subcatAsignada = 'Cinemark'; tipoAsignado = 'extra'; }
-            else if (contiene('gimnasio') || contiene('gym')) { categoriaAsignada = 'Salud'; subcatAsignada = 'Gimnasio'; tipoAsignado = 'extra'; }
-
-            // Asignar los valores si se detectó algo
-            if (categoriaAsignada) {
-                document.getElementById('gasto-cat').value = categoriaAsignada;
-                document.getElementById('gasto-subcat').value = subcatAsignada;
-                document.getElementById('gasto-tipo').value = tipoAsignado;
-                updateStatus(`✅ Total: L. ${mayorMonto.toFixed(2)} - ${subcatAsignada} detectado`);
-            } else {
-                updateStatus(`✅ Total: L. ${mayorMonto.toFixed(2)} - Comercio no reconocido. Puedes llenarlo manualmente.`);
-            }
-            
-            window.tempFacturaImagen = true;
-            // Mostrar preview de la factura escaneada en el modal
-            let previewEl = document.getElementById('ocr-preview');
-            if (!previewEl) {
-                previewEl = document.createElement('div');
-                previewEl.id = 'ocr-preview';
-                previewEl.style.cssText = 'margin-top:10px;border-radius:8px;overflow:hidden;max-height:140px;border:2px solid var(--amber);position:relative';
-                previewEl.innerHTML = `<img id="ocr-preview-img" src="" style="width:100%;max-height:140px;object-fit:cover;display:block">
-                  <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--amber);font-size:10px;padding:4px 8px;font-weight:700">🧾 Factura adjunta — se guardará con el gasto</div>`;
-                document.getElementById('ocr-status').after(previewEl);
-            }
-            document.getElementById('ocr-preview-img').src = window._tempFacturaDataURL || '';
-            previewEl.style.display = 'block';
-            setTimeout(() => statusEl.style.display = 'none', 7000);
-            
+            updateStatus(`✅ Total: L. ${mayorMonto.toFixed(2)}${subcatAsignada ? ' · ' + subcatAsignada : ''}. Revisa y guarda.${guardada}`, 'var(--green)');
         } else {
-            updateStatus('⚠️ No se detectó ningún monto. Por favor ingresa manualmente.', true);
+            updateStatus(`⚠️ No encontré el total en la foto: escríbelo tú.${guardada}`, 'var(--aviso)');
         }
     } catch (error) {
         console.error('❌ Error OCR:', error);
-        updateStatus('❌ Error al procesar la imagen. Intenta de nuevo.', true);
+        updateStatus(conFoto
+            ? '⚠️ No se pudo leer la factura (revisa tu internet la primera vez). Escribe el monto: la foto igual queda guardada con el gasto.'
+            : '❌ No se pudo usar la foto. Intenta de nuevo.', conFoto ? 'var(--aviso)' : 'var(--red)');
     } finally {
+        if (worker) { try { await worker.terminate(); } catch (e) {} }
         event.target.value = '';
     }
 }
-  
+
 
 
 // ═══ LEER SMS O NOTIFICACIONES DEL BANCO ══════════════════════════════════
