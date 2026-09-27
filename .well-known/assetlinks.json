@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "hn.mipisto.app",
+    "sha256_cert_fingerprints": [
+      "21:7F:47:74:33:77:C0:2E:83:6D:7A:66:78:05:9D:CA:03:CF:74:D5:1C:60:F5:27:17:32:4E:84:4C:51:F1:55"
+    ]
+  }
+}]
