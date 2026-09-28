@@ -7,11 +7,19 @@ try {
     console.log = console.info = console.debug = function () {};
   }
 } catch (e) {}
-window.TESSERACT_CONFIG = {
-  workerPath: 'https://unpkg.com/tesseract.js@4.0.2/dist/worker.min.js',
-  langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-  corePath: 'https://unpkg.com/tesseract.js-core@4.0.2/tesseract-core.wasm.js'
-};
+// El motor OCR (Tesseract) vive en NUESTRO propio sitio (js/vendor/tesseract/):
+// así no depende de un CDN de terceros ni hace falta verificar su firma, y el
+// Service Worker no cachea código externo sin control. Solo el idioma (datos,
+// no código) se baja de tessdata la primera vez.
+(function () {
+  var base = new URL('js/vendor/tesseract/', document.baseURI).href;
+  window.TESSERACT_CONFIG = {
+    libPath: base + 'tesseract.min.js',
+    workerPath: base + 'worker.min.js',
+    corePath: base + 'tesseract-core.wasm.js',
+    langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+  };
+})();
 // Tema antes de pintar para que no parpadee (ver TEMAS en 20-extras.js)
 try {
   const _g = localStorage.getItem('mph_tema');

@@ -40,7 +40,7 @@
 //       getRemoteInfo — causaban "Unexpected token '!'").
 // ============================================================
 
-const VERSION = 'v98-subir-imagen';
+const VERSION = 'v99-ocr-local';
 const CACHE_NAME = `mipistohn-${VERSION}`;
 
 // FIX: Detectar el scope automáticamente del registro del SW
@@ -280,13 +280,19 @@ self.addEventListener('fetch', event => {
   // Lector de facturas (Tesseract y el idioma español, varios MB): sin límite
   // de tiempo —con 7 s se cortaba la descarga en datos móviles y el escaneo
   // fallaba siempre— y guardado para que la próxima vez funcione al instante
-  if (/^https:\/\/cdn\.jsdelivr\.net\/npm\/tesseract\.js(-core)?@/.test(url.href) || url.hostname === 'tessdata.projectnaptha.com') {
+  const esNucleoOCRpropio = url.origin === self.location.origin && url.pathname.includes('/js/vendor/tesseract/');
+  const esDatosOCR = url.hostname === 'tessdata.projectnaptha.com';
+  if (esNucleoOCRpropio || esDatosOCR) {
     event.respondWith((async () => {
       const cached = await caches.match(event.request, { ignoreVary: true });
       if (cached) return cached;
       try {
         const resp = await fetch(event.request);
-        if (resp && (resp.ok || resp.type === 'opaque')) {
+        // Se cachea nuestro propio motor (respuesta 'ok') o los datos de idioma del
+        // host de confianza. NUNCA se cachea una respuesta opaca de un script de
+        // otro origen (evita que un envenenamiento quede pegado).
+        const cacheable = resp && (resp.ok || (esDatosOCR && resp.type === 'opaque'));
+        if (cacheable) {
           const clone = resp.clone();
           caches.open(OCR_CACHE).then(c => c.put(event.request, clone).catch(() => {}));
         }
@@ -459,9 +465,17 @@ self.addEventListener('message', event => {
 
     case 'CACHE_URLS':
       if (Array.isArray(event.data.urls)) {
-        caches.open(CACHE_NAME).then(cache => {
-          cache.addAll(event.data.urls).catch(e => console.warn('Cache error:', e));
+        // Solo se aceptan rutas de nuestro propio sitio: así una página (o un XSS)
+        // no puede pedirle al SW que cachee y luego sirva contenido de terceros.
+        const propias = event.data.urls.filter(u => {
+          try { return new URL(u, self.location.origin).origin === self.location.origin; }
+          catch (e) { return false; }
         });
+        if (propias.length) {
+          caches.open(CACHE_NAME).then(cache => {
+            cache.addAll(propias).catch(e => console.warn('Cache error:', e));
+          });
+        }
       }
       break;
 
