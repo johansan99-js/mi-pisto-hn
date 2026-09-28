@@ -26,8 +26,9 @@ Estas piezas no son del autor y conservan su propia licencia, que se respeta:
 
 - qrcode-generator 1.4.4 (Kazuhiko Arase), en js/vendor/qrcode.js: licencia MIT.
 - Supabase JS 2.45.4, que se carga desde cdn.jsdelivr.net: licencia MIT.
-- Tesseract.js 4.0.2 y su modelo de idioma español (tessdata), que se cargan
-  desde CDN: licencia Apache 2.0.
+- Tesseract.js 4.0.2 y su núcleo, en js/vendor/tesseract/ (incluidos en este
+  repositorio): licencia Apache 2.0. Su modelo de idioma español (tessdata) se
+  descarga de un CDN: licencia Apache 2.0.
 - SheetJS Community Edition 0.20.1 (exportación a Excel), que se carga desde
   cdn.sheetjs.com: licencia Apache 2.0.
 - Fuente Space Grotesk, en fonts/: SIL Open Font License 1.1 (fonts/OFL.txt).

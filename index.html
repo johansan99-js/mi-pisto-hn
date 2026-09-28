@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
 <!-- P1-6: Content Security Policy. unsafe-inline temporal mientras se migra a delegación de eventos.
-     Las CDNs listadas son las que carga la app: Supabase (jsdelivr), SheetJS, Tesseract (unpkg + projectnaptha) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://unpkg.com https://tessdata.projectnaptha.com blob: https://open.er-api.com https://api.exchangerate-api.com https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
+     Las CDNs listadas son las que carga la app: Supabase (jsdelivr), SheetJS, y solo los datos de idioma del OCR (projectnaptha). El motor OCR se sirve desde este mismo sitio (js/vendor/tesseract/). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://cdn.sheetjs.com https://tessdata.projectnaptha.com https://open.er-api.com https://api.exchangerate-api.com https://aetaktkexbtluoxehuwi.supabase.co wss://aetaktkexbtluoxehuwi.supabase.co; manifest-src 'self'">
 <title>Mi Pisto HN · Tu dinero, tu control</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">

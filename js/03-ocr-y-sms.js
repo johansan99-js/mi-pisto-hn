@@ -13,9 +13,9 @@ function _cargarTesseractLib() {
     if (_tesseractLibPromise) return _tesseractLibPromise;
     _tesseractLibPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js'; // igual que _TESS_VER
-        script.integrity = 'sha384-p0lyrUSwAXKW8+KUuu0G96F+bX2fnB1MGFTx5X/Y/99IjrwU1BnTzW+H71bs1Vrn';
-        script.crossOrigin = 'anonymous';
+        // Mismo origen (js/vendor/tesseract/): lo sirve nuestro propio sitio por
+        // HTTPS, así que no necesita integrity ni crossOrigin.
+        script.src = (window.TESSERACT_CONFIG && TESSERACT_CONFIG.libPath) || 'js/vendor/tesseract/tesseract.min.js';
         script.onload = () => resolve();
         script.onerror = () => { _tesseractLibPromise = null; reject(new Error('No se pudo cargar el motor OCR (revisa tu conexión).')); };
         document.head.appendChild(script);
@@ -290,9 +290,9 @@ async function _leerTextoFactura(file, updateStatus) {
                 else if (m.status === 'initializing api') updateStatus('⚙️ Preparando el lector...');
                 else if (m.status === 'recognizing text') updateStatus(`🔍 Leyendo la factura... ${m.progress ? Math.round(m.progress * 100) : 0}%`);
             },
-            workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${_TESS_VER}/dist/worker.min.js`,
-            langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-            corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${_TESS_VER}/tesseract-core.wasm.js`
+            workerPath: (window.TESSERACT_CONFIG || {}).workerPath || 'js/vendor/tesseract/worker.min.js',
+            langPath: (window.TESSERACT_CONFIG || {}).langPath || 'https://tessdata.projectnaptha.com/4.0.0',
+            corePath: (window.TESSERACT_CONFIG || {}).corePath || 'js/vendor/tesseract/tesseract-core.wasm.js'
         });
         await worker.loadLanguage('spa');
         await worker.initialize('spa');
