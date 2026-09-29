@@ -863,6 +863,13 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--bg);color
 /* Lo que debo: deudas como cuentas */
 .deuda-grupo{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 8px}
 .deuda-grupo strong{color:var(--red);font-size:13px}
+.resumen-personas{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:6px 12px 8px;margin:6px 2px 12px}
+.resumen-personas summary{cursor:pointer;color:var(--text2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;list-style:none}
+.resumen-personas summary::-webkit-details-marker{display:none}
+.resumen-personas .rp-fila{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--border);font-size:14px}
+.resumen-personas .rp-fila span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.resumen-personas .rp-fila em{color:var(--text2);font-style:normal;font-size:12px}
+.resumen-personas .rp-fila strong{font-weight:800;white-space:nowrap}
 .deuda-movs,.deuda-liquidadas{margin-top:10px;font-size:12px}
 .deuda-movs summary,.deuda-liquidadas summary{cursor:pointer;color:var(--text2);font-weight:600;padding:4px 0}
 .deuda-liquidadas{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-top:14px}

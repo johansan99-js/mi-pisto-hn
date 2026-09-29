@@ -2,7 +2,25 @@
 // Se carga como script clásico en el orden de index.html: todos comparten el ámbito global.
 // ========== COBRAR Y PAGAR (MEJORADO CON FLUJO DE CAJA) ==========
 function saveCobrar(){const persona=document.getElementById('cobrar-persona').value.trim(),monto=leerMonto(document.getElementById('cobrar-monto').value),pagado=leerMonto(document.getElementById('cobrar-pagado').value)||0;if(!persona||!monto)return;state.receivables.push({id:uid(),persona,monto,pagado,fecha:document.getElementById('cobrar-fecha').value});save();closeModal('modal-cobrar');renderAll();}
-function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)return;const tot=document.getElementById('total-cobrar');if(tot)tot.textContent=fL(state.receivables.reduce((a,r)=>a+Math.max(0,r.monto-(r.pagado||0)),0));if(state.receivables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🤝</div><div class="es-title">Nadie te debe dinero</div><div class="es-sub">Registra aquí los préstamos que has hecho a otras personas para llevar el control.</div><button class="btn-empty-secondary" onclick="openModal('modal-cobrar')">➕ Registrar cobro pendiente</button></div>`;return;}c.innerHTML=state.receivables.map(r=>{
+// Agrupa deudas/cobros por el nombre de la persona y suma lo pendiente de cada una.
+// Sirve para el resumen "Total por persona" cuando alguien aparece varias veces.
+function _agruparPorNombre(items, nombreFn, pendFn) {
+  const m = new Map();
+  (items || []).forEach(x => {
+    const n = String(nombreFn(x) || '—').trim() || '—';
+    const p = pendFn(x);
+    if (p > 0.005) { const e = m.get(n) || { nombre: n, total: 0, veces: 0 }; e.total += p; e.veces++; m.set(n, e); }
+  });
+  return [...m.values()].sort((a, b) => b.total - a.total);
+}
+function _htmlResumenPersonas(rows, color, titulo) {
+  // Solo aparece si hay algo que resumir: 2+ personas, o una con varias entradas.
+  if (!rows.length || (rows.length === 1 && rows[0].veces < 2)) return '';
+  return `<details class="resumen-personas" open><summary>👥 ${titulo || 'Total por persona'}</summary>` +
+    rows.map(r => `<div class="rp-fila"><span>${esc(r.nombre)}${r.veces > 1 ? ` <em>· ${r.veces}</em>` : ''}</span><strong style="color:${color}">${fL(r.total)}</strong></div>`).join('') +
+    `</details>`;
+}
+function renderCobrar(){const c=document.getElementById('cobrar-list');if(!c)return;const tot=document.getElementById('total-cobrar');if(tot)tot.textContent=fL(state.receivables.reduce((a,r)=>a+Math.max(0,r.monto-(r.pagado||0)),0));if(state.receivables.length===0){c.innerHTML=`<div class="empty-state-simple"><div class="es-icon">🤝</div><div class="es-title">Nadie te debe dinero</div><div class="es-sub">Registra aquí los préstamos que has hecho a otras personas para llevar el control.</div><button class="btn-empty-secondary" onclick="openModal('modal-cobrar')">➕ Registrar cobro pendiente</button></div>`;return;}c.innerHTML=_htmlResumenPersonas(_agruparPorNombre(state.receivables,r=>r.persona,r=>r.monto-(r.pagado||0)),'var(--amber)','Total por persona')+state.receivables.map(r=>{
   const pendiente=r.monto-(r.pagado||0);
   return `<div class="card card-receivable">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -209,8 +227,10 @@ function renderPagar() {
     const suma = lista.reduce((a, p) => a + pendienteDeuda(p), 0);
     return `<div class="deuda-grupo"><span>${titulo}</span><strong>-${fL(suma)}</strong></div>` + lista.map(_htmlDeuda).join('');
   };
+  const personas = activas.filter(p => p.tipo !== 'banco');
+  const resumenPersonas = _htmlResumenPersonas(_agruparPorNombre(personas, p => p.creditor, pendienteDeuda), 'var(--red)', 'Total por persona');
   c.innerHTML = grupo('🏦 Bancos y financieras', activas.filter(p => p.tipo === 'banco')) +
-    grupo('👤 Personas', activas.filter(p => p.tipo !== 'banco')) +
+    (personas.length ? `<div class="deuda-grupo"><span>👤 Personas</span><strong>-${fL(personas.reduce((a, p) => a + pendienteDeuda(p), 0))}</strong></div>` + resumenPersonas + personas.map(_htmlDeuda).join('') : '') +
     (activas.length ? '' : '<p style="text-align:center;color:var(--text2);font-size:13px;padding:10px">🎉 No debes nada. ¡Bien hecho!</p>') +
     (liquidadas.length ? `<details class="deuda-liquidadas"><summary>✅ Liquidadas (${liquidadas.length})</summary>${liquidadas.map(p => `<div class="deuda-mov"><span>${p.tipo === 'banco' ? '🏦' : '👤'} ${esc(p.creditor)} · ${fL(p.monto)}${p.liquidadaEn ? ' · ' + new Date(p.liquidadaEn + 'T12:00:00').toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span><button onclick="eliminarPagar('${esc(p.id)}')" aria-label="Eliminar" style="background:none;border:none;cursor:pointer;padding:4px">${_ICONO_BORRAR}</button></div>`).join('')}</details>` : '');
 }
