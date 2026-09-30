@@ -24,6 +24,24 @@ const CLOUD_SYNC_CONFIG = {
   deviceNameKey: 'mph_device_name'
 };
 
+// Un bache de señal (cambio de WiFi a datos, la app en segundo plano) hace que
+// la petición a la nube ni siquiera salga: el navegador tira "Failed to fetch".
+// No es un error de la app ni se pierde nada, así que a la persona le mostramos
+// un aviso amable en vez del texto técnico. Reconoce el fallo tanto desde el
+// error (Error) como desde el mensaje ya convertido en texto.
+function _esFalloDeRed(e) {
+  try { if (navigator && navigator.onLine === false) return true; } catch (x) {}
+  const m = String((e && e.message) || e || '');
+  return /failed to fetch|networkerror|network request failed|load failed|err_(internet|network|timed)|net::|fetch(ing)? (failed|error)|tiempo de espera|sin conexi[oó]n|connection|timeout|timed out/i.test(m);
+}
+// Devuelve el aviso amable si fue un fallo de red; si no, el mensaje técnico
+// que se pasa como respaldo (para errores reales que sí conviene mostrar).
+function _avisoNube(e, tecnico) {
+  return _esFalloDeRed(e)
+    ? '📶 Sin conexión ahora. Tus datos están guardados en tu teléfono; volvemos a sincronizar en cuanto haya señal.'
+    : tecnico;
+}
+
 const cloudSync = {
   client: null,        // Cliente Supabase (lazy-initialized)
   user: null,          // Usuario autenticado (auth.user object)
@@ -176,7 +194,7 @@ const cloudSync = {
   async _primeraConexion() {
     let info;
     try { info = await this.getRemoteInfo({ strict: true }); }
-    catch (e) { return avisar('❌ No se pudo consultar la nube: ' + e.message + '\n\nPuedes intentarlo después en Configuración → Sincronización.'); }
+    catch (e) { return avisar(_avisoNube(e, '❌ No se pudo consultar la nube: ' + e.message + '\n\nPuedes intentarlo después en Configuración → Sincronización.')); }
     const conDatos = (state.transactions || []).some(t => !t.deletedAt);
     if (info && !conDatos) {
       // Perfil recién hecho y la cuenta ya tiene datos: se traen tal cual
@@ -370,7 +388,7 @@ const cloudSync = {
     if (this.hasCloudKey()) return true;
     let info;
     try { info = await this.getRemoteInfo({ strict: true }); }
-    catch (e) { alert('❌ No se pudo consultar la nube:\n\n' + e.message); return false; }
+    catch (e) { alert(_avisoNube(e, '❌ No se pudo consultar la nube:\n\n' + e.message)); return false; }
     const existe = !!(info && String(info.pin_salt || '').startsWith('p2:'));
     const pass = await pedirContrasenaNube(existe);
     if (!pass) return false;
@@ -1214,7 +1232,7 @@ async function subirDatosCloud() {
   // Verificar si hay versión más nueva en la nube
   let remoteInfo;
   try { remoteInfo = await cloudSync.getRemoteInfo({ strict: true }); }
-  catch (e) { alert('❌ No se pudo consultar la nube:\n\n' + e.message); return; }
+  catch (e) { alert(_avisoNube(e, '❌ No se pudo consultar la nube:\n\n' + e.message)); return; }
   const localV = cloudSync.getLocalSyncVersion();
 
   if (remoteInfo && remoteInfo.version > localV) {
@@ -1363,7 +1381,7 @@ async function traerDatosDeOtroDispositivo() {
     decir('Buscando tus datos…');
     let info;
     try { info = await cloudSync.getRemoteInfo({ strict: true }); }
-    catch (e) { return decir('❌ No se pudo consultar la nube: ' + e.message); }
+    catch (e) { return decir(_avisoNube(e, '❌ No se pudo consultar la nube: ' + e.message)); }
     if (st) st.style.display = 'none';
     if (!info) return _sinDatosEnLaNube(cloudSync.user.email || '');
     document.getElementById('onboarding').style.display = 'none';

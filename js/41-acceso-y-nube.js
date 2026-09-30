@@ -186,7 +186,7 @@ async function actualizarDesdeNube() {
   } else if (/bajar la versión más nueva/.test(r.error || '')) {
     // La nube tiene datos con otra clave: el camino de "Subir" los junta
     subirDatosCloud();
-  } else avisar('❌ No se pudo actualizar: ' + (r.error || 'error desconocido'));
+  } else avisar(_avisoNube(r.error, '❌ No se pudo actualizar: ' + (r.error || 'error desconocido')));
 }
 
 // Los botones de actualizar solo se ven con la cuenta conectada
